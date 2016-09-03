@@ -12,7 +12,7 @@
 #include "task.h"
 
 namespace led_task {
-	void start_task(void);
+	void start(void);
 }
 
 

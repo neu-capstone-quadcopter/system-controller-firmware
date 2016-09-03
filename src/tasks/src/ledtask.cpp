@@ -21,7 +21,7 @@ namespace led_task {
 	ExampleLed *led0;
 	ExampleLed *led1;
 
-	void start_task(void) {
+	void start(void) {
 		// Retrieve driver instances from HAL
 		led0 = static_cast<ExampleLed*>(hal::get_driver(hal::LED_0));
 		led1 = static_cast<ExampleLed*>(hal::get_driver(hal::LED_1));

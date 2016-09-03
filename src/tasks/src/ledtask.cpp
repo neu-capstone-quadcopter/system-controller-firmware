@@ -14,7 +14,7 @@
 #include "exampleled.hpp"
 
 namespace led_task {
-	void task_loop(void *p);
+	static void task_loop(void *p);
 
 	TaskHandle_t task_handle;
 
@@ -29,7 +29,7 @@ namespace led_task {
 		xTaskCreate(task_loop, "led task", 1536, NULL, 2, &task_handle);
 	}
 
-	void task_loop(void *p) {
+	static void task_loop(void *p) {
 		for(;;) {
 			led0->set_led(false);
 			led1->set_led(true);

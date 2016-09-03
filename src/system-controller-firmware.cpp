@@ -21,9 +21,8 @@ inline void* operator new (size_t size) { return pvPortMalloc(size); }
 inline void* operator new[] (size_t size) { return pvPortMalloc(size); }
 
 int main(void) {
-	hal_init();
-
-	LedTask::start_task();
+	hal::init();
+	led_task::start_task();
 
 	vTaskStartScheduler();
 

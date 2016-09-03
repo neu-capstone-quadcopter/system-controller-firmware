@@ -13,7 +13,7 @@
 #include "hal.hpp"
 #include "exampleled.hpp"
 
-namespace LedTask {
+namespace led_task {
 	void task_loop(void *p);
 
 	TaskHandle_t task_handle;
@@ -23,8 +23,8 @@ namespace LedTask {
 
 	void start_task(void) {
 		// Retrieve driver instances from HAL
-		led0 = static_cast<ExampleLed*>(hal_get_driver(LED_0));
-		led1 = static_cast<ExampleLed*>(hal_get_driver(LED_1));
+		led0 = static_cast<ExampleLed*>(hal::get_driver(hal::LED_0));
+		led1 = static_cast<ExampleLed*>(hal::get_driver(hal::LED_1));
 
 		xTaskCreate(task_loop, "led task", 1536, NULL, 2, &task_handle);
 	}

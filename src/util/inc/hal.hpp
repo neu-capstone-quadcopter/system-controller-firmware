@@ -10,12 +10,14 @@
 
 #include "driver.hpp"
 
-typedef enum hal_driver_identifier{
-	LED_0,
-	LED_1,
-} hal_driver_identifier;
+namespace hal {
+	typedef enum driver_identifier{
+		LED_0,
+		LED_1,
+	} driver_identifier;
 
-void hal_init(void);
-Driver *hal_get_driver(hal_driver_identifier id);
+	void init(void);
+	Driver *get_driver(driver_identifier id);
+}
 
 #endif /* UTIL_INC_HAL_HPP_ */

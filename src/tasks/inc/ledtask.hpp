@@ -11,16 +11,7 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
-/*class LedTask {
-public:
-	LedTask(void);
-	void start_task(void);
-private:
-	void task_loop(void *p);
-	TaskHandle_t task_handle;
-};
-*/
-namespace LedTask {
+namespace led_task {
 	void start_task(void);
 }
 

@@ -14,6 +14,7 @@ namespace hal {
 	typedef enum driver_identifier{
 		LED_0,
 		LED_1,
+		TELEM_CC1120,
 	} driver_identifier;
 
 	void init(void);

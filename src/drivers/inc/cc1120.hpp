@@ -19,6 +19,8 @@ public:
 private:
 	LPC_SSP_T *cc1120_ssp;
 	SSP_ConfigFormat ssp_format;
+
+	void ssp_write(uint8_t data);
 };
 
 

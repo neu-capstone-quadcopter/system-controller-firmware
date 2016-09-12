@@ -19,6 +19,7 @@ Driver *drivers[DRIVER_COUNT];
 namespace hal {
 	void init(void) {
 		Chip_GPIO_Init(LPC_GPIO);
+		Chip_IOCON_Init(LPC_IOCON);
 
 		// Instantiate device drivers in order of dependence
 		drivers[LED_0] = new ExampleLed(0, 9);

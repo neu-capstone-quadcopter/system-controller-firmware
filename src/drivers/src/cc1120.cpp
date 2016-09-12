@@ -16,6 +16,12 @@ Cc1120::Cc1120(LPC_SSP_T *cc1120_ssp) {
 }
 
 void Cc1120::init_driver() {
+	// Select port 0, pins 6-9 for SSP1. No Addition mode
+	Chip_IOCON_PinMux(LPC_IOCON, 0, 6, IOCON_MODE_INACT, IOCON_FUNC2);
+	Chip_IOCON_PinMux(LPC_IOCON, 0, 7, IOCON_MODE_INACT, IOCON_FUNC2);
+	Chip_IOCON_PinMux(LPC_IOCON, 0, 8, IOCON_MODE_INACT, IOCON_FUNC2);
+	Chip_IOCON_PinMux(LPC_IOCON, 0, 9, IOCON_MODE_INACT, IOCON_FUNC2);
+
 	Chip_SSP_Init(this->cc1120_ssp);
 
 	this->ssp_format.frameFormat = SSP_FRAMEFORMAT_SPI;

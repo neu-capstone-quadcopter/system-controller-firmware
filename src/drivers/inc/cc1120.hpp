@@ -17,11 +17,12 @@ public:
 	Cc1120(LPC_SSP_T *cc1120_ssp);
 	void init_driver(void);
 	void ssp_interrupt_handler(void);
+	void ssp_write(uint8_t data);
 private:
 	LPC_SSP_T *cc1120_ssp;
 	SSP_ConfigFormat ssp_format;
-
-	void ssp_write(uint8_t data);
+	void start_frame();
+	void stop_frame();
 };
 
 

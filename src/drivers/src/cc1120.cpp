@@ -22,6 +22,11 @@ void Cc1120::init_driver() {
 	Chip_IOCON_PinMux(LPC_IOCON, 0, 8, IOCON_MODE_INACT, IOCON_FUNC2);
 	Chip_IOCON_PinMux(LPC_IOCON, 0, 9, IOCON_MODE_INACT, IOCON_FUNC2);
 
+	// Set CS (6) as output
+	//Chip_GPIO_WriteDirBit(LPC_GPIO, 0, 6, true);
+	// Stop frame sets CS high, falling edge will trigger transaction
+	//this->stop_frame();
+
 	Chip_SSP_Init(this->cc1120_ssp);
 
 	this->ssp_format.frameFormat = SSP_FRAMEFORMAT_SPI;
@@ -29,6 +34,7 @@ void Cc1120::init_driver() {
 	this->ssp_format.clockMode = SSP_CLOCK_CPHA0_CPOL0;
 	Chip_SSP_SetFormat(this->cc1120_ssp, this->ssp_format.bits,
 			this->ssp_format.frameFormat, this->ssp_format.clockMode);
+	Chip_SSP_SetBitRate(this->cc1120_ssp, 4000000);
 
 	Chip_SSP_SetMaster(this->cc1120_ssp, 1);
 
@@ -44,6 +50,15 @@ void Cc1120::ssp_write(uint8_t data) {
 	xf_setup.rx_data = &RxBuf;
 
 	Chip_SSP_Int_RWFrames8Bits(this->cc1120_ssp, &xf_setup);
+}
+
+void Cc1120::start_frame() {
+	Chip_GPIO_WritePortBit(LPC_GPIO, 0, 6, false);
+
+}
+
+void Cc1120::stop_frame() {
+	Chip_GPIO_WritePortBit(LPC_GPIO, 0, 6, true);
 }
 
 void Cc1120::ssp_interrupt_handler(void) {

@@ -22,8 +22,8 @@ namespace hal {
 		Chip_IOCON_Init(LPC_IOCON);
 
 		// Instantiate device drivers in order of dependence
-		drivers[LED_0] = new ExampleLed(0, 9);
-		drivers[LED_1] = new ExampleLed(0, 8);
+		drivers[LED_0] = new ExampleLed(2, 11);
+		drivers[LED_1] = new ExampleLed(2, 12);
 		drivers[TELEM_CC1120] = new Cc1120(LPC_SSP1);
 
 		// Initialize all drivers

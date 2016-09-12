@@ -35,3 +35,7 @@ namespace hal {
 		return drivers[id];
 	}
 }
+
+void SSP1_IRQHandler() {
+	static_cast<Cc1120*>(drivers[hal::TELEM_CC1120])->ssp_interrupt_handler();
+}

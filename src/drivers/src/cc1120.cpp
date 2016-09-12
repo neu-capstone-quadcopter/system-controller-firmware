@@ -31,8 +31,7 @@ void Cc1120::init_driver() {
 	NVIC_EnableIRQ(SSP1_IRQn);
 }
 
-void Cc1120::ssp_write(uint8_t data)
-{
+void Cc1120::ssp_write(uint8_t data) {
 	Chip_SSP_DATA_SETUP_T xf_setup;
 	xf_setup.length = 1;
 	xf_setup.tx_data = &TxBuf;
@@ -41,7 +40,6 @@ void Cc1120::ssp_write(uint8_t data)
 	Chip_SSP_Int_RWFrames8Bits(this->cc1120_ssp, &xf_setup);
 }
 
-void SSPIRQHANDLER(void)
-{
+void Cc1120::ssp_interrupt_handler(void) {
 
 }

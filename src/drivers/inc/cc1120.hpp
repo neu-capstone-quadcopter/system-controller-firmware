@@ -16,6 +16,7 @@ class Cc1120 : public Driver {
 public:
 	Cc1120(LPC_SSP_T *cc1120_ssp);
 	void init_driver(void);
+	void ssp_interrupt_handler(void);
 private:
 	LPC_SSP_T *cc1120_ssp;
 	SSP_ConfigFormat ssp_format;

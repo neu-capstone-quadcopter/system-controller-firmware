@@ -13,11 +13,25 @@
 #include "driver.hpp"
 #include "exampleled.hpp"
 #include "adc.hpp"
+#include "cd74hc4067.hpp"
 
 namespace hal {
 	void add_drivers(void);
 
 	Driver *drivers[NUM_IDENTIFIERS];
+
+	Cd74hc4067_gpio_map gpio_map = {
+			.s0_port = 0,
+			.s0_pin = 2,
+			.s1_port = 0,
+			.s1_pin = 3,
+			.s2_port = 0,
+			.s2_pin = 21,
+			.s3_port = 0,
+			.s3_pin = 22,
+			.en_port = 0,
+			.en_pin = 27
+	};
 
 	void init(void) {
 		SystemCoreClockUpdate();
@@ -38,6 +52,7 @@ namespace hal {
 		ExampleLed *led_0 = new ExampleLed(2, 11);
 		ExampleLed *led_1 = new ExampleLed(2, 12);
 		Adc *adc = new Adc(LPC_ADC);
+		Cd74hc4067 *adc_mux = new Cd74hc4067(gpio_map);
 		Cc1120 *telem_cc1120 = new Cc1120(telem_cc1120_ssp);
 
 		// Add drivers to driver array
@@ -45,6 +60,7 @@ namespace hal {
 		drivers[LED_0] = led_0;
 		drivers[LED_1] = led_1;
 		drivers[SENSOR_ADC] = adc;
+		drivers[CD74HC4067] = adc_mux;
 		drivers[TELEM_CC1120] = telem_cc1120;
 	}
 

@@ -9,6 +9,7 @@
 #define UTIL_INC_HAL_HPP_
 
 #include "driver.hpp"
+#include "cd74hc4067.hpp"
 
 namespace hal {
 	// Add device drivers in order of dependence
@@ -17,6 +18,7 @@ namespace hal {
 		LED_0,
 		LED_1,
 		SENSOR_ADC,
+		CD74HC4067,
 		TELEM_CC1120,
 		NUM_IDENTIFIERS = TELEM_CC1120 + 1 // Add all entries before this and update
 	} driver_identifier;

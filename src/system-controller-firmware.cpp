@@ -19,6 +19,7 @@
 #include "hal.hpp"
 #include "ledtask.hpp"
 #include "telemetry_radio_task.hpp"
+#include "analog_sensor_collection_task.hpp"
 
 inline void* operator new (size_t size) { return pvPortMalloc(size); }
 inline void* operator new[] (size_t size) { return pvPortMalloc(size); }
@@ -28,6 +29,7 @@ int main(void) {
 	hal::init();
 	led_task::start();
 	//telemetry_radio_task::start();
+	adc_task::start();
 
 	vTaskStartScheduler();
 

@@ -12,6 +12,7 @@
 #include "cc1120.hpp"
 #include "driver.hpp"
 #include "exampleled.hpp"
+#include "adc.hpp"
 
 namespace hal {
 	void add_drivers(void);
@@ -35,12 +36,14 @@ namespace hal {
 		SspIo *telem_cc1120_ssp = new SspIo(LPC_SSP1);
 		ExampleLed *led_0 = new ExampleLed(2, 11);
 		ExampleLed *led_1 = new ExampleLed(2, 12);
+		Adc *adc = new Adc(LPC_ADC);
 		Cc1120 *telem_cc1120 = new Cc1120(telem_cc1120_ssp);
 
 		// Add drivers to driver array
 		drivers[TELEM_CC1120_SSP] = telem_cc1120_ssp;
 		drivers[LED_0] = led_0;
 		drivers[LED_1] = led_1;
+		drivers[SENSOR_ADC] = adc;
 		drivers[TELEM_CC1120] = telem_cc1120;
 	}
 

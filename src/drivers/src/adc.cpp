@@ -24,8 +24,14 @@ void Adc::init_driver() {
 	Chip_IOCON_PinMuxSet(LPC_IOCON, 0, 23, FUNC1);
 }
 
-int Adc::read_value(ADC_CHANNEL_T channel, uint16_t *data){
+int Adc::read_value(ADC_CHANNEL_T channel, uint16_t *data) {
 	if(xSemaphoreTakeFromISR(this->command_running_semaphore, NULL) == pdTRUE) {
+		Chip_ADC_SetBurstCmd(this->adc_base, DISABLE);
+		/* Start A/D conversion if not using burst mode */
+		Chip_ADC_SetStartMode(this->adc_base, ADC_START_NOW, ADC_TRIGGERMODE_RISING);
+		/* Waiting for A/D conversion complete */
+		while (Chip_ADC_ReadStatus(this->adc_base, channel, ADC_DR_DONE_STAT) != SET) {}
+
 		int status = 0;
 		// Get value.
 		status = Chip_ADC_ReadValue(this->adc_base, channel, data);

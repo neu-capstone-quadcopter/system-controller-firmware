@@ -28,6 +28,11 @@ namespace adc_task {
 
 	static void task_loop(void *p) {
 		uint16_t data;
+		Chip_TIMER_Init(LPC_TIMER0);
+		Chip_TIMER_SetMatch(LPC_TIMER0, 0, 320000000);
+		Chip_TIMER_ResetOnMatchEnable(LPC_TIMER0, 0);
+		Chip_TIMER_MatchEnableInt(LPC_TIMER0, 0);
+
 		adc->enable_channel(ADC_CH0);
 		mux->enable();
 		for(;;) {
@@ -37,6 +42,11 @@ namespace adc_task {
 			}
 		}
 	}
+}
+
+void TIMER0_IRQHandler(void) {
+	Chip_GPIO_WriteDirBit(LPC_GPIO, 2, 11, true);
+	Chip_GPIO_WritePortBit(LPC_GPIO, 2, 11, true);
 }
 
 

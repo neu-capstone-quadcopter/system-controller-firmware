@@ -35,6 +35,7 @@ namespace hal {
 
 	void init(void) {
 		SystemCoreClockUpdate();
+		Chip_IOCON_Init(LPC_IOCON);
 		Chip_GPIO_Init(LPC_GPIO);
 		Chip_IOCON_Init(LPC_IOCON);
 

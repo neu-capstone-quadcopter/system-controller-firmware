@@ -59,6 +59,8 @@
 #include "chip.h"
 #endif
 
+#include "chip.h"
+
 /*-----------------------------------------------------------
  * Application specific definitions.
  *

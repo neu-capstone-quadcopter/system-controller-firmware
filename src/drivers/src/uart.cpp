@@ -50,6 +50,28 @@ IRQn_Type Uart::get_NVIC_IRQ(void){
 	}
 }
 
+void Uart::uart_interrupt_handler(void){
+
+}
+
+void Uart::write(uint8_t* data, uint8_t length){
+	//Error Checking?
+
+	//Write to the transmission buffer
+	Chip_UART_SendRB(this->uart, &this->txring, data, length);
+
+	//Return some value -- bool?
+}
+
+void Uart::read(uint8_t* data, uint8_t length){
+	//Error Checking?
+
+	//Read from read buffer
+	int bytes = Chip_UART_ReadRB(this->uart, this->rxring, data, length);
+}
+
+
+
 void Uart::init_driver(void) {
 
 	//UART init

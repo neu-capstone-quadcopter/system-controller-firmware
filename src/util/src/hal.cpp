@@ -57,4 +57,8 @@ extern "C" {
 	void SSP1_IRQHandler() {
 		static_cast<SspIo*>(drivers[TELEM_CC1120_SSP])->ssp_interrupt_handler();
 	}
+
+	void UART3_IRQHandler(void){
+		static_cast<Uart*>(drivers[CONSOLE_UART])->uart_interrupt_handler();
+	}
 }

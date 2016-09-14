@@ -12,6 +12,7 @@
 #include "cc1120.hpp"
 #include "driver.hpp"
 #include "exampleled.hpp"
+#include "uart.hpp"
 
 namespace hal {
 	void add_drivers(void);
@@ -33,6 +34,7 @@ namespace hal {
 	void add_drivers(void) {
 		// Instantiate drivers
 		SspIo *telem_cc1120_ssp = new SspIo(LPC_SSP1);
+		Uart *console_uart = new Uart(LPC_UART3);
 		ExampleLed *led_0 = new ExampleLed(2, 11);
 		ExampleLed *led_1 = new ExampleLed(2, 12);
 		Cc1120 *telem_cc1120 = new Cc1120(telem_cc1120_ssp);
@@ -42,6 +44,7 @@ namespace hal {
 		drivers[LED_0] = led_0;
 		drivers[LED_1] = led_1;
 		drivers[TELEM_CC1120] = telem_cc1120;
+		drivers[CONSOLE_UART] = console_uart;
 	}
 
 	Driver *get_driver(driver_identifier id) {

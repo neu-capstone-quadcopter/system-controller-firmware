@@ -14,6 +14,7 @@ namespace hal {
 	// Add device drivers in order of dependence
 	typedef enum driver_identifier{
 		TELEM_CC1120_SSP = 0,
+		CONSOLE_UART,
 		LED_0,
 		LED_1,
 		TELEM_CC1120,

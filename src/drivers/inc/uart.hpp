@@ -27,6 +27,7 @@ public:
 	void write(uint8_t* data, uint8_t length);
 	void read(uint8_t* data, uint8_t length);
 	inline void read_char(uint8_t* data) {read(data, 1);}
+	inline void write_char(uint8_t* data) {write(data,1);}
 
 private:
 	IRQn_Type get_NVIC_IRQ(void);

@@ -29,7 +29,8 @@ namespace uart_task {
 
 	static void task_loop(void *p) {
 		for(;;) {
-			asm("NOP;");
+			uint8_t send_char = (uint8_t)'N';
+			uart->write_char(&send_char);
 		}
 	}
 }

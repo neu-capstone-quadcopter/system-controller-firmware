@@ -67,7 +67,7 @@ void Uart::read(uint8_t* data, uint8_t length){
 	//Error Checking?
 
 	//Read from read buffer
-	int bytes = Chip_UART_ReadRB(this->uart, this->rxring, data, length);
+	int bytes = Chip_UART_ReadRB(this->uart, &this->rxring, data, length);
 }
 
 

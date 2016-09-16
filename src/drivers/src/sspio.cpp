@@ -10,6 +10,10 @@
 #include "sspio.hpp"
 #include "board.hpp"
 
+#define DEFAULT_FRAMEFORMAT SSP_FRAMEFORMAT_SPI
+#define DEFAULT_BITS SSP_BITS_8
+#define DEFAULT_CLOCKMODE SSP_CLOCK_CPHA0_CPOL0
+
 SspIo::SspIo(LPC_SSP_T *ssp_base) {
 	this->ssp_base = ssp_base;
 }
@@ -18,17 +22,21 @@ void SspIo::init_driver() {
 	board::ssp_init(this->ssp_base);
 	Chip_SSP_Init(this->ssp_base);
 
-	this->ssp_format.frameFormat = SSP_FRAMEFORMAT_SPI;
-	this->ssp_format.bits = SSP_BITS_8;
-	this->ssp_format.clockMode = SSP_CLOCK_CPHA0_CPOL0;
-	Chip_SSP_SetFormat(this->ssp_base, this->ssp_format.bits,
-			this->ssp_format.frameFormat, this->ssp_format.clockMode);
+	Chip_SSP_SetFormat(this->ssp_base, DEFAULT_FRAMEFORMAT, DEFAULT_BITS, DEFAULT_CLOCKMODE);
 
 	Chip_SSP_SetMaster(this->ssp_base, 1);
 
 	Chip_SSP_Enable(this->ssp_base);
 
 	NVIC_EnableIRQ(SSP1_IRQn);
+}
+
+void SspIo::set_clk_rate(uint32_t freq) {
+	Chip_SSP_SetBitRate(this->ssp_base, freq);
+}
+
+void SspIo::set_format(SSP_ConfigFormat format) {
+	Chip_SSP_SetFormat(this->ssp_base, format.bits, format.frameFormat, format.clockMode);
 }
 
 void SspIo::write(uint8_t *data, size_t len) {
@@ -51,13 +59,12 @@ void SspIo::read(uint8_t *data, size_t len) {
 
 void SspIo::ssp_interrupt_handler(void) {
 	Chip_SSP_Int_Disable(this->ssp_base);
-	/*
+
 	Chip_SSP_Int_RWFrames8Bits(this->ssp_base, &this->xfer_setup);
 
 	if ((this->xfer_setup.rx_cnt != this->xfer_setup.length) ||
 			(this->xfer_setup.tx_cnt != this->xfer_setup.length)) {
 		Chip_SSP_Int_Enable(this->ssp_base);
 	}
-	*/
 }
 

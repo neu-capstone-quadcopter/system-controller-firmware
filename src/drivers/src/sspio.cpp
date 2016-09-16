@@ -32,15 +32,16 @@ void SspIo::init_driver() {
 }
 
 void SspIo::write(uint8_t *data, size_t len) {
-	memcpy(this->tx_buffer, data, len);
+	memcpy(this->tx_buffer, data, sizeof(uint8_t) * len);
 
-	Chip_SSP_DATA_SETUP_T xf_setup;
-	xf_setup.length = len;
-	xf_setup.tx_data = this->tx_buffer;
-	xf_setup.rx_data = this->rx_buffer;
+	this->xfer_setup.length = len;
+	this->xfer_setup.tx_data = this->tx_buffer;
+	this->xfer_setup.rx_data = this->rx_buffer;
+	this->xfer_setup.tx_cnt = 0;
+	this->xfer_setup.rx_cnt = 0;
 
 	Chip_SSP_Int_FlushData(this->ssp_base);
-	Chip_SSP_Int_RWFrames8Bits(this->ssp_base, &xf_setup);
+	Chip_SSP_Int_RWFrames8Bits(this->ssp_base, &this->xfer_setup);
 	Chip_SSP_Int_Enable(this->ssp_base);
 }
 
@@ -50,5 +51,13 @@ void SspIo::read(uint8_t *data, size_t len) {
 
 void SspIo::ssp_interrupt_handler(void) {
 	Chip_SSP_Int_Disable(this->ssp_base);
+	/*
+	Chip_SSP_Int_RWFrames8Bits(this->ssp_base, &this->xfer_setup);
+
+	if ((this->xfer_setup.rx_cnt != this->xfer_setup.length) ||
+			(this->xfer_setup.tx_cnt != this->xfer_setup.length)) {
+		Chip_SSP_Int_Enable(this->ssp_base);
+	}
+	*/
 }
 

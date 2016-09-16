@@ -10,6 +10,7 @@
 #endif
 
 #include <cr_section_macros.h>
+#include <cstring>
 
 #include "FreeRTOS.h"
 #include "task.h"

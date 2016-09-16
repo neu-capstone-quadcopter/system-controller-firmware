@@ -26,6 +26,7 @@ public:
 private:
 	LPC_SSP_T *ssp_base;
 	SSP_ConfigFormat ssp_format;
+	Chip_SSP_DATA_SETUP_T xfer_setup;
 	uint8_t tx_buffer[BUFFER_SIZE];
 	uint8_t rx_buffer[BUFFER_SIZE];
 };

@@ -14,28 +14,30 @@
 #include "exampleled.hpp"
 
 namespace hal {
-	void add_devices(void);
+	void add_drivers(void);
 
-	Driver *drivers[INTENTIFIER_MAX];
+	Driver *drivers[NUM_IDENTIFIERS];
 
 	void init(void) {
 		Chip_GPIO_Init(LPC_GPIO);
 		Chip_IOCON_Init(LPC_IOCON);
 
+		add_drivers();
+
 		// Initialize all drivers
-		for(int i = 0; i < INTENTIFIER_MAX; i++) {
+		for(int i = 0; i < NUM_IDENTIFIERS; i++) {
 			drivers[i]->init_driver();
 		}
 	}
 
-	void add_devices(void) {
-		// Instantiate devices
+	void add_drivers(void) {
+		// Instantiate drivers
 		SspIo *telem_cc1120_ssp = new SspIo(LPC_SSP1);
 		ExampleLed *led_0 = new ExampleLed(2, 11);
-		ExampleLed *led_1 = new ExampleLed(2, 11);
+		ExampleLed *led_1 = new ExampleLed(2, 12);
 		Cc1120 *telem_cc1120 = new Cc1120(telem_cc1120_ssp);
 
-		// Add devices to device array
+		// Add drivers to driver array
 		drivers[TELEM_CC1120_SSP] = telem_cc1120_ssp;
 		drivers[LED_0] = led_0;
 		drivers[LED_1] = led_1;

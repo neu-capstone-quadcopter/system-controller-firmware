@@ -17,7 +17,7 @@ namespace hal {
 		LED_0,
 		LED_1,
 		TELEM_CC1120,
-		INTENTIFIER_MAX = TELEM_CC1120 // Add all entries before this and update
+		NUM_IDENTIFIERS = TELEM_CC1120 + 1 // Add all entries before this and update
 	} driver_identifier;
 
 	void init(void);

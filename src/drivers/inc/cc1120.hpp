@@ -11,18 +11,16 @@
 #include "chip.h"
 #include <cstdint>
 #include "driver.hpp"
+#include "sspio.hpp"
 
 class Cc1120 : public Driver {
 public:
-	Cc1120(LPC_SSP_T *cc1120_ssp);
+	Cc1120(SspIo *ssp_device);
 	void init_driver(void);
-	void ssp_interrupt_handler(void);
-	void ssp_write(uint8_t data);
+	void init_device(void);
+
 private:
-	LPC_SSP_T *cc1120_ssp;
-	SSP_ConfigFormat ssp_format;
-	void start_frame();
-	void stop_frame();
+	SspIo *ssp_device;
 };
 
 

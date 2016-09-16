@@ -28,7 +28,7 @@ namespace telemetry_radio_task {
 	}
 
 	static void task_loop(void *p) {
-		telem_cc1120->ssp_write(0xCC);
+		telem_cc1120->init_device();
 		for (;;) {
 			asm("nop;");
 		}

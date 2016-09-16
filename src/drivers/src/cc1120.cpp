@@ -9,62 +9,15 @@
 
 #include "cc1120.hpp"
 
-uint8_t RxBuf, TxBuf;
-
-Cc1120::Cc1120(LPC_SSP_T *cc1120_ssp) {
-	this->cc1120_ssp = cc1120_ssp;
+Cc1120::Cc1120(SspIo *ssp_device) {
+	this->ssp_device = ssp_device;
 }
 
-void Cc1120::init_driver() {
-	// Select port 0, pins 6-9 for SSP1. No Addition mode
-	Chip_IOCON_PinMux(LPC_IOCON, 0, 6, IOCON_MODE_INACT, IOCON_FUNC2);
-	Chip_IOCON_PinMux(LPC_IOCON, 0, 7, IOCON_MODE_INACT, IOCON_FUNC2);
-	Chip_IOCON_PinMux(LPC_IOCON, 0, 8, IOCON_MODE_INACT, IOCON_FUNC2);
-	Chip_IOCON_PinMux(LPC_IOCON, 0, 9, IOCON_MODE_INACT, IOCON_FUNC2);
-
-	// Set CS (6) as output
-	//Chip_GPIO_WriteDirBit(LPC_GPIO, 0, 6, true);
-	// Stop frame sets CS high, falling edge will trigger transaction
-	//this->stop_frame();
-
-	Chip_SSP_Init(this->cc1120_ssp);
-
-	this->ssp_format.frameFormat = SSP_FRAMEFORMAT_SPI;
-	this->ssp_format.bits = SSP_BITS_8;
-	this->ssp_format.clockMode = SSP_CLOCK_CPHA0_CPOL0;
-	Chip_SSP_SetFormat(this->cc1120_ssp, this->ssp_format.bits,
-			this->ssp_format.frameFormat, this->ssp_format.clockMode);
-	Chip_SSP_SetBitRate(this->cc1120_ssp, 4000000);
-
-	Chip_SSP_SetMaster(this->cc1120_ssp, 1);
-
-	Chip_SSP_Enable(this->cc1120_ssp);
-
-	NVIC_EnableIRQ(SSP1_IRQn);
+void Cc1120::init_driver(void) {
+	// SSP init is done by HAL
 }
 
-void Cc1120::ssp_write(uint8_t data) {
-	TxBuf = data;
-
-	Chip_SSP_DATA_SETUP_T xf_setup;
-	xf_setup.length = 1;
-	xf_setup.tx_data = &TxBuf;
-	xf_setup.rx_data = &RxBuf;
-
-	Chip_SSP_Int_FlushData(this->cc1120_ssp);
-	Chip_SSP_Int_RWFrames8Bits(this->cc1120_ssp, &xf_setup);
-	Chip_SSP_Int_Enable(this->cc1120_ssp);
-}
-
-void Cc1120::start_frame() {
-	Chip_GPIO_WritePortBit(LPC_GPIO, 0, 6, false);
-
-}
-
-void Cc1120::stop_frame() {
-	Chip_GPIO_WritePortBit(LPC_GPIO, 0, 6, true);
-}
-
-void Cc1120::ssp_interrupt_handler(void) {
-	Chip_SSP_Int_Disable(this->cc1120_ssp);
+void Cc1120::init_device(void) {
+	uint8_t test_data[] = {0xAA, 0xCC, 0xAA, 0xCC};
+	this->ssp_device->write(test_data, 4);
 }

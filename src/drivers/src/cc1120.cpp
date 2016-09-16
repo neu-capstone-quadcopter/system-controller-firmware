@@ -44,12 +44,16 @@ void Cc1120::init_driver() {
 }
 
 void Cc1120::ssp_write(uint8_t data) {
+	TxBuf = data;
+
 	Chip_SSP_DATA_SETUP_T xf_setup;
 	xf_setup.length = 1;
 	xf_setup.tx_data = &TxBuf;
 	xf_setup.rx_data = &RxBuf;
 
+	Chip_SSP_Int_FlushData(this->cc1120_ssp);
 	Chip_SSP_Int_RWFrames8Bits(this->cc1120_ssp, &xf_setup);
+	Chip_SSP_Int_Enable(this->cc1120_ssp);
 }
 
 void Cc1120::start_frame() {
@@ -62,5 +66,5 @@ void Cc1120::stop_frame() {
 }
 
 void Cc1120::ssp_interrupt_handler(void) {
-
+	Chip_SSP_Int_Disable(this->cc1120_ssp);
 }

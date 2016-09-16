@@ -15,7 +15,7 @@ SspIo::SspIo(LPC_SSP_T *ssp_base) {
 }
 
 void SspIo::init_driver() {
-	Board_SSP_Init(this->ssp_base);
+	board::ssp_init(this->ssp_base);
 	Chip_SSP_Init(this->ssp_base);
 
 	this->ssp_format.frameFormat = SSP_FRAMEFORMAT_SPI;

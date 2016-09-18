@@ -19,7 +19,9 @@ class Uart : public Driver {
 public:
 	Uart(LPC_USART_T *uart);
 	void init_driver(void);
-	inline void set_baud(uint32_t baud) {this->baud_rate = baud;}
+
+	inline void set_baud(uint32_t baud) {this->baud_rate = baud;
+	Chip_UART_SetBaud(this->uart, baud);}
 	void config_data(uint32_t word_length, uint32_t parity, uint32_t stopbits);
 	void uart_interrupt_handler(void);
 

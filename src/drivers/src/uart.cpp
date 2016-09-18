@@ -10,6 +10,7 @@
 #include "uart.hpp"
 
 #include "FreeRTOS.h"
+#include "board.hpp"
 
 //Baud
 #define DEFAULT_BAUD 115200
@@ -51,6 +52,7 @@ IRQn_Type Uart::get_NVIC_IRQ(void){
 }
 
 void Uart::uart_interrupt_handler(void){
+	Chip_UART_IRQRBHandler(this->uart, &this->rxring, &this->txring);
 
 }
 
@@ -75,6 +77,7 @@ void Uart::read(uint8_t* data, uint8_t length){
 void Uart::init_driver(void) {
 
 	//UART init
+	board::uart_init(this->uart);
 	Chip_UART_Init(this->uart);
 
 	//Set Baud
@@ -97,8 +100,7 @@ void Uart::init_driver(void) {
 	Chip_UART_IntEnable(this->uart, (UART_IER_RBRINT | UART_IER_RLSINT));
 
 	//Enable UART -> NVIC
-		NVIC_EnableIRQ(get_NVIC_IRQ());
+	NVIC_EnableIRQ(get_NVIC_IRQ());
 
 
 }
-

@@ -88,7 +88,7 @@ void Uart::init_driver(void) {
 
 	//Init Rx/Tx Ring Buffers
 	RingBuffer_Init(&this->rxring, this->rxbuff, 1, RX_BUFFER_SIZE);
-	RingBuffer_Init(&this->rxring, this->rxbuff, 1, RX_BUFFER_SIZE);
+	RingBuffer_Init(&this->txring, this->txbuff, 1, TX_BUFFER_SIZE);
 
 	//FIFO stuff
 	Chip_UART_SetupFIFOS(this->uart, (UART_FCR_FIFO_EN | UART_FCR_TRG_LEV2 |

@@ -10,6 +10,8 @@
 #include "sspio.hpp"
 #include "board.hpp"
 
+#include "FreeRTOS.h"
+
 #define DEFAULT_FRAMEFORMAT SSP_FRAMEFORMAT_SPI
 #define DEFAULT_BITS SSP_BITS_8
 #define DEFAULT_CLOCKMODE SSP_CLOCK_CPHA0_CPOL0
@@ -28,7 +30,7 @@ void SspIo::init_driver() {
 
 	Chip_SSP_Enable(this->ssp_base);
 
-	NVIC_EnableIRQ(SSP1_IRQn);
+	NVIC_EnableIRQ(this->get_NVIC_IRQ());
 }
 
 void SspIo::set_clk_rate(uint32_t freq) {
@@ -65,6 +67,18 @@ void SspIo::ssp_interrupt_handler(void) {
 	if ((this->xfer_setup.rx_cnt != this->xfer_setup.length) ||
 			(this->xfer_setup.tx_cnt != this->xfer_setup.length)) {
 		Chip_SSP_Int_Enable(this->ssp_base);
+	}
+}
+
+IRQn_Type SspIo::get_NVIC_IRQ(void){
+	switch((uint32_t)this->ssp_base)
+	{
+	case LPC_SSP0_BASE:
+		return UART0_IRQn;
+	case LPC_SSP1_BASE:
+		return UART1_IRQn;
+	default:
+		configASSERT(0);
 	}
 }
 

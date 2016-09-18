@@ -30,6 +30,7 @@ private:
 	Chip_SSP_DATA_SETUP_T xfer_setup;
 	uint8_t tx_buffer[BUFFER_SIZE];
 	uint8_t rx_buffer[BUFFER_SIZE];
+	IRQn_Type get_NVIC_IRQ(void);
 };
 
 

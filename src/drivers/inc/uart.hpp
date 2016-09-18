@@ -11,6 +11,8 @@
 #include <cstdint> //Defines types
 #include "driver.hpp"
 #include "chip.h"
+#include "FreeRTOS.h"
+#include "semphr.h"
 
 #define RX_BUFFER_SIZE 32
 #define TX_BUFFER_SIZE 128
@@ -33,6 +35,11 @@ public:
 
 private:
 	IRQn_Type get_NVIC_IRQ(void);
+
+	SemaphoreHandle_t tx_transfer_semaphore;
+	SemaphoreHandle_t rx_transfer_semaphore;
+
+	bool write_in_progress = false;
 
 	LPC_USART_T *uart;
 	uint32_t baud_rate;

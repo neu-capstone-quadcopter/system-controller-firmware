@@ -12,6 +12,7 @@
 #include "FreeRTOS.h"
 #include "board.hpp"
 
+
 //Baud
 #define DEFAULT_BAUD 115200
 
@@ -54,13 +55,27 @@ IRQn_Type Uart::get_NVIC_IRQ(void){
 void Uart::uart_interrupt_handler(void){
 	Chip_UART_IRQRBHandler(this->uart, &this->rxring, &this->txring);
 
+	if(!RingBuffer_IsEmpty(&this->rxring)){
+		xSemaphoreGiveFromISR(this->rx_transfer_semaphore, NULL);
+	}
+
+	//Check to see that we are writing and the Transmitter is empty
+	if(write_in_progress && (this->uart->LSR & UART_LSR_TEMT)){
+		xSemaphoreGiveFromISR(this->tx_transfer_semaphore, NULL);
+		write_in_progress = false;
+	}
+
+
+
 }
 
 void Uart::write(uint8_t* data, uint8_t length){
 	//Error Checking?
 
 	//Write to the transmission buffer
+	write_in_progress = true;
 	Chip_UART_SendRB(this->uart, &this->txring, data, length);
+	xSemaphoreTake(this->tx_transfer_semaphore, portMAX_DELAY);
 
 	//Return some value -- bool?
 }
@@ -69,6 +84,9 @@ void Uart::read(uint8_t* data, uint8_t length){
 	//Error Checking?
 
 	//Read from read buffer
+	xSemaphoreTake(this->rx_transfer_semaphore, portMAX_DELAY);
+
+
 	int bytes = Chip_UART_ReadRB(this->uart, &this->rxring, data, length);
 }
 
@@ -79,6 +97,11 @@ void Uart::init_driver(void) {
 	//UART init
 	board::uart_init(this->uart);
 	Chip_UART_Init(this->uart);
+
+	//Semaphores
+	this->tx_transfer_semaphore = xSemaphoreCreateBinary();
+	this->rx_transfer_semaphore = xSemaphoreCreateBinary();
+
 
 	//Set Baud
 	set_baud(DEFAULT_BAUD);

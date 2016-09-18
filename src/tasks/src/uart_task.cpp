@@ -29,9 +29,22 @@ namespace uart_task {
 
 	static void task_loop(void *p) {
 		for(;;) {
+
+			uint8_t key;
+			do
+			{
+				uart->read_char(&key);
+				if(key != 0){
+					uart->write_char(&key);
+					key = 0;
+				}
+			}
+			while(true);
+
 			vTaskDelay(100);
 			uint8_t send_char = (uint8_t)'N';
 			uart->write_char(&send_char);
+
 		}
 	}
 }

@@ -19,7 +19,7 @@
 #include "hal.hpp"
 #include "ledtask.hpp"
 #include "telemetry_radio_task.hpp"
-#include "uart_task.hpp"
+#include <uart_console_task.hpp>
 
 inline void* operator new (size_t size) { return pvPortMalloc(size); }
 inline void* operator new[] (size_t size) { return pvPortMalloc(size); }

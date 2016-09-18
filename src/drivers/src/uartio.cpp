@@ -5,9 +5,8 @@
  *      Author: nate
  */
 
+#include <uartio.hpp>
 #include "chip.h"
-
-#include "uart.hpp"
 
 #include "FreeRTOS.h"
 #include "board.hpp"
@@ -21,15 +20,15 @@
 #define DEFAULT_PARITY UART_LCR_PARITY_DIS
 #define DEFAULT_STOP_BIT UART_LCR_SBS_1BIT
 
-Uart::Uart(LPC_USART_T *uart) {
+UartIo::UartIo(LPC_USART_T *uart) {
 	this->uart = uart;
 }
 
-void Uart::config_data(uint32_t word_length, uint32_t parity, uint32_t stopbits){
+void UartIo::config_data(uint32_t word_length, uint32_t parity, uint32_t stopbits){
 	Chip_UART_ConfigData(this->uart, (word_length | stopbits));
 }
 
-IRQn_Type Uart::get_NVIC_IRQ(void){
+IRQn_Type UartIo::get_NVIC_IRQ(void){
 
 	switch((uint32_t)this->uart)
 	{
@@ -52,7 +51,7 @@ IRQn_Type Uart::get_NVIC_IRQ(void){
 	}
 }
 
-void Uart::uart_interrupt_handler(void){
+void UartIo::uart_interrupt_handler(void){
 	Chip_UART_IRQRBHandler(this->uart, &this->rxring, &this->txring);
 
 	if(!RingBuffer_IsEmpty(&this->rxring)){
@@ -69,7 +68,7 @@ void Uart::uart_interrupt_handler(void){
 
 }
 
-void Uart::write(uint8_t* data, uint8_t length){
+void UartIo::write(uint8_t* data, uint8_t length){
 	//Error Checking?
 
 	//Write to the transmission buffer
@@ -80,7 +79,7 @@ void Uart::write(uint8_t* data, uint8_t length){
 	//Return some value -- bool?
 }
 
-void Uart::read(uint8_t* data, uint8_t length){
+void UartIo::read(uint8_t* data, uint8_t length){
 	//Error Checking?
 
 	//Read from read buffer
@@ -92,7 +91,7 @@ void Uart::read(uint8_t* data, uint8_t length){
 
 
 
-void Uart::init_driver(void) {
+void UartIo::init_driver(void) {
 
 	//UART init
 	board::uart_init(this->uart);

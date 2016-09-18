@@ -5,8 +5,8 @@
  *      Author: nate
  */
 
-#ifndef DRIVERS_INC_UART_HPP_
-#define DRIVERS_INC_UART_HPP_
+#ifndef DRIVERS_INC_UARTIO_HPP_
+#define DRIVERS_INC_UARTIO_HPP_
 
 #include <cstdint> //Defines types
 #include "driver.hpp"
@@ -17,9 +17,9 @@
 #define RX_BUFFER_SIZE 32
 #define TX_BUFFER_SIZE 128
 
-class Uart : public Driver {
+class UartIo : public Driver {
 public:
-	Uart(LPC_USART_T *uart);
+	UartIo(LPC_USART_T *uart);
 	void init_driver(void);
 
 	inline void set_baud(uint32_t baud) {this->baud_rate = baud;

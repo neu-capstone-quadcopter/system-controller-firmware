@@ -32,5 +32,6 @@ void Cc1120::init_driver(void) {
 
 void Cc1120::init_device(void) {
 	uint8_t test_data[4] = {0xAA, 0xCC, 0xAA, 0xCC};
-	this->ssp_device->write(test_data, 4);
+	uint8_t t[4];
+	this->ssp_device->read_write(test_data, t, 4);
 }

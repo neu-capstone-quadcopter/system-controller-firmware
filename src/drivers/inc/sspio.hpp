@@ -13,6 +13,8 @@
 
 #include "chip.h"
 #include "driver.hpp"
+#include "FreeRTOS.h"
+#include "semphr.h"
 
 #define BUFFER_SIZE 200
 
@@ -22,8 +24,7 @@ public:
 	void init_driver(void);
 	void set_clk_rate(uint32_t freq);
 	void set_format(SSP_ConfigFormat format);
-	void write(uint8_t *data, size_t len);
-	void read(uint8_t *data, size_t len);
+	void read_write(uint8_t *tx_data, uint8_t *rx_data, size_t len);
 	void ssp_interrupt_handler(void);
 private:
 	LPC_SSP_T *ssp_base;
@@ -31,6 +32,7 @@ private:
 	uint8_t tx_buffer[BUFFER_SIZE];
 	uint8_t rx_buffer[BUFFER_SIZE];
 	IRQn_Type get_NVIC_IRQ(void);
+	SemaphoreHandle_t transfer_semaphore;
 };
 
 

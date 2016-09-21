@@ -27,7 +27,7 @@ int main(void) {
 	board::setup_clocking();
 	hal::init();
 	led_task::start();
-	//telemetry_radio_task::start();
+	telemetry_radio_task::start();
 
 	vTaskStartScheduler();
 

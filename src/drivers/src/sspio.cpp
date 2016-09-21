@@ -24,6 +24,8 @@ void SspIo::init_driver() {
 	board::ssp_init(this->ssp_base);
 	Chip_SSP_Init(this->ssp_base);
 
+	this->transfer_semaphore = xSemaphoreCreateBinary();
+
 	Chip_SSP_SetFormat(this->ssp_base, DEFAULT_FRAMEFORMAT, DEFAULT_BITS, DEFAULT_CLOCKMODE);
 
 	Chip_SSP_SetMaster(this->ssp_base, 1);
@@ -41,8 +43,8 @@ void SspIo::set_format(SSP_ConfigFormat format) {
 	Chip_SSP_SetFormat(this->ssp_base, format.bits, format.frameFormat, format.clockMode);
 }
 
-void SspIo::write(uint8_t *data, size_t len) {
-	memcpy(this->tx_buffer, data, sizeof(uint8_t) * len);
+void SspIo::read_write(uint8_t *tx_data, uint8_t *rx_data, size_t len) {
+	memcpy(this->tx_buffer, tx_data, sizeof(uint8_t) * len);
 
 	this->xfer_setup.length = len;
 	this->xfer_setup.tx_data = this->tx_buffer;
@@ -53,10 +55,12 @@ void SspIo::write(uint8_t *data, size_t len) {
 	Chip_SSP_Int_FlushData(this->ssp_base);
 	Chip_SSP_Int_RWFrames8Bits(this->ssp_base, &this->xfer_setup);
 	Chip_SSP_Int_Enable(this->ssp_base);
-}
 
-void SspIo::read(uint8_t *data, size_t len) {
+	xSemaphoreTake(this->transfer_semaphore, portMAX_DELAY);
 
+	if (rx_data) {
+		memcpy(rx_data, this->rx_buffer, sizeof(uint8_t) * len);
+	}
 }
 
 void SspIo::ssp_interrupt_handler(void) {
@@ -68,15 +72,18 @@ void SspIo::ssp_interrupt_handler(void) {
 			(this->xfer_setup.tx_cnt != this->xfer_setup.length)) {
 		Chip_SSP_Int_Enable(this->ssp_base);
 	}
+	else {
+		xSemaphoreGiveFromISR(this->transfer_semaphore, NULL);
+	}
 }
 
 IRQn_Type SspIo::get_NVIC_IRQ(void){
 	switch((uint32_t)this->ssp_base)
 	{
 	case LPC_SSP0_BASE:
-		return UART0_IRQn;
+		return SSP0_IRQn;
 	case LPC_SSP1_BASE:
-		return UART1_IRQn;
+		return SSP1_IRQn;
 	default:
 		configASSERT(0);
 	}

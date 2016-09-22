@@ -12,6 +12,9 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
+#include <cmath>
+#include <vector>
+
 #define EVENT_QUEUE_DEPTH 8
 
 namespace adc_task {
@@ -31,8 +34,18 @@ void start() {
 	event_queue = xQueueCreate(EVENT_QUEUE_DEPTH, sizeof(adc_event_t));
 }
 
+void package_data_frame(int i, uint16_t *data, std::vector<uint16_t> *frame) {
+	switch (1) {
+	case 0:
+		*data = pow(3*(*data), 2) + 6*(*data) + 8;
+		break;
+	}
+	frame->push_back(*data);
+}
+
 static void task_loop(void *p) {
 	uint16_t data;
+	std::vector<uint16_t> frame;
 
 	Chip_TIMER_Init(LPC_TIMER0);
 	Chip_TIMER_Reset(LPC_TIMER0);
@@ -54,7 +67,11 @@ static void task_loop(void *p) {
 			for (int i = 0; i < 16; ++i) {
 				mux->select_channel(i);
 				adc->read_value(ADC_CH0, &data);
+				package_data_frame(i, &data, &frame);
 			}
+			// Todo: Send data frame
+			// Clear data frame
+			frame.clear();
 			break;
 		}
 	}

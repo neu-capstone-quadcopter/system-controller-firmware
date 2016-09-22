@@ -34,7 +34,7 @@ void start() {
 }
 
 void package_data_frame(int i, uint16_t *data, adc_values_t *frame) {
-	switch (1) {
+	switch (i) {
 	case 0:
 		*data = pow(3*(*data), 2) + 6*(*data) + 8;
 		frame->val0 = *data;
@@ -75,7 +75,6 @@ static void task_loop(void *p) {
 				package_data_frame(i, &data, &frame);
 			}
 			// Todo: Send data frame
-			// Clear data frame
 			break;
 		}
 	}

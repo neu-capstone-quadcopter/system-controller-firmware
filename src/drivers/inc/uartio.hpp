@@ -17,6 +17,8 @@
 #define RX_BUFFER_SIZE 32
 #define TX_BUFFER_SIZE 128
 
+typedef void (*uart_char_read_callback)(uint8_t);
+
 class UartIo : public Driver {
 public:
 	UartIo(LPC_USART_T *uart);
@@ -31,7 +33,8 @@ public:
 	void write(uint8_t* data, uint8_t length);
 	void read(uint8_t* data, uint8_t length);
 	inline void read_char(uint8_t* data) {read(data, 1);}
-	inline void write_char(uint8_t* data) {write(data,1);}
+	inline void write_char(uint8_t data) {write(&data,1);}
+	void read_char_async(uart_char_read_callback callback);
 
 private:
 	IRQn_Type get_NVIC_IRQ(void);
@@ -40,6 +43,7 @@ private:
 	SemaphoreHandle_t rx_transfer_semaphore;
 
 	bool write_in_progress = false;
+	bool async_read_in_progress = false;
 
 	LPC_USART_T *uart;
 	uint32_t baud_rate;
@@ -47,6 +51,8 @@ private:
 	RINGBUFF_T rxring;
 	uint8_t rxbuff[RX_BUFFER_SIZE];
 	uint8_t txbuff[TX_BUFFER_SIZE];
+
+	uart_char_read_callback callback;
 };
 
 

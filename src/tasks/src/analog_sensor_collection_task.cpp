@@ -13,7 +13,6 @@
 #include "task.h"
 
 #include <cmath>
-#include <vector>
 
 #define EVENT_QUEUE_DEPTH 8
 
@@ -34,18 +33,24 @@ void start() {
 	event_queue = xQueueCreate(EVENT_QUEUE_DEPTH, sizeof(adc_event_t));
 }
 
-void package_data_frame(int i, uint16_t *data, std::vector<uint16_t> *frame) {
+void package_data_frame(int i, uint16_t *data, adc_values_t *frame) {
 	switch (1) {
 	case 0:
 		*data = pow(3*(*data), 2) + 6*(*data) + 8;
+		frame->val0 = *data;
+		break;
+	case 3:
+		*data = 4*(*data) + 9;
+		frame->val3 = *data;
+		break;
+	default:
 		break;
 	}
-	frame->push_back(*data);
 }
 
 static void task_loop(void *p) {
 	uint16_t data;
-	std::vector<uint16_t> frame;
+	adc_values_t frame;
 
 	Chip_TIMER_Init(LPC_TIMER0);
 	Chip_TIMER_Reset(LPC_TIMER0);
@@ -71,7 +76,6 @@ static void task_loop(void *p) {
 			}
 			// Todo: Send data frame
 			// Clear data frame
-			frame.clear();
 			break;
 		}
 	}

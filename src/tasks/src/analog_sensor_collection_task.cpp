@@ -19,6 +19,7 @@
 namespace adc_task {
 
 static void task_loop(void *p);
+void package_data_frame(int i, uint16_t *data, adc_values_t *frame);
 
 Adc* adc;
 Cd74hc4067 *mux;
@@ -31,21 +32,6 @@ void start() {
 	mux = static_cast<Cd74hc4067*>(hal::get_driver(hal::CD74HC4067));
 	xTaskCreate(task_loop, "led task", 1536, NULL, 2, &task_handle);
 	event_queue = xQueueCreate(EVENT_QUEUE_DEPTH, sizeof(adc_event_t));
-}
-
-void package_data_frame(int i, uint16_t *data, adc_values_t *frame) {
-	switch (i) {
-	case 0:
-		*data = pow(3*(*data), 2) + 6*(*data) + 8;
-		frame->val0 = *data;
-		break;
-	case 3:
-		*data = 4*(*data) + 9;
-		frame->val3 = *data;
-		break;
-	default:
-		break;
-	}
 }
 
 static void task_loop(void *p) {
@@ -91,6 +77,78 @@ void TIMER0_IRQHandler(void) {
 		//Chip_GPIO_WritePortBit(LPC_GPIO, 2, 11, true);
 	}
 }
+}
+
+void package_data_frame(int i, uint16_t *data, adc_values_t *frame) {
+	switch (i) {
+	case 0:
+		*data = pow(3*(*data), 2) + 6*(*data) + 8;
+		frame->val0 = *data;
+		break;
+	case 1:
+		*data = 4*(*data) + 9;
+		frame->val1 = *data;
+		break;
+	case 2:
+		*data = pow(3*(*data), 2) + 6*(*data) + 8;
+		frame->val2 = *data;
+		break;
+	case 3:
+		*data = 4*(*data) + 9;
+		frame->val3 = *data;
+		break;
+	case 4:
+		*data = pow(3*(*data), 2) + 6*(*data) + 8;
+		frame->val4 = *data;
+		break;
+	case 5:
+		*data = 4*(*data) + 9;
+		frame->val5 = *data;
+		break;
+	case 6:
+		*data = pow(3*(*data), 2) + 6*(*data) + 8;
+		frame->val6 = *data;
+		break;
+	case 7:
+		*data = 4*(*data) + 9;
+		frame->val7 = *data;
+		break;
+	case 8:
+		*data = pow(3*(*data), 2) + 6*(*data) + 8;
+		frame->val8 = *data;
+		break;
+	case 9:
+		*data = 4*(*data) + 9;
+		frame->val9 = *data;
+		break;
+	case 10:
+		*data = pow(3*(*data), 2) + 6*(*data) + 8;
+		frame->val10 = *data;
+		break;
+	case 11:
+		*data = 4*(*data) + 9;
+		frame->val11 = *data;
+		break;
+	case 12:
+		*data = pow(3*(*data), 2) + 6*(*data) + 8;
+		frame->val12 = *data;
+		break;
+	case 13:
+		*data = 4*(*data) + 9;
+		frame->val13 = *data;
+		break;
+	case 14:
+		*data = pow(3*(*data), 2) + 6*(*data) + 8;
+		frame->val14 = *data;
+		break;
+	case 15:
+		*data = 4*(*data) + 9;
+		frame->val15 = *data;
+		break;
+	default:
+		configASSERT(0);
+		break;
+	}
 }
 
 } // End adc_task namespace.

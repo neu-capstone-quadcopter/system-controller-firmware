@@ -43,6 +43,7 @@ private:
 	SemaphoreHandle_t rx_transfer_semaphore;
 
 	bool write_in_progress = false;
+	bool read_in_progress = false;
 	bool async_read_in_progress = false;
 
 	LPC_USART_T *uart;

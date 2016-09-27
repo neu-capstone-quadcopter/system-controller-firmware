@@ -54,7 +54,13 @@ IRQn_Type UartIo::get_NVIC_IRQ(void){
 void UartIo::uart_interrupt_handler(void){
 	Chip_UART_IRQRBHandler(this->uart, &this->rxring, &this->txring);
 
-	if(this->async_read_in_progress)
+	if(write_in_progress && RingBuffer_IsEmpty(&this->txring));
+	{
+		xSemaphoreGiveFromISR(this->tx_transfer_semaphore, NULL);
+		write_in_progress = false;
+	}
+
+	if(this->async_read_in_progress && !RingBuffer_IsEmpty(&this->rxring))
 	{
 		uint8_t data;
 		Chip_UART_ReadRB(this->uart, &this->rxring, &data, 1);
@@ -62,15 +68,12 @@ void UartIo::uart_interrupt_handler(void){
 		this->async_read_in_progress = false;
 
 	}
-	else if(write_in_progress && (this->uart->LSR & UART_LSR_TEMT))
-		{
-			xSemaphoreGiveFromISR(this->tx_transfer_semaphore, NULL);
-			write_in_progress = false;
-		}
-	else
+
+	else if(this->read_in_progress)
 	{
 		if(!RingBuffer_IsEmpty(&this->rxring))
 		{
+			this->read_in_progress = false;
 			xSemaphoreGiveFromISR(this->rx_transfer_semaphore, NULL);
 		}
 	}
@@ -79,11 +82,8 @@ void UartIo::uart_interrupt_handler(void){
 
 }
 
-
-
-
-
-void UartIo::write(uint8_t* data, uint8_t length){
+void UartIo::write(uint8_t* data, uint8_t length)
+{
 	//Error Checking?
 
 	//Write to the transmission buffer
@@ -98,10 +98,10 @@ void UartIo::read(uint8_t* data, uint8_t length){
 	//Error Checking?
 
 	//Read from read buffer
+	this->read_in_progress = true;
 	xSemaphoreTake(this->rx_transfer_semaphore, portMAX_DELAY);
 
-
-	int bytes = Chip_UART_ReadRB(this->uart, &this->rxring, data, length);
+	Chip_UART_ReadRB(this->uart, &this->rxring, data, length);
 }
 
 void UartIo::read_char_async(uart_char_read_callback callback)

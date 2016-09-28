@@ -21,4 +21,3 @@ void ExampleLed::init_driver(void) {
 void ExampleLed::set_led(bool state) {
 	Chip_GPIO_WritePortBit(LPC_GPIO, this->port, this->pin, state);
 }
-

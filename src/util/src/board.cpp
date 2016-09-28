@@ -50,4 +50,9 @@ namespace board {
 			break;
 		}
 	}
+
+	void cc1120_init() {
+		Chip_GPIO_WriteDirBit(LPC_GPIO, 2, 13, true);
+	}
+
 }

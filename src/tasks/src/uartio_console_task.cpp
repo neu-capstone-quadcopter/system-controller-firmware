@@ -17,6 +17,9 @@
 #include "hal.hpp"
 
 #define EVENT_QUEUE_DEPTH 10
+#define NEW_LINE_LENGTH 4
+#define MAX_COMMAND_INPUT_SIZE 255
+#define ASCII_DEL ( 0x7F )
 
 namespace uart_task {
 
@@ -40,6 +43,12 @@ namespace uart_task {
 	QueueHandle_t event_queue;
 	TaskHandle_t task_handle;
 	UartIo *uart;
+	char * new_line = "\r\n\r\n";
+
+	//Command line variables
+	static char cmd_input_string [MAX_COMMAND_INPUT_SIZE];
+	static char cmd_last_input_string [MAX_COMMAND_INPUT_SIZE];
+	uint8_t cmd_input_index = 0;
 
 	void start(void) {
 		// Retrieve driver instances from HAL
@@ -55,19 +64,68 @@ namespace uart_task {
 		Event current_event;
 
 		for(;;) {
+			//Handle reading and writing at the same time
 			uart->read_char_async(uart_read_handler);
 			xQueueReceive(event_queue, &current_event, portMAX_DELAY);
 
 			switch(current_event.type)
 			{
+			//If we typed a character, write it to the screen
 			case READ_EVENT:
-				uart->write_char(current_event.data[0]);
-				break;
+				//Okay -- a character has been typed to the screen. Let's check what that character is.
+				//If we pressed return key
+				if(current_event.data[0] == '\n' || current_event.data[0] == '\r')
+				{
+					uart->write((uint8_t*)new_line, NEW_LINE_LENGTH);
+					//Execute whatever the command is
+					break;
+				}
+				else
+				{
+					//Wasn't a newline character -- ignore carriage returns
+					if(current_event.data[0] == '\r')
+					{
+						//IGNORE
+						break;
+					}
+					else if(current_event.data[0] == '\b' || current_event.data[0] == ASCII_DEL)
+					{
+						//If backspace was pressed, delete the last character from both
+						//the screen and the input string
+						if(cmd_input_index > 0)
+						{
+							cmd_input_index--;
+							cmd_input_string[cmd_input_index] = '\0';
+						}
+						char *back = "\b \b";
+						uart->write((uint8_t*)back, 3);
+						break;
+					}
+					else
+					{
+						//A character was written - write it to both the console and
+						//the input string
+						if((current_event.data[0] >= ' ') && (current_event.data[0] <= '~'))
+						{
+							if(cmd_input_index < MAX_COMMAND_INPUT_SIZE)
+							{
+								cmd_input_string [cmd_input_index] = current_event.data[0];
+								cmd_input_index++;
 
+								uart->write_char(current_event.data[0]);
+								break;
+							}
+						}
+					}
+
+				}
+
+			//If we get a message from another task -- we'll write it to the screen
 			case DEBUG_MESSAGE_EVENT:
 				uart->write(current_event.data, current_event.length);
 				break;
 			}
+
 		}
 	}
 

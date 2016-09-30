@@ -59,6 +59,6 @@ extern "C" {
 	}
 
 	void UART3_IRQHandler(void){
-		static_cast<UartIo*>(drivers[CONSOLE_UART])->uart_interrupt_handler();
+		static_cast<UartIo*>(drivers[CONSOLE_UART])->uartInterruptHandler();
 	}
 }

@@ -24,20 +24,20 @@ public:
 	UartIo(LPC_USART_T *uart);
 	void init_driver(void);
 
-	inline void set_baud(uint32_t baud) {this->baud_rate = baud;
+	inline void setBaud(uint32_t baud) {this->baud_rate = baud;
 	Chip_UART_SetBaud(this->uart, baud);}
-	void config_data(uint32_t word_length, uint32_t parity, uint32_t stopbits);
-	void uart_interrupt_handler(void);
+	void configData(uint32_t word_length, uint32_t parity, uint32_t stopbits);
+	void uartInterruptHandler(void);
 
 	//Read and Write
 	void write(uint8_t* data, uint8_t length);
 	void read(uint8_t* data, uint8_t length);
-	inline void read_char(uint8_t* data) {read(data, 1);}
-	inline void write_char(uint8_t data) {write(&data,1);}
-	void read_char_async(uart_char_read_callback callback);
+	inline void readChar(uint8_t* data) {read(data, 1);}
+	inline void writeChar(uint8_t data) {write(&data,1);}
+	void readCharAsync(uart_char_read_callback callback);
 
 private:
-	IRQn_Type get_NVIC_IRQ(void);
+	IRQn_Type getNVICIRQ(void);
 
 	SemaphoreHandle_t tx_transfer_semaphore;
 	SemaphoreHandle_t rx_transfer_semaphore;

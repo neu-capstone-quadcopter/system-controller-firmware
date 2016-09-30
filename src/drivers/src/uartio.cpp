@@ -24,11 +24,11 @@ UartIo::UartIo(LPC_USART_T *uart) {
 	this->uart = uart;
 }
 
-void UartIo::config_data(uint32_t word_length, uint32_t parity, uint32_t stopbits){
+void UartIo::configData(uint32_t word_length, uint32_t parity, uint32_t stopbits){
 	Chip_UART_ConfigData(this->uart, (word_length | stopbits));
 }
 
-IRQn_Type UartIo::get_NVIC_IRQ(void){
+IRQn_Type UartIo::getNVICIRQ(void){
 
 	switch((uint32_t)this->uart)
 	{
@@ -51,7 +51,7 @@ IRQn_Type UartIo::get_NVIC_IRQ(void){
 	}
 }
 
-void UartIo::uart_interrupt_handler(void){
+void UartIo::uartInterruptHandler(void){
 	Chip_UART_IRQRBHandler(this->uart, &this->rxring, &this->txring);
 
 	if(write_in_progress && RingBuffer_IsEmpty(&this->txring));
@@ -104,7 +104,7 @@ void UartIo::read(uint8_t* data, uint8_t length){
 	Chip_UART_ReadRB(this->uart, &this->rxring, data, length);
 }
 
-void UartIo::read_char_async(uart_char_read_callback callback)
+void UartIo::readCharAsync(uart_char_read_callback callback)
 {
 	this->callback = callback;
 	this->async_read_in_progress = true;
@@ -125,10 +125,10 @@ void UartIo::init_driver(void) {
 
 
 	//Set Baud
-	set_baud(DEFAULT_BAUD);
+	setBaud(DEFAULT_BAUD);
 
 	//Config Data
-	config_data(DEFAULT_WORD_LENGTH, DEFAULT_PARITY, DEFAULT_STOP_BIT);
+	configData(DEFAULT_WORD_LENGTH, DEFAULT_PARITY, DEFAULT_STOP_BIT);
 
 	//Enable Transmission
 	Chip_UART_TXEnable(this->uart);
@@ -144,7 +144,7 @@ void UartIo::init_driver(void) {
 	Chip_UART_IntEnable(this->uart, (UART_IER_RBRINT | UART_IER_RLSINT));
 
 	//Enable UART -> NVIC
-	NVIC_EnableIRQ(get_NVIC_IRQ());
+	NVIC_EnableIRQ(getNVICIRQ());
 
 
 }

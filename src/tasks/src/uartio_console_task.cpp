@@ -36,7 +36,7 @@ namespace uart_task {
 		size_t length;
 	};
 
-	void uart_read_handler(uint8_t data);
+	void uartReadHandler(uint8_t data);
 	static void task_loop(void *p);
 
 	//Define our Queue
@@ -65,7 +65,7 @@ namespace uart_task {
 
 		for(;;) {
 			//Handle reading and writing at the same time
-			uart->read_char_async(uart_read_handler);
+			uart->readCharAsync(uartReadHandler);
 			xQueueReceive(event_queue, &current_event, portMAX_DELAY);
 
 			switch(current_event.type)
@@ -112,7 +112,7 @@ namespace uart_task {
 								cmd_input_string [cmd_input_index] = current_event.data[0];
 								cmd_input_index++;
 
-								uart->write_char(current_event.data[0]);
+								uart->writeChar(current_event.data[0]);
 								break;
 							}
 						}
@@ -130,7 +130,7 @@ namespace uart_task {
 	}
 
 	//Will save our data into the queue
-	void uart_read_handler(uint8_t data)
+	void uartReadHandler(uint8_t data)
 	{
 		Event e;
 		e.type = READ_EVENT;
@@ -140,7 +140,7 @@ namespace uart_task {
 		xQueueSendToBackFromISR(event_queue, &e, 0);
 	}
 
-	void send_debug_message(uint8_t *data, size_t length)
+	void sendDebugMessage(uint8_t *data, size_t length)
 	{
 		Event e;
 		e.type = DEBUG_MESSAGE_EVENT;
@@ -151,6 +151,17 @@ namespace uart_task {
 			memcpy(e.data, data, length);
 			xQueueSendToBack(event_queue, &e, 0);
 		}
+	}
+
+	void interpretFunctionCall(char* input_string, char* output_string)
+	{
+		//the first thing we need to do is interpret the command string
+
+	}
+
+	uint8_t getNumberOfParameters(char* input_string)
+	{
+
 	}
 }
 

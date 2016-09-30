@@ -38,7 +38,7 @@ namespace led_task {
 			led0->set_led(true);
 			led1->set_led(false);
 			vTaskDelay(500);
-			//uart_task::send_debug_message((uint8_t*)"FUCK!", 5);
+			uart_task::sendDebugMessage((uint8_t*)"FUCK!", 5);
 		}
 	}
 }

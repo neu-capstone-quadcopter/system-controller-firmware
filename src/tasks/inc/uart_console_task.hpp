@@ -11,12 +11,12 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
-#define UART_EVENT_DATA_MAX_LEN 10
+#define UART_EVENT_DATA_MAX_LEN 255
 
 namespace uart_task {
 	void start(void);
 
-	void send_debug_message(uint8_t *data, size_t length);
+	void sendDebugMessage(uint8_t *data, size_t length);
 
 
 

@@ -20,6 +20,7 @@ namespace sensor_task {
 
 static void task_loop(void *p);
 void package_data_frame(int i, uint16_t data, adc_values_t *frame);
+void initialize_timer();
 
 Adc *adc;
 Cd74hc4067 *mux;
@@ -34,17 +35,10 @@ void start() {
 	event_queue = xQueueCreate(EVENT_QUEUE_DEPTH, sizeof(adc_event_t));
 }
 
+
+
 static void task_loop(void *p) {
-	Chip_TIMER_Init(LPC_TIMER0);
-	Chip_TIMER_Reset(LPC_TIMER0);
-	Chip_TIMER_MatchEnableInt(LPC_TIMER0, 1);
-	Chip_TIMER_SetMatch(LPC_TIMER0, 1, 1200000);
-	Chip_TIMER_ResetOnMatchEnable(LPC_TIMER0, 1);
-	Chip_TIMER_Enable(LPC_TIMER0);
-
-	NVIC_ClearPendingIRQ(TIMER0_IRQn);
-	NVIC_EnableIRQ(TIMER0_IRQn);
-
+	initialize_timer();
 	adc->enable_channel(ADC_CH0);
 	mux->enable();
 	adc_event_t current_event;
@@ -74,6 +68,17 @@ void TIMER0_IRQHandler(void) {
 		xQueueSendToBackFromISR(event_queue, &event, 0);
 	}
 }
+}
+
+void initialize_timer() {
+	Chip_TIMER_Init(LPC_TIMER0);
+	Chip_TIMER_Reset(LPC_TIMER0);
+	Chip_TIMER_MatchEnableInt(LPC_TIMER0, 1);
+	Chip_TIMER_SetMatch(LPC_TIMER0, 1, 1200000);
+	Chip_TIMER_ResetOnMatchEnable(LPC_TIMER0, 1);
+	Chip_TIMER_Enable(LPC_TIMER0);
+	NVIC_ClearPendingIRQ(TIMER0_IRQn);
+	NVIC_EnableIRQ(TIMER0_IRQn);
 }
 
 void package_data_frame(int i, uint16_t data, adc_values_t *frame) {

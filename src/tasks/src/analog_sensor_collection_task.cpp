@@ -35,7 +35,16 @@ void start() {
 	event_queue = xQueueCreate(EVENT_QUEUE_DEPTH, sizeof(adc_event_t));
 }
 
-
+void initialize_timer() {
+    Chip_TIMER_Init(LPC_TIMER0);
+    Chip_TIMER_Reset(LPC_TIMER0);
+    Chip_TIMER_MatchEnableInt(LPC_TIMER0, 1);
+    Chip_TIMER_SetMatch(LPC_TIMER0, 1, 1200000);
+    Chip_TIMER_ResetOnMatchEnable(LPC_TIMER0, 1);
+    Chip_TIMER_Enable(LPC_TIMER0);
+    NVIC_ClearPendingIRQ(TIMER0_IRQn);
+    NVIC_EnableIRQ(TIMER0_IRQn);
+}
 
 static void task_loop(void *p) {
 	initialize_timer();
@@ -59,6 +68,14 @@ static void task_loop(void *p) {
 	}
 }
 
+void package_data_frame(int i, uint16_t data, adc_values_t *frame) {
+	double a[16] = {1.0, 2.0, 3.0, 4.0, 1.0, 2.0, 3.0, 4.0,
+                    1.0, 2.0, 3.0, 4.0, 1.0, 2.0, 3.0, 4.0};
+	double b[16] = {1.0, 2.0, 3.0, 4.0, 1.0, 2.0, 3.0, 4.0,
+                    1.0, 2.0, 3.0, 4.0, 1.0, 2.0, 3.0, 4.0};
+	frame->sensor_values[i] = data * a[i] + b[i];
+}
+
 extern "C" {
 void TIMER0_IRQHandler(void) {
 	adc_event_t event;
@@ -68,25 +85,6 @@ void TIMER0_IRQHandler(void) {
 		xQueueSendToBackFromISR(event_queue, &event, 0);
 	}
 }
-}
-
-void initialize_timer() {
-	Chip_TIMER_Init(LPC_TIMER0);
-	Chip_TIMER_Reset(LPC_TIMER0);
-	Chip_TIMER_MatchEnableInt(LPC_TIMER0, 1);
-	Chip_TIMER_SetMatch(LPC_TIMER0, 1, 1200000);
-	Chip_TIMER_ResetOnMatchEnable(LPC_TIMER0, 1);
-	Chip_TIMER_Enable(LPC_TIMER0);
-	NVIC_ClearPendingIRQ(TIMER0_IRQn);
-	NVIC_EnableIRQ(TIMER0_IRQn);
-}
-
-void package_data_frame(int i, uint16_t data, adc_values_t *frame) {
-	double a[16] = {1.0, 2.0, 3.0, 4.0, 1.0, 2.0, 3.0, 4.0,
-					1.0, 2.0, 3.0, 4.0, 1.0, 2.0, 3.0, 4.0};
-	double b[16] = {1.0, 2.0, 3.0, 4.0, 1.0, 2.0, 3.0, 4.0,
-					1.0, 2.0, 3.0, 4.0, 1.0, 2.0, 3.0, 4.0};
-	frame->sensor_values[i] = data * a[i] + b[i];
 }
 
 } // End sensor_task namespace.

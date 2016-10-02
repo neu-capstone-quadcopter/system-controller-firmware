@@ -16,28 +16,25 @@
 
 #define EVENT_QUEUE_DEPTH 8
 
-namespace adc_task {
+namespace sensor_task {
 
 static void task_loop(void *p);
 void package_data_frame(int i, uint16_t *data, adc_values_t *frame);
 
-Adc* adc;
+Adc *adc;
 Cd74hc4067 *mux;
 
-TaskHandle_t task_handle;
+static TaskHandle_t task_handle;
 static QueueHandle_t event_queue;
 
 void start() {
 	adc = static_cast<Adc*>(hal::get_driver(hal::SENSOR_ADC));
 	mux = static_cast<Cd74hc4067*>(hal::get_driver(hal::CD74HC4067));
-	xTaskCreate(task_loop, "led task", 1536, NULL, 2, &task_handle);
+	xTaskCreate(task_loop, "sensor task", 1536, NULL, 2, &task_handle);
 	event_queue = xQueueCreate(EVENT_QUEUE_DEPTH, sizeof(adc_event_t));
 }
 
 static void task_loop(void *p) {
-	uint16_t data;
-	adc_values_t frame;
-
 	Chip_TIMER_Init(LPC_TIMER0);
 	Chip_TIMER_Reset(LPC_TIMER0);
 	Chip_TIMER_MatchEnableInt(LPC_TIMER0, 1);
@@ -53,6 +50,8 @@ static void task_loop(void *p) {
 	adc_event_t current_event;
 	for(;;) {
 		xQueueReceive(event_queue, &current_event, portMAX_DELAY);
+		uint16_t data;
+		adc_values_t frame;
 		switch (current_event.type) {
 		case ADC_SCAN:
 			for (int i = 0; i < 16; ++i) {
@@ -73,8 +72,6 @@ void TIMER0_IRQHandler(void) {
 	if(Chip_TIMER_MatchPending(LPC_TIMER0, 1)) {
 		Chip_TIMER_ClearMatch(LPC_TIMER0, 1);
 		xQueueSendToBackFromISR(event_queue, &event, 0);
-		//Chip_GPIO_WriteDirBit(LPC_GPIO, 2, 11, true);
-		//Chip_GPIO_WritePortBit(LPC_GPIO, 2, 11, true);
 	}
 }
 }
@@ -151,7 +148,7 @@ void package_data_frame(int i, uint16_t *data, adc_values_t *frame) {
 	}
 }
 
-} // End adc_task namespace.
+} // End sensor_task namespace.
 
 
 

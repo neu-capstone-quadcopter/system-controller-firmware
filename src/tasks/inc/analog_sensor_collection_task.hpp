@@ -11,7 +11,7 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
-namespace adc_task {
+namespace sensor_task {
 	void start(void);
 
 	enum adc_event_type {

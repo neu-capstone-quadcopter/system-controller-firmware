@@ -29,7 +29,7 @@ int main(void) {
 	hal::init();
 	led_task::start();
 	//telemetry_radio_task::start();
-	adc_task::start();
+	sensor_task::start();
 
 	vTaskStartScheduler();
 

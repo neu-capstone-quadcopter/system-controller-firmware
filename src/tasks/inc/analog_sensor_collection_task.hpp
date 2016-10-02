@@ -23,22 +23,7 @@ namespace sensor_task {
 	} adc_event_t;
 
 	typedef struct {
-		uint16_t val0;
-		uint16_t val1;
-		uint16_t val2;
-		uint16_t val3;
-		uint16_t val4;
-		uint16_t val5;
-		uint16_t val6;
-		uint16_t val7;
-		uint16_t val8;
-		uint16_t val9;
-		uint16_t val10;
-		uint16_t val11;
-		uint16_t val12;
-		uint16_t val13;
-		uint16_t val14;
-		uint16_t val15;
+		uint16_t sensor_values[16];
 	} adc_values_t;
 }
 

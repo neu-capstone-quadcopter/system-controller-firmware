@@ -7,6 +7,7 @@
 
 #include "cd74hc4067.hpp"
 #include "chip.h"
+#include "FreeRTOS.h"
 
 Cd74hc4067::Cd74hc4067(Cd74hc4067_gpio_map gpio_map){
 	this->gpio_map = gpio_map;
@@ -128,6 +129,7 @@ void Cd74hc4067::select_channel(uint8_t channel) {
 		Chip_GPIO_WritePortBit(LPC_GPIO, this->gpio_map.s3_port, this->gpio_map.s3_pin, true);
 		break;
 	default:
+		configASSERT(0);
 		break;
 	}
 }

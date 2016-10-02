@@ -19,7 +19,7 @@
 namespace sensor_task {
 
 static void task_loop(void *p);
-void package_data_frame(int i, uint16_t *data, adc_values_t *frame);
+void package_data_frame(int i, uint16_t data, adc_values_t *frame);
 
 Adc *adc;
 Cd74hc4067 *mux;
@@ -57,7 +57,7 @@ static void task_loop(void *p) {
 			for (int i = 0; i < 16; ++i) {
 				mux->select_channel(i);
 				adc->read_value(ADC_CH0, &data);
-				package_data_frame(i, &data, &frame);
+				package_data_frame(i, data, &frame);
 			}
 			// Todo: Send data frame
 			break;
@@ -76,76 +76,12 @@ void TIMER0_IRQHandler(void) {
 }
 }
 
-void package_data_frame(int i, uint16_t *data, adc_values_t *frame) {
-	switch (i) {
-	case 0:
-		*data = pow(3*(*data), 2) + 6*(*data) + 8;
-		frame->val0 = *data;
-		break;
-	case 1:
-		*data = 4*(*data) + 9;
-		frame->val1 = *data;
-		break;
-	case 2:
-		*data = pow(3*(*data), 2) + 6*(*data) + 8;
-		frame->val2 = *data;
-		break;
-	case 3:
-		*data = 4*(*data) + 9;
-		frame->val3 = *data;
-		break;
-	case 4:
-		*data = pow(3*(*data), 2) + 6*(*data) + 8;
-		frame->val4 = *data;
-		break;
-	case 5:
-		*data = 4*(*data) + 9;
-		frame->val5 = *data;
-		break;
-	case 6:
-		*data = pow(3*(*data), 2) + 6*(*data) + 8;
-		frame->val6 = *data;
-		break;
-	case 7:
-		*data = 4*(*data) + 9;
-		frame->val7 = *data;
-		break;
-	case 8:
-		*data = pow(3*(*data), 2) + 6*(*data) + 8;
-		frame->val8 = *data;
-		break;
-	case 9:
-		*data = 4*(*data) + 9;
-		frame->val9 = *data;
-		break;
-	case 10:
-		*data = pow(3*(*data), 2) + 6*(*data) + 8;
-		frame->val10 = *data;
-		break;
-	case 11:
-		*data = 4*(*data) + 9;
-		frame->val11 = *data;
-		break;
-	case 12:
-		*data = pow(3*(*data), 2) + 6*(*data) + 8;
-		frame->val12 = *data;
-		break;
-	case 13:
-		*data = 4*(*data) + 9;
-		frame->val13 = *data;
-		break;
-	case 14:
-		*data = pow(3*(*data), 2) + 6*(*data) + 8;
-		frame->val14 = *data;
-		break;
-	case 15:
-		*data = 4*(*data) + 9;
-		frame->val15 = *data;
-		break;
-	default:
-		configASSERT(0);
-		break;
-	}
+void package_data_frame(int i, uint16_t data, adc_values_t *frame) {
+	double a[16] = {1.0, 2.0, 3.0, 4.0, 1.0, 2.0, 3.0, 4.0,
+					1.0, 2.0, 3.0, 4.0, 1.0, 2.0, 3.0, 4.0};
+	double b[16] = {1.0, 2.0, 3.0, 4.0, 1.0, 2.0, 3.0, 4.0,
+					1.0, 2.0, 3.0, 4.0, 1.0, 2.0, 3.0, 4.0};
+	frame->sensor_values[i] = data * a[i] + b[i];
 }
 
 } // End sensor_task namespace.

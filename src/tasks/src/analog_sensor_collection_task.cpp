@@ -5,13 +5,16 @@
  *      Author: bsoper
  */
 
+// Tasks
 #include "analog_sensor_collection_task.hpp"
+#include "nav_computer_task.hpp"
+// Drivers
+#include "adc.hpp"
 #include "cd74hc4067.hpp"
 #include "hal.hpp"
-#include "adc.hpp"
+// Other
 #include "FreeRTOS.h"
 #include "task.h"
-
 #include <cmath>
 
 #define EVENT_QUEUE_DEPTH 8
@@ -20,6 +23,7 @@ namespace sensor_task {
 
 	static void task_loop(void *p);
 	void package_data_frame(int i, uint16_t data, adc_values_t *frame);
+	void send_data_frame(adc_values_t *frame);
 	void initialize_timer();
 
 	Adc *adc;
@@ -76,6 +80,13 @@ namespace sensor_task {
 		double b[16] = {1.0, 2.0, 3.0, 4.0, 1.0, 2.0, 3.0, 4.0,
 						1.0, 2.0, 3.0, 4.0, 1.0, 2.0, 3.0, 4.0};
 		frame->sensor_values[i] = data * a[i] + b[i];
+	}
+
+	void send_data_frame(adc_values_t *frame) {
+		nav_computer_task::nav_event_t event;
+		event.type = nav_computer_task::ADC_SCAN;
+		event.data = *frame;
+		xQueueSendToBackFromISR(nav_computer_task::event_queue, &event, 0);
 	}
 
 	extern "C" {

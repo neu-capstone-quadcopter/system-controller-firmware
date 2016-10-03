@@ -68,7 +68,7 @@ namespace sensor_task {
 					adc->read_value(ADC_CH0, &data);
 					package_data_frame(i, data, &frame);
 				}
-				// Todo: Send data frame
+				send_data_frame(&frame);
 				break;
 			}
 		}

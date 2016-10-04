@@ -15,7 +15,7 @@
 
 namespace nav_computer_task {
 
-	static QueueHandle_t event_queue;
+	static QueueHandle_t nav_event_queue;
 	void start(void);
 
 	enum nav_event_type {
@@ -26,6 +26,8 @@ namespace nav_computer_task {
 	  enum nav_event_type type;
 	  sensor_task::adc_values_t data;
 	} nav_event_t;
+
+	void add_event_to_queue(nav_event_t event);
 
 } // End nav_computer_task namespace.
 

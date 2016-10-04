@@ -37,7 +37,7 @@ namespace sensor_task {
 		adc = hal::get_driver<Adc>(hal::SENSOR_ADC);
 		//mux = static_cast<Cd74hc4067*>(hal::get_driver(hal::CD74HC4067));
 		mux = hal::get_driver<Cd74hc4067>(hal::CD74HC4067);
-		xTaskCreate(task_loop, "sensor task", 1536, NULL, 2, &task_handle);
+		xTaskCreate(task_loop, "sensor task", 400, NULL, 2, &task_handle);
 		event_queue = xQueueCreate(EVENT_QUEUE_DEPTH, sizeof(adc_event_t));
 	}
 
@@ -86,7 +86,7 @@ namespace sensor_task {
 		nav_computer_task::nav_event_t event;
 		event.type = nav_computer_task::ADC_SCAN;
 		event.data = *frame;
-		xQueueSendToBackFromISR(nav_computer_task::event_queue, &event, 0);
+		nav_computer_task::add_event_to_queue(event);
 	}
 
 	extern "C" {

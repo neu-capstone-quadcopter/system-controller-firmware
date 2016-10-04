@@ -13,14 +13,10 @@
 
 #define UART_EVENT_DATA_MAX_LEN 255
 
-namespace uart_task {
+namespace console_task {
 	void start(void);
 
 	void sendDebugMessage(uint8_t *data, size_t length);
-
-
-
-
 }
 
 

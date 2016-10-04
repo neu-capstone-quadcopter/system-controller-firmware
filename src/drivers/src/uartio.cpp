@@ -12,7 +12,6 @@
 #include "board.hpp"
 
 
-//Baud
 #define DEFAULT_BAUD 115200
 
 //Data Config
@@ -77,21 +76,15 @@ void UartIo::uartInterruptHandler(void){
 			xSemaphoreGiveFromISR(this->rx_transfer_semaphore, NULL);
 		}
 	}
-
-	//Check to see that we are writing and the Transmitter is empty
-
 }
 
 void UartIo::write(uint8_t* data, uint8_t length)
 {
-	//Error Checking?
-
 	//Write to the transmission buffer
 	write_in_progress = true;
 	Chip_UART_SendRB(this->uart, &this->txring, data, length);
 	xSemaphoreTake(this->tx_transfer_semaphore, portMAX_DELAY);
 
-	//Return some value -- bool?
 }
 
 void UartIo::read(uint8_t* data, uint8_t length){
@@ -113,7 +106,8 @@ void UartIo::readCharAsync(uart_char_read_callback callback)
 
 
 
-void UartIo::init_driver(void) {
+void UartIo::init_driver(void)
+{
 
 	//UART init
 	board::uart_init(this->uart);
@@ -123,11 +117,10 @@ void UartIo::init_driver(void) {
 	this->tx_transfer_semaphore = xSemaphoreCreateBinary();
 	this->rx_transfer_semaphore = xSemaphoreCreateBinary();
 
-
 	//Set Baud
 	setBaud(DEFAULT_BAUD);
 
-	//Config Data
+	//Configure our data frame
 	configData(DEFAULT_WORD_LENGTH, DEFAULT_PARITY, DEFAULT_STOP_BIT);
 
 	//Enable Transmission
@@ -142,9 +135,9 @@ void UartIo::init_driver(void) {
 	                       UART_FCR_RX_RS | UART_FCR_TX_RS));
 	//Enable Interrupts
 	Chip_UART_IntEnable(this->uart, (UART_IER_RBRINT | UART_IER_RLSINT));
-
-	//Enable UART -> NVIC
 	NVIC_EnableIRQ(getNVICIRQ());
 
+	//Can remove after testing...
+	Chip_GPIO_WriteDirBit(LPC_GPIO,2,10,true);
 
 }

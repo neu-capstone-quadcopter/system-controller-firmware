@@ -21,6 +21,8 @@ namespace hal {
 	void init(void) {
 		Chip_GPIO_Init(LPC_GPIO);
 		Chip_IOCON_Init(LPC_IOCON);
+		NVIC_ClearPendingIRQ(EINT3_IRQn);
+		NVIC_EnableIRQ(EINT3_IRQn);
 
 		add_drivers();
 

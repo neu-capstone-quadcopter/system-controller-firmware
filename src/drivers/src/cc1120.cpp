@@ -173,6 +173,18 @@ void Cc1120::reset(void) {
 	Chip_GPIO_WritePortBit(LPC_GPIO, 2, 13, 1);
 }
 
+void Cc1120::gpio3_set_interrupt_pin_handler(cc1120_callback_t callback) {
+	gpio3_interrupt_callback = callback;
+}
+
+void Cc1120::gpio2_set_interrupt_pin_handler(cc1120_callback_t callback) {
+	gpio2_interrupt_callback = callback;
+}
+
+void Cc1120::gpio0_set_interrupt_pin_handler(cc1120_callback_t callback) {
+	gpio0_interrupt_callback = callback;
+}
+
 void Cc1120::write_register_single(uint8_t address, uint8_t data) {
 	send_command(SPICMD_W_REGISTER(address), &data, NULL, 1);
 }
@@ -253,5 +265,23 @@ void Cc1120::send_command_extended(uint8_t *command, uint8_t *tx_data, uint8_t *
 }
 
 bool Cc1120::pinint_handler(void) {
-
+	if (board::cc1120_is_gpio3_int()) {
+		if (gpio3_interrupt_callback) {
+			gpio3_interrupt_callback();
+		}
+		return true;
+	}
+	if (board::cc1120_is_gpio2_int()) {
+		if (gpio2_interrupt_callback) {
+			gpio2_interrupt_callback();
+		}
+		return true;
+	}
+	if (board::cc1120_is_gpio0_int()) {
+		if (gpio0_interrupt_callback) {
+			gpio0_interrupt_callback();
+		}
+		return true;
+	}
+	return false;
 }

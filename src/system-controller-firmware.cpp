@@ -26,7 +26,7 @@ inline void* operator new[] (size_t size) { return pvPortMalloc(size); }
 int main(void) {
 	board::setup_clocking();
 	hal::init();
-	led_task::start();
+	//led_task::start();
 	telemetry_radio_task::start();
 
 	vTaskStartScheduler();

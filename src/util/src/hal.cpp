@@ -54,4 +54,10 @@ extern "C" {
 	void SSP1_IRQHandler() {
 		static_cast<SspIo*>(drivers[TELEM_CC1120_SSP])->ssp_interrupt_handler();
 	}
+
+	void EINT3_IRQHandler() {
+		if (static_cast<Cc1120*>(drivers[TELEM_CC1120])->pinint_handler()) {
+			return;
+		}
+	}
 }

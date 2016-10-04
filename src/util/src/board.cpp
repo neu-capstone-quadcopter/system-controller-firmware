@@ -1,3 +1,4 @@
+#include "board.hpp"
 #include <cstdint>
 #include "chip.h"
 
@@ -53,6 +54,9 @@ namespace board {
 
 	void cc1120_init() {
 		Chip_GPIO_WriteDirBit(LPC_GPIO, 2, 13, true);
+		Chip_GPIOINT_SetIntFalling(LPC_GPIOINT, CC1120_GPIO3_INTPORT, CC1120_GPIO3_PIN);
+		Chip_GPIOINT_SetIntFalling(LPC_GPIOINT, CC1120_GPIO2_INTPORT, CC1120_GPIO2_PIN);
+		Chip_GPIOINT_SetIntFalling(LPC_GPIOINT, CC1120_GPIO1_INTPORT, CC1120_GPIO1_PIN);
 	}
 
 }

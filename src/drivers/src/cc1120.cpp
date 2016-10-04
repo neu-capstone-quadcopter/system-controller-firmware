@@ -251,3 +251,7 @@ void Cc1120::send_command_extended(uint8_t *command, uint8_t *tx_data, uint8_t *
 
 	this->ssp_device->read_write(op_tx_data, rx_data, data_len + 2);
 }
+
+bool Cc1120::pinint_handler(void) {
+
+}

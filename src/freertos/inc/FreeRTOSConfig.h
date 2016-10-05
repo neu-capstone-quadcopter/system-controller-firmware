@@ -77,7 +77,7 @@
 #define configTICK_RATE_HZ			( ( portTickType ) 1000 )
 #define configMINIMAL_STACK_SIZE	( ( unsigned short ) 128 )
 #ifdef __CODE_RED
-#define configTOTAL_HEAP_SIZE		( ( size_t ) ( 16*1024 ) )
+#define configTOTAL_HEAP_SIZE		( ( size_t ) ( 22*1024 ) )
 #else
 #define configTOTAL_HEAP_SIZE		( ( size_t ) ( 0 ) )
 #endif

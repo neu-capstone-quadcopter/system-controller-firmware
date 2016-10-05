@@ -12,6 +12,7 @@
 
 #include "hal.hpp"
 #include "exampleled.hpp"
+#include "uart_console_task.hpp"
 
 namespace led_task {
 	static void task_loop(void *p);
@@ -26,17 +27,18 @@ namespace led_task {
 		led0 = static_cast<ExampleLed*>(hal::get_driver(hal::LED_0));
 		led1 = static_cast<ExampleLed*>(hal::get_driver(hal::LED_1));
 
-		xTaskCreate(task_loop, "led task", 1536, NULL, 2, &task_handle);
+		xTaskCreate(task_loop, "led task", 128, NULL, 2, &task_handle);
 	}
 
 	static void task_loop(void *p) {
 		for(;;) {
 			led0->set_led(false);
 			led1->set_led(true);
-			vTaskDelay(100);
+			vTaskDelay(500);
 			led0->set_led(true);
 			led1->set_led(false);
-			vTaskDelay(100);
+			vTaskDelay(500);
+			//uart_task::sendDebugMessage((uint8_t*)"FUCK!", 5);
 		}
 	}
 }

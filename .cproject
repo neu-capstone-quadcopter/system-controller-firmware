@@ -118,15 +118,6 @@
 							<tool id="com.crt.advproject.link.exe.debug.766865493" name="MCU Linker" superClass="com.crt.advproject.link.exe.debug"/>
 						</toolChain>
 					</folderInfo>
-					<folderInfo id="com.crt.advproject.config.exe.debug.1698178935.1854612776" name="/" resourcePath="monarcpb">
-						<toolChain id="com.crt.advproject.toolchain.exe.debug.1512463199" name="NXP MCU Tools" superClass="com.crt.advproject.toolchain.exe.debug" unusedChildren="">
-							<tool id="com.crt.advproject.cpp.exe.debug.1067134501" name="MCU C++ Compiler" superClass="com.crt.advproject.cpp.exe.debug.437407545"/>
-							<tool id="com.crt.advproject.gcc.exe.debug.393388573" name="MCU C Compiler" superClass="com.crt.advproject.gcc.exe.debug.1232959032"/>
-							<tool id="com.crt.advproject.gas.exe.debug.762503416" name="MCU Assembler" superClass="com.crt.advproject.gas.exe.debug.13381346"/>
-							<tool id="com.crt.advproject.link.cpp.exe.debug.1470656447" name="MCU C++ Linker" superClass="com.crt.advproject.link.cpp.exe.debug.768509095"/>
-							<tool id="com.crt.advproject.link.exe.debug.2053454810" name="MCU Linker" superClass="com.crt.advproject.link.exe.debug.766865493"/>
-						</toolChain>
-					</folderInfo>
 					<sourceEntries>
 						<entry excluding="build/cpp|nanopb/examples|nanopb/tests" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="monarcpb"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="src"/>

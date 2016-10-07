@@ -61,7 +61,7 @@ namespace hal {
 		ExampleLed *led_1 = new ExampleLed(2, 12);
 		Adc *adc = new Adc(LPC_ADC);
 		Cd74hc4067 *adc_mux = new Cd74hc4067(gpio_map);
-		//NavComputer *nav_computer = new NavComputer();
+		UartIo *nav_computer = new UartIo(LPC_UART2);
 		Cc1120 *telem_cc1120 = new Cc1120(telem_cc1120_ssp);
 
 		// Add drivers to driver array
@@ -71,7 +71,7 @@ namespace hal {
 		drivers[LED_1] = led_1;
 		drivers[SENSOR_ADC] = adc;
 		drivers[CD74HC4067] = adc_mux;
-		//drivers[NAV_COMPUTER] = nav_computer;
+		drivers[NAV_COMPUTER] = nav_computer;
 		drivers[TELEM_CC1120] = telem_cc1120;
 		drivers[CONSOLE_UART] = console_uart;
 	}

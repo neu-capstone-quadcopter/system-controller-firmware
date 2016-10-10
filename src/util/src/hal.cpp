@@ -61,7 +61,7 @@ namespace hal {
 		ExampleLed *led_1 = new ExampleLed(2, 12);
 		Adc *adc = new Adc(LPC_ADC);
 		Cd74hc4067 *adc_mux = new Cd74hc4067(gpio_map);
-		UartIo *nav_computer = new UartIo(LPC_UART2);
+		UartIo *nav_computer = new UartIo(LPC_UART1);
 		Cc1120 *telem_cc1120 = new Cc1120(telem_cc1120_ssp);
 
 		// Add drivers to driver array
@@ -102,5 +102,9 @@ extern "C" {
 
 	void UART3_IRQHandler(void){
 		static_cast<UartIo*>(drivers[CONSOLE_UART])->uartInterruptHandler();
+	}
+
+	void UART1_IRQHandler(void){
+		static_cast<UartIo*>(drivers[NAV_COMPUTER])->uartInterruptHandler();
 	}
 }

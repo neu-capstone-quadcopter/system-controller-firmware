@@ -59,6 +59,8 @@ namespace board {
 		case LPC_UART0_BASE:
 			break;
 		case LPC_UART1_BASE:
+			Chip_IOCON_PinMux(LPC_IOCON, 0, 15, IOCON_MODE_INACT, IOCON_FUNC1);
+			Chip_IOCON_PinMux(LPC_IOCON, 0, 16, IOCON_MODE_INACT, IOCON_FUNC1);
 			break;
 		case LPC_UART2_BASE:
 			break;

@@ -43,7 +43,7 @@ namespace sensor_task {
 		Chip_TIMER_Init(LPC_TIMER0);
 		Chip_TIMER_Reset(LPC_TIMER0);
 		Chip_TIMER_MatchEnableInt(LPC_TIMER0, 1);
-		Chip_TIMER_SetMatch(LPC_TIMER0, 1, 1200000);
+		Chip_TIMER_SetMatch(LPC_TIMER0, 1, 240000);//1200000
 		Chip_TIMER_ResetOnMatchEnable(LPC_TIMER0, 1);
 		Chip_TIMER_Enable(LPC_TIMER0);
 		NVIC_ClearPendingIRQ(TIMER0_IRQn);

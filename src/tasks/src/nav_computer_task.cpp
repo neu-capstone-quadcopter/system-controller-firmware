@@ -65,9 +65,6 @@ void read_from_uart() {
 	// Read length of incoming message.
 	uint8_t len[2];
 	nav_uart->read(len, 2);
-	uint8_t temp = len[0];
-	len[0] = len[1];
-	len[1] = temp;
 	uint16_t message_len = *((uint16_t*)len);
 	// Read message.
 	nav_uart->read(buffer, message_len);

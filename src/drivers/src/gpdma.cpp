@@ -20,7 +20,7 @@ GpdmaChannel::GpdmaChannel(LPC_GPDMA_T *gpdma, uint8_t channel_num) {
 /*
  * Gpdma Impl
  */
-Gpdma::Gpdma(LPC_GPDMA_T *gpdma) {
+GpdmaManager::GpdmaManager(LPC_GPDMA_T *gpdma) {
 	this->gpdma_base = gpdma;
 
 	for(uint8_t i = 0; i < GPDMA_NUMBER_CHANNELS; i++) {
@@ -28,11 +28,11 @@ Gpdma::Gpdma(LPC_GPDMA_T *gpdma) {
 	}
 }
 
-void Gpdma::init_driver(void) {
+void GpdmaManager::init_driver(void) {
 	Chip_GPDMA_Init(this->gpdma_base);
 }
 
-GpdmaChannel *Gpdma::allocate_channel(uint8_t channel_num) {
+GpdmaChannel *GpdmaManager::allocate_channel(uint8_t channel_num) {
 	if(this->channel_usage & (1 << channel_num)) {
 		// Channel already allocated
 		return (GpdmaChannel*)NULL;
@@ -43,6 +43,6 @@ GpdmaChannel *Gpdma::allocate_channel(uint8_t channel_num) {
 	return this->channels[channel_num];
 }
 
-void Gpdma::release_channel(uint8_t channel_num) {
+void GpdmaManager::release_channel(uint8_t channel_num) {
 	this->channel_usage &= ~(1 << channel_num);
 }

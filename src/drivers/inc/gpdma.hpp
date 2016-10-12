@@ -19,9 +19,9 @@ private:
 	uint8_t channel_num;
 };
 
-class Gpdma : public Driver {
+class GpdmaManager : public Driver {
 public:
-	Gpdma(LPC_GPDMA_T *gpdma);
+	GpdmaManager(LPC_GPDMA_T *gpdma);
 	void init_driver(void);
 	GpdmaChannel *allocate_channel(uint8_t channel_num);
 	void release_channel(uint8_t channel_num);

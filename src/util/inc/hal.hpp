@@ -14,7 +14,7 @@
 namespace hal {
 	// Add device drivers in order of dependence
 	typedef enum driver_identifier{
-		GPDMA = 0,
+		GPDMA_MAN = 0,
 		TELEM_CC1120_SSP,
 		CONSOLE_UART,
 		LED_0,

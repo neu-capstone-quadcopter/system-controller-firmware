@@ -11,12 +11,24 @@
 #include <cstdint>
 #include "driver.hpp"
 
-class Gpdma : public Driver {
+class GpdmaChannel {
 public:
-	Gpdma(void);
-	void init_driver(void);
+	GpdmaChannel(LPC_GPDMA_T *gpdma, uint8_t channel_num);
 private:
 	LPC_GPDMA_T *gpdma_base;
+	uint8_t channel_num;
+};
+
+class Gpdma : public Driver {
+public:
+	Gpdma(LPC_GPDMA_T *gpdma);
+	void init_driver(void);
+	GpdmaChannel *allocate_channel(uint8_t channel_num);
+	void release_channel(uint8_t channel_num);
+private:
+	LPC_GPDMA_T *gpdma_base;
+	GpdmaChannel *channels[GPDMA_NUMBER_CHANNELS];
+	uint8_t channel_usage;
 };
 
 

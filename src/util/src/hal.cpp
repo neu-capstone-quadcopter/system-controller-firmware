@@ -71,13 +71,26 @@ namespace hal {
 		drivers[CONSOLE_UART] = console_uart;
 	}
 
-	Driver *get_driver(driver_identifier id) {
-		return drivers[id];
+	template <class T>
+	T *get_driver(driver_identifier id) {
+		return static_cast<T *>(drivers[id]);
 	}
+
+	template class GpdmaManager *get_driver(driver_identifier);
+	template class SspIo *get_driver(driver_identifier);
+	template class UartIo *get_driver(driver_identifier);
+	template class Adc *get_driver(driver_identifier);
+	template class Cd74hc4067 *get_driver(driver_identifier);
+	template class Cc1120 *get_driver(driver_identifier);
+	template class ExampleLed *get_driver(driver_identifier);
 }
 
 extern "C" {
 	using namespace hal;
+	void DMA_IRQHandler() {
+		static_cast<GpdmaManager*>(drivers[GPDMA_MAN])->interrupt_handler();
+	}
+
 	void SSP1_IRQHandler() {
 		static_cast<SspIo*>(drivers[TELEM_CC1120_SSP])->ssp_interrupt_handler();
 	}

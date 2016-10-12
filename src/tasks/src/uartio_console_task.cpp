@@ -81,7 +81,7 @@ namespace console_task {
 
 	void start(void) {
 		// Retrieve driver instances from HAL
-		uart = static_cast<UartIo*>(hal::get_driver(hal::CONSOLE_UART));
+		uart = hal::get_driver<UartIo>(hal::CONSOLE_UART);
 
 		//Instantiate Queue
 		event_queue = xQueueCreate(EVENT_QUEUE_DEPTH, sizeof(Event));

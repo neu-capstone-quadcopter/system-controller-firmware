@@ -22,7 +22,7 @@ namespace telemetry_radio_task {
 
 	void start(void) {
 		// Retrieve driver instances from HAL
-		telem_cc1120 = static_cast<Cc1120*>(hal::get_driver(hal::TELEM_CC1120));
+		telem_cc1120 = hal::get_driver<Cc1120>(hal::TELEM_CC1120);
 
 		xTaskCreate(task_loop, "telem radio task", 1536, NULL, 2, &task_handle);
 	}

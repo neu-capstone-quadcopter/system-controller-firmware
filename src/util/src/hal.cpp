@@ -9,6 +9,7 @@
 #include "chip.h"
 
 #include "hal.hpp"
+#include "gpdma.hpp"
 #include "sspio.hpp"
 #include "cc1120.hpp"
 #include "driver.hpp"
@@ -50,6 +51,7 @@ namespace hal {
 
 	void add_drivers(void) {
 		// Instantiate drivers
+		Gpdma *gpdma = new Gpdma();
 		SspIo *telem_cc1120_ssp = new SspIo(LPC_SSP1);
 		UartIo *console_uart = new UartIo(LPC_UART3);
 		ExampleLed *led_0 = new ExampleLed(2, 11);
@@ -59,6 +61,7 @@ namespace hal {
 		Cc1120 *telem_cc1120 = new Cc1120(telem_cc1120_ssp);
 
 		// Add drivers to driver array
+		drivers[GPDMA] = gpdma;
 		drivers[TELEM_CC1120_SSP] = telem_cc1120_ssp;
 		drivers[LED_0] = led_0;
 		drivers[LED_1] = led_1;

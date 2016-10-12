@@ -8,11 +8,13 @@
 #ifndef DRIVERS_INC_UARTIO_HPP_
 #define DRIVERS_INC_UARTIO_HPP_
 
-#include <cstdint> //Defines types
+#include <cstdint>
 #include "driver.hpp"
 #include "chip.h"
 #include "FreeRTOS.h"
 #include "semphr.h"
+
+#include "gpdma.hpp"
 
 #define RX_BUFFER_SIZE 32
 #define TX_BUFFER_SIZE 128
@@ -32,12 +34,14 @@ public:
 	//Read and Write
 	void write(uint8_t* data, uint8_t length);
 	void read(uint8_t* data, uint8_t length);
+	void write_dma(uint8_t* data, uint8_t length, GpdmaChannel *dma_channel);
 	inline void readChar(uint8_t* data) {read(data, 1);}
 	inline void writeChar(uint8_t data) {write(&data,1);}
 	void readCharAsync(uart_char_read_callback callback);
 
 private:
 	IRQn_Type getNVICIRQ(void);
+	uint32_t get_tx_dmareq(void);
 
 	SemaphoreHandle_t tx_transfer_semaphore;
 	SemaphoreHandle_t rx_transfer_semaphore;

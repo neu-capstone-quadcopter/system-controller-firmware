@@ -87,6 +87,20 @@ void UartIo::write(uint8_t* data, uint8_t length)
 
 }
 
+void UartIo::write_dma(uint8_t* data, uint8_t length, GpdmaChannel *dma_channel) {
+	if(dma_channel->is_active()) {
+		// Error here
+	}
+
+	this->uart->FCR |= UART_FCR_DMAMODE_SEL;
+
+	dma_channel->start_transfer(
+			(uint32_t)data,
+			get_tx_dmareq(),
+			GPDMA_TRANSFERTYPE_M2P_CONTROLLER_DMA,
+			length);
+}
+
 void UartIo::read(uint8_t* data, uint8_t length){
 	//Error Checking?
 
@@ -140,4 +154,26 @@ void UartIo::init_driver(void)
 	//Can remove after testing...
 	Chip_GPIO_WriteDirBit(LPC_GPIO,2,10,true);
 
+}
+
+uint32_t UartIo::get_tx_dmareq(void) {
+	switch((uint32_t)this->uart)
+		{
+
+		case LPC_UART0_BASE:
+			return GPDMA_CONN_UART0_Tx;
+
+		case LPC_UART1_BASE:
+			return GPDMA_CONN_UART1_Tx;
+
+		case LPC_UART2_BASE:
+			return GPDMA_CONN_UART2_Tx;
+
+		case LPC_UART3_BASE:
+			return GPDMA_CONN_UART3_Tx;
+
+		default:
+			configASSERT(0);
+
+		}
 }

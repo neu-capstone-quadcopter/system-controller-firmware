@@ -17,6 +17,7 @@ class GpdmaChannel {
 friend class GpdmaManager;
 public:
 	GpdmaChannel(LPC_GPDMA_T *gpdma, uint8_t channel_num);
+	bool is_active(void);
 	void register_callback(gpdma_callback callback);
 	void start_transfer(uint32_t src, uint32_t dst, GPDMA_FLOW_CONTROL_T type, uint32_t len);
 private:
@@ -36,7 +37,7 @@ public:
 private:
 	LPC_GPDMA_T *gpdma_base;
 	GpdmaChannel *channels[GPDMA_NUMBER_CHANNELS];
-	uint8_t channel_usage;
+	uint8_t channel_usage = 0;
 };
 
 

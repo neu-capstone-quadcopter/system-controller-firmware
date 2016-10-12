@@ -25,7 +25,7 @@ namespace led_task {
 	void start(void) {
 		// Retrieve driver instances from HAL
 		led0 = hal::get_driver<ExampleLed>(hal::LED_0);
-		led1 = hal::get_driver<ExampleLed>(hal::LED_0);
+		led1 = hal::get_driver<ExampleLed>(hal::LED_1);
 
 		xTaskCreate(task_loop, "led task", 128, NULL, 2, &task_handle);
 	}

@@ -16,22 +16,31 @@
 
 #include "gpdma.hpp"
 
-#define RX_BUFFER_SIZE 32
-#define TX_BUFFER_SIZE 128
-
 typedef void (*uart_char_read_callback)(uint8_t);
 
 enum UartTransferMode {POLLING, INTERRUPT, DMA};
 
 enum UartError {
 	NONE,
-	NO_DMA_CHANNEL
+	NO_DMA_CHANNEL_ERROR,
+	MEMORY_ALLOCATION_ERROR,
+	DMA_IN_USE_ERROR
 };
 
 class UartIo : public Driver {
 public:
 	UartIo(LPC_USART_T *uart);
 	void init_driver(void);
+
+	/*
+	 * @brief Allocate the buffers needed for operations
+	 * @param tx_buffer_size : Size of the tx buffer in bytes
+	 * @param rx_buffer_size : Size of the rx buffer in bytes
+	 * @return NONE on SUCCESS, MEMORY_ALLOCATION_ERROR if there is a problem allocating memory
+	 * @notes
+	 * This function must be called prior to using any of the driver functionality
+	 */
+	UartError allocate_buffers(uint16_t tx_buffer_size, uint16_t rx_buffer_size);
 
 	/*
 	 * @brief Set the UART buad rate
@@ -88,7 +97,6 @@ public:
 	 */
 	UartError read(uint8_t* data, uint8_t length);
 
-	void write_dma(uint8_t* data, uint8_t length, GpdmaChannel *dma_channel);
 	inline void readChar(uint8_t* data) {read(data, 1);}
 	inline void writeChar(uint8_t data) {write(&data,1);}
 	void readCharAsync(uart_char_read_callback callback);
@@ -113,10 +121,10 @@ private:
 
 	LPC_USART_T *uart;
 	uint32_t baud_rate;
-	RINGBUFF_T txring;
-	RINGBUFF_T rxring;
-	uint8_t rxbuff[RX_BUFFER_SIZE];
-	uint8_t txbuff[TX_BUFFER_SIZE];
+	RINGBUFF_T tx_ring;
+	RINGBUFF_T rx_ring;
+	uint8_t *rx_buffer;
+	uint8_t *tx_buffer;
 
 	uart_char_read_callback callback;
 };

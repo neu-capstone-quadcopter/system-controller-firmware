@@ -70,7 +70,7 @@ namespace console_task {
 	static char cmd_param_string[MAX_COMMAND_PARAM_SIZE] = {0};
 	static char last_cmd_input_stringv[MAX_COMMAND_INPUT_SIZE];
 	uint8_t cmd_input_index = 0;
-	char * new_line = "\r\n\r\n";
+	const char * new_line = "\r\n\r\n";
 
 	//Add any debug function to this array in the same order it appears
 	//in the function_index enum
@@ -82,6 +82,7 @@ namespace console_task {
 	void start(void) {
 		// Retrieve driver instances from HAL
 		uart = hal::get_driver<UartIo>(hal::CONSOLE_UART);
+		uart->allocate_buffers(128, 32);
 
 		//Instantiate Queue
 		event_queue = xQueueCreate(EVENT_QUEUE_DEPTH, sizeof(Event));

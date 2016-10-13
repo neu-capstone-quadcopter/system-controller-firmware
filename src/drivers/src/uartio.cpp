@@ -25,11 +25,12 @@ public:
 	UartTxDmaHandlerFunctor(UartIo *uart) {
 		this->uart = uart;
 	}
+private:
+	UartIo *uart;
+
 	void dma_handler(DmaError error) {
 		this->uart->tx_dma_handler(error);
 	}
-private:
-	UartIo *uart;
 };
 
 UartIo::UartIo(LPC_USART_T *uart) {
@@ -151,7 +152,7 @@ UartError UartIo::write(uint8_t* data, uint16_t length)
 		UartTxDmaHandlerFunctor handler_func(this);
 		this->tx_dma_channel->register_callback(&handler_func);
 		this->tx_dma_channel->start_transfer(
-				(uint32_t)data,
+				(uint32_t)this->tx_buffer,
 				get_tx_dmareq(),
 				GPDMA_TRANSFERTYPE_M2P_CONTROLLER_DMA,
 				length);

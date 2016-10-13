@@ -33,8 +33,8 @@ int main(void) {
 	led_task::start();
 	//telemetry_radio_task::start();
 	//sensor_task::start();
-	console_task::start();
-	//dma_test_task::start();
+	//console_task::start();
+	dma_test_task::start();
 
 	vTaskStartScheduler();
 

@@ -30,15 +30,17 @@ namespace dma_test_task {
 	void start(void) {
 		uart = hal::get_driver<UartIo>(hal::CONSOLE_UART);
 		uart->allocate_buffers(100, 100);
-		uart->set_tx_transfer_mode(DMA);
 
 		dma_man = hal::get_driver<GpdmaManager>(hal::GPDMA_MAN);
+		test_channel = dma_man->allocate_channel(0);
 
+		uart->bind_tx_dma_channel(test_channel);
+		uart->set_tx_transfer_mode(DMA);
 		xTaskCreate(task_loop, "dma task", 1536, NULL, 2, &task_handle);
 	}
 
 	static void task_loop(void *p) {
-		test_channel = dma_man->allocate_channel(0);
+
 		while(true) {
 			vTaskDelay(200);
 			uart->write((uint8_t *)str, 6);

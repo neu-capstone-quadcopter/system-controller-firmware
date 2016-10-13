@@ -20,7 +20,7 @@ bool GpdmaChannel::is_active(void) {
 	return this->gpdma_base->ENBLDCHNS & (1 << channel_num);
 }
 
-void GpdmaChannel::register_callback(gpdma_callback callback) {
+void GpdmaChannel::register_callback(DmaHandlerFunctor *callback) {
 	this->callback = callback;
 }
 /*
@@ -36,7 +36,7 @@ void GpdmaChannel::interrupt_handler(void) {
 	this->gpdma_base->INTTCCLEAR |= (1 << this->channel_num);
 	// TODO: Probably should check status more and for errors and such and pass to callback
 	if(this->callback) {
-		this->callback(0);
+		this->callback->dma_handler(DMA_ERROR_NONE);
 	}
 }
 

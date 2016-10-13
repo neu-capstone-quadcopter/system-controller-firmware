@@ -6,6 +6,7 @@
  */
 
 #include <cstring>
+#include <functional>
 
 #include "FreeRTOS.h"
 #include "chip.h"
@@ -19,33 +20,6 @@
 #define DEFAULT_PARITY UART_LCR_PARITY_DIS
 #define DEFAULT_STOP_BIT UART_LCR_SBS_1BIT
 #define DEFAULT_TRANSFER_MODE UART_XFER_MODE_INTERRUPT
-
-/* Callback Functors */
-class UartTxDmaHandlerFunctor : public DmaHandlerFunctor {
-public:
-	UartTxDmaHandlerFunctor(UartIo *uart) {
-		this->uart = uart;
-	}
-private:
-	UartIo *uart;
-
-	void dma_handler(DmaError status) {
-		this->uart->tx_dma_handler(status);
-	}
-};
-
-class UartRxDmaHandlerFunctor : public DmaHandlerFunctor {
-public:
-	UartRxDmaHandlerFunctor(UartIo *uart) {
-		this->uart = uart;
-	}
-private:
-	UartIo *uart;
-
-	void dma_handler(DmaError status) {
-		this->uart->rx_dma_handler(status);
-	}
-};
 
 UartIo::UartIo(LPC_USART_T *uart) {
 	this->uart = uart;
@@ -150,8 +124,7 @@ UartError UartIo::write(uint8_t* data, uint16_t length)
 
 		memcpy(this->tx_buffer, data, length);
 
-		UartTxDmaHandlerFunctor handler_func(this);
-		this->tx_dma_channel->register_callback(&handler_func);
+		this->rx_dma_channel->register_callback([this](DmaError status){ this->tx_dma_handler(status); });
 		this->tx_dma_channel->start_transfer(
 				(uint32_t)this->tx_buffer,
 				get_tx_dmareq(),
@@ -190,8 +163,7 @@ UartError UartIo::read(uint8_t* data, uint16_t length)
 			return UART_ERROR_BUFFER_OVERFLOW;
 		}
 
-		UartRxDmaHandlerFunctor handler_func(this);
-		this->rx_dma_channel->register_callback(&handler_func);
+		this->rx_dma_channel->register_callback([this](DmaError status){ this->rx_dma_handler(status); });
 		this->rx_dma_channel->start_transfer(
 				get_rx_dmareq(),
 				(uint32_t)data, //(uint32_t)this->rx_buffer,
@@ -214,10 +186,8 @@ void UartIo::readCharAsync(uart_char_read_callback callback)
 }
 
 IRQn_Type UartIo::get_nvic_irq(void){
-
 	switch((uint32_t)this->uart)
 	{
-
 	case LPC_UART0_BASE:
 		return UART0_IRQn;
 	case LPC_UART1_BASE:

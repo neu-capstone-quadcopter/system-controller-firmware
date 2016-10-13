@@ -20,11 +20,13 @@ bool GpdmaChannel::is_active(void) {
 	return this->gpdma_base->ENBLDCHNS & (1 << channel_num);
 }
 
-void GpdmaChannel::register_callback(DmaHandlerFunctor *callback) {
+void GpdmaChannel::register_callback(DmaHandlerLamda callback) {
 	this->callback = callback;
 }
 
 void GpdmaChannel::start_transfer(uint32_t src, uint32_t dst, GPDMA_FLOW_CONTROL_T type, uint32_t len) {
+	Chip_GPDMA_ClearIntPending(this->gpdma_base, GPDMA_STATCLR_INTTC, this->channel_num);
+	Chip_GPDMA_ClearIntPending(this->gpdma_base, GPDMA_STATCLR_INTERR, this->channel_num);
 	Chip_GPDMA_Transfer(this->gpdma_base, this->channel_num, src, dst, type, len);
 }
 
@@ -32,7 +34,7 @@ void GpdmaChannel::interrupt_handler(void) {
 	this->gpdma_base->INTTCCLEAR |= (1 << this->channel_num);
 	// TODO: Probably should check status more and for errors and such and pass to callback
 	if(this->callback) {
-		(*this->callback)(DMA_ERROR_NONE);
+		this->callback(DMA_ERROR_NONE);
 	}
 }
 

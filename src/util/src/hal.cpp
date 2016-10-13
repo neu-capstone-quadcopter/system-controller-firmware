@@ -20,7 +20,7 @@
 namespace hal {
 	void add_drivers(void);
 
-	Driver *drivers[NUM_IDENTIFIERS];
+	static Driver *drivers[NUM_IDENTIFIERS];
 
 	Cd74hc4067_gpio_map gpio_map = {
 			.s0_port = 0,

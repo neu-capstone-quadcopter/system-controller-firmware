@@ -9,33 +9,27 @@
 #define DRIVERS_INC_GPDMA_HPP_
 
 #include <cstdint>
+#include <functional>
 #include "driver.hpp"
 
 enum DmaError {
 	DMA_ERROR_NONE
 };
 
-typedef void (*gpdma_callback)(DmaError);
-
-class DmaHandlerFunctor {
-public:
-	void operator()(DmaError status) { this->dma_handler(status); }
-private:
-	virtual void dma_handler(DmaError status) = 0;
-};
+typedef std::function<void (DmaError)> DmaHandlerLamda;
 
 class GpdmaChannel {
 friend class GpdmaManager;
 public:
 	GpdmaChannel(LPC_GPDMA_T *gpdma, uint8_t channel_num);
 	bool is_active(void);
-	void register_callback(DmaHandlerFunctor *callback);
+	void register_callback(DmaHandlerLamda callback);
 	void start_transfer(uint32_t src, uint32_t dst, GPDMA_FLOW_CONTROL_T type, uint32_t len);
 private:
 	void interrupt_handler(void);
 	LPC_GPDMA_T *gpdma_base;
 	uint8_t channel_num;
-	DmaHandlerFunctor *callback = 0;
+	DmaHandlerLamda callback;
 };
 
 class GpdmaManager : public Driver {

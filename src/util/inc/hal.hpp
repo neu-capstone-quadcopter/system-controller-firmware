@@ -25,8 +25,6 @@ namespace hal {
 		NUM_IDENTIFIERS = TELEM_CC1120 + 1 // Add all entries before this and update
 	} driver_identifier;
 
-
-
 	void init(void);
 	template <class T>
 	T *get_driver(driver_identifier id);

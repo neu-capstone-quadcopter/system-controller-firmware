@@ -18,8 +18,9 @@
 #define DEFAULT_WORD_LENGTH UART_LCR_WLEN8
 #define DEFAULT_PARITY UART_LCR_PARITY_DIS
 #define DEFAULT_STOP_BIT UART_LCR_SBS_1BIT
-#define DEFAULT_TRANSFER_MODE INTERRUPT
+#define DEFAULT_TRANSFER_MODE UART_XFER_MODE_INTERRUPT
 
+/* Callback Functors */
 class UartTxDmaHandlerFunctor : public DmaHandlerFunctor {
 public:
 	UartTxDmaHandlerFunctor(UartIo *uart) {
@@ -28,15 +29,27 @@ public:
 private:
 	UartIo *uart;
 
-	void dma_handler(DmaError error) {
-		this->uart->tx_dma_handler(error);
+	void dma_handler(DmaError status) {
+		this->uart->tx_dma_handler(status);
+	}
+};
+
+class UartRxDmaHandlerFunctor : public DmaHandlerFunctor {
+public:
+	UartRxDmaHandlerFunctor(UartIo *uart) {
+		this->uart = uart;
+	}
+private:
+	UartIo *uart;
+
+	void dma_handler(DmaError status) {
+		this->uart->rx_dma_handler(status);
 	}
 };
 
 UartIo::UartIo(LPC_USART_T *uart) {
 	this->uart = uart;
-	this->tx_transfer_mode = DEFAULT_TRANSFER_MODE;
-	this->rx_transfer_mode = DEFAULT_TRANSFER_MODE;
+	this->transfer_mode = DEFAULT_TRANSFER_MODE;
 }
 
 void UartIo::init_driver(void)
@@ -83,60 +96,49 @@ void UartIo::config_data_mode(uint32_t word_length, uint32_t parity, uint32_t st
 	Chip_UART_ConfigData(this->uart, (word_length | stop_bits));
 }
 
-UartError UartIo::set_tx_transfer_mode(UartTransferMode mode) {
-	if(mode == DMA && !this->tx_dma_channel) {
+UartError UartIo::set_transfer_mode(UartTransferMode mode) {
+	if(mode == UART_XFER_MODE_DMA && (!this->tx_dma_channel || !this->rx_dma_channel)) {
 		return UART_ERROR_NO_DMA_CHANNEL;
 	}
-	this->tx_transfer_mode = mode;
-	return UART_ERROR_NONE;
-}
 
-UartError UartIo::set_rx_transfer_mode(UartTransferMode mode) {
-	if(mode == DMA && !this->rx_dma_channel) {
-		return UART_ERROR_NO_DMA_CHANNEL;
+	if(mode == UART_XFER_MODE_DMA) {
+		this->uart->FCR |= UART_FCR_DMAMODE_SEL;
 	}
-	this->rx_transfer_mode = mode;
+	else {
+		this->uart->FCR &= ~UART_FCR_DMAMODE_SEL;
+	}
+
+	this->transfer_mode = mode;
 	return UART_ERROR_NONE;
 }
 
-UartError UartIo::bind_tx_dma_channel(GpdmaChannel *dma_channel) {
-	this->tx_dma_channel = dma_channel;
+UartError UartIo::bind_dma_channels(GpdmaChannel *tx_channel, GpdmaChannel *rx_channel) {
+	this->tx_dma_channel = tx_channel;
+	this->rx_dma_channel = rx_channel;
 	return UART_ERROR_NONE;
 }
 
-UartError UartIo::unbind_tx_dma_channel(void) {
+UartError UartIo::unbind_dma_channels(void) {
 	this->tx_dma_channel = NULL;
-	if(this->tx_transfer_mode == DMA) {
-		this->tx_transfer_mode = INTERRUPT;
-	}
-	return UART_ERROR_NONE;
-}
-
-UartError UartIo::bind_rx_dma_channel(GpdmaChannel *dma_channel) {
-	this->rx_dma_channel = dma_channel;
-	return UART_ERROR_NONE;
-}
-
-UartError UartIo::unbind_rx_dma_channel(void) {
 	this->rx_dma_channel = NULL;
-	if(this->rx_transfer_mode == DMA) {
-		this->rx_transfer_mode = INTERRUPT;
+	if(this->transfer_mode == UART_XFER_MODE_DMA) {
+		this->transfer_mode = UART_XFER_MODE_INTERRUPT;
 	}
 	return UART_ERROR_NONE;
 }
 
 UartError UartIo::write(uint8_t* data, uint16_t length)
 {
-	switch(this->tx_transfer_mode) {
-	case POLLING:
+	switch(this->transfer_mode) {
+	case UART_XFER_MODE_POLLING:
 		// TODO: Maybe implement this lol
 		return UART_ERROR_GENERAL;
-	case INTERRUPT:
+	case UART_XFER_MODE_INTERRUPT:
 		write_in_progress = true;
 		Chip_UART_SendRB(this->uart, &this->tx_ring, data, length);
 		xSemaphoreTake(this->tx_transfer_semaphore, portMAX_DELAY);
 		return UART_ERROR_NONE;
-	case DMA:
+	case UART_XFER_MODE_DMA:
 	{
 		if(this->tx_dma_channel->is_active()) {
 			return UART_ERROR_DMA_IN_USE;
@@ -148,7 +150,6 @@ UartError UartIo::write(uint8_t* data, uint16_t length)
 
 		memcpy(this->tx_buffer, data, length);
 
-		this->uart->FCR |= UART_FCR_DMAMODE_SEL;
 		UartTxDmaHandlerFunctor handler_func(this);
 		this->tx_dma_channel->register_callback(&handler_func);
 		this->tx_dma_channel->start_transfer(
@@ -167,17 +168,38 @@ UartError UartIo::write(uint8_t* data, uint16_t length)
 
 UartError UartIo::read(uint8_t* data, uint16_t length)
 {
-	switch(this->rx_transfer_mode) {
-	case POLLING:
+	switch(this->transfer_mode) {
+	case UART_XFER_MODE_POLLING:
 		// TODO: Maybe implement this lol
 		return UART_ERROR_GENERAL;
-	case INTERRUPT:
+	case UART_XFER_MODE_INTERRUPT:
+	{
 		this->read_in_progress = true;
+		this->rx_op_len = length;
 		xSemaphoreTake(this->rx_transfer_semaphore, portMAX_DELAY);
 		Chip_UART_ReadRB(this->uart, &this->rx_ring, data, length);
 		return UART_ERROR_NONE;
-	case DMA:
+	}
+	case UART_XFER_MODE_DMA:
+	{
+		if(this->rx_dma_channel->is_active()) {
+			return UART_ERROR_DMA_IN_USE;
+		}
+
+		if(length > this->rx_buffer_len) {
+			return UART_ERROR_BUFFER_OVERFLOW;
+		}
+
+		UartRxDmaHandlerFunctor handler_func(this);
+		this->rx_dma_channel->register_callback(&handler_func);
+		this->rx_dma_channel->start_transfer(
+				get_rx_dmareq(),
+				(uint32_t)data, //(uint32_t)this->rx_buffer,
+				GPDMA_TRANSFERTYPE_P2M_CONTROLLER_DMA,
+				length);
+		xSemaphoreTake(this->rx_transfer_semaphore, portMAX_DELAY);
 		return UART_ERROR_NONE;
+	}
 	default:
 		configASSERT(0);
 	}
@@ -227,6 +249,23 @@ uint32_t UartIo::get_tx_dmareq(void) {
 	return GPDMA_CONN_UART0_Tx;
 }
 
+uint32_t UartIo::get_rx_dmareq(void) {
+	switch((uint32_t)this->uart)
+	{
+	case LPC_UART0_BASE:
+		return GPDMA_CONN_UART0_Rx;
+	case LPC_UART1_BASE:
+		return GPDMA_CONN_UART1_Rx;
+	case LPC_UART2_BASE:
+		return GPDMA_CONN_UART2_Rx;
+	case LPC_UART3_BASE:
+		return GPDMA_CONN_UART3_Rx;
+	default:
+		configASSERT(0);
+	}
+	return GPDMA_CONN_UART0_Rx;
+}
+
 void UartIo::tx_dma_handler(DmaError status) {
 	xSemaphoreGiveFromISR(this->tx_transfer_semaphore, NULL);
 }
@@ -253,7 +292,7 @@ void UartIo::uartInterruptHandler(void){
 	}
 	else if(this->read_in_progress)
 	{
-		if(!RingBuffer_IsEmpty(&this->rx_ring))
+		if(RingBuffer_GetCount(&this->rx_ring) == this->rx_op_len)
 		{
 			this->read_in_progress = false;
 			xSemaphoreGiveFromISR(this->rx_transfer_semaphore, NULL);

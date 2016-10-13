@@ -18,7 +18,11 @@
 
 typedef void (*uart_char_read_callback)(uint8_t);
 
-enum UartTransferMode {POLLING, INTERRUPT, DMA};
+enum UartTransferMode {
+	UART_XFER_MODE_POLLING,
+	UART_XFER_MODE_INTERRUPT,
+	UART_XFER_MODE_DMA
+};
 
 enum UartError {
 	UART_ERROR_NONE,
@@ -61,23 +65,14 @@ public:
 	void config_data_mode(uint32_t word_length, uint32_t parity, uint32_t stop_bits);
 
 	/*
-	 * @brief Set up the internal transmit transfer mode of the driver
+	 * @brief Set up the internal transfer mode of the driver
 	 * @param mode : This is the mode of the transfer
 	 * @return NONE on success
 	 */
-	UartError set_tx_transfer_mode(UartTransferMode mode);
+	UartError set_transfer_mode(UartTransferMode mode);
 
-	/*
-	 * @brief Set up the internal receive transfer mode of the driver
-	 * @param mode : This is the mode of the transfer
-	 * @return NONE on success
-	 */
-	UartError set_rx_transfer_mode(UartTransferMode mode);
-
-	UartError bind_tx_dma_channel(GpdmaChannel *dma_channel);
-	UartError unbind_tx_dma_channel(void);
-	UartError bind_rx_dma_channel(GpdmaChannel *dma_channel);
-	UartError unbind_rx_dma_channel(void);
+	UartError bind_dma_channels(GpdmaChannel *tx_channel, GpdmaChannel *rx_channel);
+	UartError unbind_dma_channels(void);
 
 	/*
 	 * @brief Write bytes via the UART
@@ -109,9 +104,9 @@ public:
 private:
 	IRQn_Type get_nvic_irq(void);
 	uint32_t get_tx_dmareq(void);
+	uint32_t get_rx_dmareq(void);
 
-	UartTransferMode tx_transfer_mode;
-	UartTransferMode rx_transfer_mode;
+	UartTransferMode transfer_mode;
 
 	SemaphoreHandle_t tx_transfer_semaphore;
 	SemaphoreHandle_t rx_transfer_semaphore;
@@ -131,6 +126,7 @@ private:
 	uint8_t *rx_buffer;
 	uint16_t tx_buffer_len;
 	uint16_t rx_buffer_len;
+	uint16_t rx_op_len;
 
 	uart_char_read_callback callback;
 };

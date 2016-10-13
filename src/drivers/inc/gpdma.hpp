@@ -19,9 +19,9 @@ typedef void (*gpdma_callback)(DmaError);
 
 class DmaHandlerFunctor {
 public:
-	void operator()(DmaError error) { this->dma_handler(error); }
+	void operator()(DmaError status) { this->dma_handler(status); }
 private:
-	virtual void dma_handler(DmaError error) = 0;
+	virtual void dma_handler(DmaError status) = 0;
 };
 
 class GpdmaChannel {

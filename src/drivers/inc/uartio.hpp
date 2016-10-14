@@ -8,9 +8,9 @@
 #ifndef DRIVERS_INC_UARTIO_HPP_
 #define DRIVERS_INC_UARTIO_HPP_
 
+#include <delegate.hpp>
 #include <cstdint>
 #include <functional>
-//#include <tuple>
 #include "driver.hpp"
 #include "chip.h"
 #include "FreeRTOS.h"
@@ -42,7 +42,7 @@ struct UartReadData {
 	UartError status;
 };
 
-typedef std::function<void (UartReadData)> UartReadHandler;
+typedef dlgt::delegate<void(*)(UartReadData)> UartReadHandler;
 
 class UartIo : public Driver {
 public:
@@ -116,7 +116,7 @@ public:
 	 */
 	UartError read(uint8_t* data, uint16_t length);
 
-	UartError read_async(uint8_t *data, uint16_t length, UartReadHandler callback);
+	UartError read_async(uint16_t length, UartReadHandler& callback);
 
 	inline void readChar(uint8_t* data) {read(data, 1);}
 	inline void writeChar(uint8_t data) {write(&data,1);}
@@ -153,7 +153,7 @@ private:
 	uint16_t rx_op_len;
 
 	uart_char_read_callback callback;
-	UartReadHandler rx_callback;
+	UartReadHandler *rx_callback;
 };
 
 

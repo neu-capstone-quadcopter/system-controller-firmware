@@ -186,19 +186,19 @@ UartError UartIo::read(uint8_t* data, uint16_t length)
 	return UART_ERROR_GENERAL;
 }
 
-UartError UartIo::read_async(uint8_t *data, uint16_t length, UartReadHandler callback) {
+UartError UartIo::read_async(uint16_t length, UartReadHandler& callback) {
 	switch(this->transfer_mode) {
 	case UART_XFER_MODE_POLLING:
 		return UART_ERROR_GENERAL;
 	case UART_XFER_MODE_INTERRUPT:
 	{
-		this->rx_callback = callback;
+		this->rx_callback = &callback;
+		this->rx_op_len = length;
 		this->async_read_in_progress = true;
 		return UART_ERROR_NONE;
 	}
 	case UART_XFER_MODE_DMA:
 	{
-
 		return UART_ERROR_NONE;
 	}
 	default:
@@ -285,7 +285,7 @@ void UartIo::uartInterruptHandler(void){
 				.length = this->rx_op_len,
 				.status = UART_ERROR_NONE
 		};
-		this->rx_callback(data);
+		(*this->rx_callback)(data);
 		this->async_read_in_progress = false;
 	}
 	else if(this->read_in_progress)

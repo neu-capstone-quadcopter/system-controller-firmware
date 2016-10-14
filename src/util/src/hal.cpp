@@ -41,6 +41,8 @@ namespace hal {
 		Chip_GPIO_Init(LPC_GPIO);
 		Chip_IOCON_Init(LPC_IOCON);
 
+		Chip_GPIO_WriteDirBit(LPC_GPIO, 2, 10, true); // Random Debug LED...
+
 		add_drivers();
 
 		// Initialize all drivers

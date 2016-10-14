@@ -5,18 +5,23 @@
  *      Author: nate
  */
 
-#include <uartio.hpp>
+
 #include <cstddef>
 #include <stdio.h>
 #include <ctype.h>
 #include <cstring>
-#include "uart_console_task.hpp"
+#include <memory>
 
 #include "FreeRTOS.h"
 #include "task.h"
 #include "queue.h"
 
 #include "hal.hpp"
+#include "uartio.hpp"
+
+#include "uart_console_task.hpp"
+#include "console_functions.hpp"
+
 
 #define EVENT_QUEUE_DEPTH 10
 #define NEW_LINE_LENGTH 4
@@ -33,15 +38,6 @@ namespace console_task {
 		DEBUG_MESSAGE_EVENT
 	};
 
-	enum function_index
-	{
-		INVALID,
-		SAMPLE_FUNCTION,
-		ACTIVATE_LED,
-		DEACTIVATE_LED,
-		SWITCH_LED
-	};
-
 	struct Event
 	{
 		event_type type;
@@ -49,16 +45,11 @@ namespace console_task {
 		size_t length;
 	};
 
-	typedef void (*commandLineFunction)(char*, char*, char*);
-
-	static void uartReadHandler(std::shared_ptr<UartReadData> read_status);
+	static void uart_read_handler(std::shared_ptr<UartReadData> read_status);
 	static void task_loop(void *p);
-	function_index commandFunctionLookup(char*);
-	void sampleFunction(char*, char*, char*);
-	void activateLED(char*,char*,char*);
-	void deactivateLED(char*,char*,char*);
-	void switchLED(char*,char*,char*);
-	void interpretFunctionCall(char*, char*, char*, uint8_t);
+	void interpret_command_call(char*, char*, char*, uint8_t);
+	CommandFunction command_lookup(char* command);
+	CommandArguments tokanize_params(const char *param_str, uint8_t &argc);
 
 	QueueHandle_t event_queue;
 	TaskHandle_t task_handle;
@@ -68,18 +59,10 @@ namespace console_task {
 	static char cmd_input_string[MAX_COMMAND_INPUT_SIZE] = {0};
 	static char cmd_output_string[MAX_COMMAND_OUTPUT_SIZE] = {0};
 	static char cmd_param_string[MAX_COMMAND_PARAM_SIZE] = {0};
-	static char last_cmd_input_stringv[MAX_COMMAND_INPUT_SIZE];
 	uint8_t cmd_input_index = 0;
 	const char * new_line = "\r\n\r\n";
 
-	auto uart_read_del = dlgt::make_delegate(&uartReadHandler);
-
-	//Add any debug function to this array in the same order it appears
-	//in the function_index enum
-	commandLineFunction cmdFunctions[] = {&sampleFunction,
-										  &activateLED,
-										  &deactivateLED,
-										  &switchLED};
+	auto uart_read_del = dlgt::make_delegate(&uart_read_handler);
 
 	void start(void) {
 		// Retrieve driver instances from HAL
@@ -109,7 +92,7 @@ namespace console_task {
 				{
 					//Write newline/execute command
 					uart->write((uint8_t*)new_line, NEW_LINE_LENGTH);
-					interpretFunctionCall(cmd_input_string, cmd_output_string, cmd_param_string, (uint8_t)cmd_input_index);
+					interpret_command_call(cmd_input_string, cmd_output_string, cmd_param_string, (uint8_t)cmd_input_index);
 
 					//reset control strings
 					cmd_input_index = 0;
@@ -155,7 +138,6 @@ namespace console_task {
 							}
 						}
 					}
-
 				}
 
 			//If we get a message from another task -- we'll write it to the screen
@@ -167,7 +149,7 @@ namespace console_task {
 		}
 	}
 
-	void uartReadHandler(std::shared_ptr<UartReadData> read_status)
+	void uart_read_handler(std::shared_ptr<UartReadData> read_status)
 	{
 		std::unique_ptr<uint8_t[]> read_data = std::move(read_status->data);
 
@@ -192,7 +174,7 @@ namespace console_task {
 		}
 	}
 
-	void interpretFunctionCall(char* input_string, char* output_string, char* param_string, uint8_t length)
+	void interpret_command_call(char* input_string, char* output_string, char* param_string, uint8_t length)
 	{
 		//Generate command string
 		int space_index = 0;
@@ -222,83 +204,56 @@ namespace console_task {
 		if(space_index == 0)
 			strcpy(command, input_string);
 
-		//Now let's look up this command using lookup function
-		function_index command_index = commandFunctionLookup(command);
+		CommandFunction command_function = command_lookup(command);
 
-		if(command_index == INVALID)
+		if(command_function == NULL)
 		{
 			strcpy(output_string,"Invalid Command\r\n\r\n");
-			uart->write((uint8_t*)output_string, (size_t)MAX_COMMAND_OUTPUT_SIZE);
-			return;
 		}
 		else
 		{
-			//Execute called function -- command_index - 1 because an INVALID flag is the
-			//0th element of the enumeration. To actually access function array need to
-			//subtract 1
-			cmdFunctions[command_index - 1](input_string, output_string, cmd_param_string);
-			return;
-		}
-	}
-
-	void sampleFunction(char* input_string, char* output_string, char* parameter_string)
-	{
-		strcpy(output_string,"Sample function successfully called.\r\n\r\n");
-		uart->write((uint8_t*)output_string, (size_t)MAX_COMMAND_OUTPUT_SIZE);
-		return;
-	}
-
-	void switchLED(char* input_string, char* output_string, char* parameter_string)
-	{
-		if(!strcmp(parameter_string,"on"))
-		{
-			strcpy(output_string,"Turning LED on...\r\n\r\n");
-			uart->write((uint8_t*)output_string, (size_t)MAX_COMMAND_OUTPUT_SIZE);
-			Chip_GPIO_WritePortBit(LPC_GPIO, 2, 10, true);
-		}
-		else if(!strcmp(parameter_string,"off"))
-		{
-			strcpy(output_string,"Turning LED off...\r\n\r\n");
-			uart->write((uint8_t*)output_string, (size_t)MAX_COMMAND_OUTPUT_SIZE);
-			Chip_GPIO_WritePortBit(LPC_GPIO, 2, 10, false);
-		}
-		else
-		{
-			strcpy(output_string, "Invalid Parameter -- options: \'on\' or \'off\'...\r\n\r\n");
-			uart->write((uint8_t*)output_string, (size_t)MAX_COMMAND_OUTPUT_SIZE);
+			uint8_t cmd_argc;
+			CommandArguments cmd_argv = tokanize_params(cmd_param_string, cmd_argc);
+			command_function(output_string, cmd_argc, std::move(cmd_argv));
 		}
 
+		uart->write(reinterpret_cast<uint8_t*>(output_string), (size_t)MAX_COMMAND_OUTPUT_SIZE);
 	}
 
-	void activateLED(char* input_string, char* output_string, char* parameter_string)
+	/*
+	 * Looks up command from command_list array. Returns NULL if function doesn't exist
+	 */
+	CommandFunction command_lookup(char* command)
 	{
-		strcpy(output_string,"Turning LED on...\r\n\r\n");
-		uart->write((uint8_t*)output_string, (size_t)MAX_COMMAND_OUTPUT_SIZE);
-		Chip_GPIO_WritePortBit(LPC_GPIO, 2, 10, true);
+		for(uint16_t i = 0; i < NUMBER_COMMANDS; i++) {
+			if(strcmp(command, command_list[i].call_string) == 0) {
+				return command_list[i].function;
+			}
+		}
+		return NULL;
 	}
 
-	void deactivateLED(char* input_string, char* output_string, char* parameter_string)
-	{
-		strcpy(output_string,"Turning LED off...\r\n\r\n");
-		uart->write((uint8_t*)output_string, (size_t)MAX_COMMAND_OUTPUT_SIZE);
-		Chip_GPIO_WritePortBit(LPC_GPIO, 2, 10, false);
-	}
+	 CommandArguments tokanize_params(const char *param_str, uint8_t &argc) {
+		char *str = const_cast<char*>(param_str);
+		char *tok = strtok(str, " ");
+		uint8_t i = 0;
+		argc = 0;
 
-	//Any debug functions must be added to this function else/if in addition
-	//to the function_index enum.
-	function_index commandFunctionLookup(char* command)
-	{
-		//Translate command string to a value
-		if(strcmp(command,"sampleFunction") == 0)
-			return SAMPLE_FUNCTION;
-		else if(strcmp(command,"activateLED") == 0)
-			return ACTIVATE_LED;
-		else if(strcmp(command,"deactivateLED") == 0)
-			return DEACTIVATE_LED;
-		else if(strcmp(command,"switchLED") == 0)
-			return SWITCH_LED;
-		else
-			return INVALID;
+		while(tok != NULL) {
+			argc++;
+			tok = strtok(NULL, " ");
+		}
+
+		CommandArguments argv = std::unique_ptr<char*[]>(new char*[argc]);
+
+		str = const_cast<char*>(param_str);
+		tok = strtok(str, " ");
+		while(tok != NULL) {
+			argv[i++] = tok;
+			tok = strtok(NULL, " ");
+		}
+
+		return argv;
 	}
 }
 

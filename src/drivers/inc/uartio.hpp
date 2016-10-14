@@ -60,6 +60,7 @@ public:
 	 * @return NONE on SUCCESS, MEMORY_ALLOCATION_ERROR if there is a problem allocating memory
 	 * @notes
 	 * This function must be called prior to using any of the driver functionality
+	 * In the implemation of this driver using the bullshit ring buffer the size must be a power of 2...
 	 */
 	UartError allocate_buffers(uint16_t tx_buffer_size, uint16_t rx_buffer_size);
 
@@ -142,17 +143,17 @@ private:
 	GpdmaChannel *tx_dma_channel = NULL;
 	GpdmaChannel *rx_dma_channel = NULL;
 
-	volatile bool is_writing = false;
-	volatile bool is_reading = false;
-	volatile bool is_write_async = false;
-	volatile bool is_read_async = false;
+	bool is_writing = false;
+	bool is_reading = false;
+	bool is_write_async = false;
+	bool is_read_async = false;
 
 	LPC_USART_T *uart;
 	uint32_t baud_rate;
 	RINGBUFF_T tx_ring;
 	RINGBUFF_T rx_ring;
-	uint8_t *tx_buffer;
-	uint8_t *rx_buffer;
+	uint8_t volatile *tx_buffer;
+	uint8_t volatile *rx_buffer;
 	uint8_t *tx_buffer_ring;
 	uint8_t *rx_buffer_ring;
 	uint16_t tx_buffer_len;

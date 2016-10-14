@@ -137,7 +137,7 @@ UartError UartIo::write(uint8_t* data, uint16_t length)
 			return UART_ERROR_BUFFER_OVERFLOW;
 		}
 
-		memcpy(this->tx_buffer, data, length);
+		memcpy(const_cast<uint8_t*>(this->tx_buffer), data, length);
 
 		this->tx_dma_channel->register_callback([this](DmaError status){
 			xSemaphoreGiveFromISR(this->tx_transfer_semaphore, NULL);
@@ -177,7 +177,7 @@ UartError UartIo::write_async(uint8_t* data, uint16_t length, UartWriteDelegate&
 			return UART_ERROR_BUFFER_OVERFLOW;
 		}
 
-		memcpy(this->tx_buffer, data, length);
+		memcpy(const_cast<uint8_t*>(this->tx_buffer), data, length);
 
 		this->tx_dma_channel->register_callback([this](DmaError status){
 			(*this->tx_delegate)(UART_ERROR_NONE);
@@ -259,7 +259,8 @@ UartError UartIo::read_async(uint16_t length, UartReadDelegate& delegate) {
 		}
 
 		this->rx_dma_channel->register_callback([this](DmaError status) {
-			auto read_data = std::shared_ptr<UartReadData>(new UartReadData(this->rx_buffer, this->rx_op_len, UART_ERROR_NONE));
+			auto read_data = std::shared_ptr<UartReadData>(
+					new UartReadData(const_cast<uint8_t*>(this->rx_buffer), this->rx_op_len, UART_ERROR_NONE));
 			(*this->rx_delegate)(read_data);
 		});
 		this->rx_dma_channel->start_transfer(
@@ -343,8 +344,9 @@ void UartIo::uartInterruptHandler(void){
 		if(this->is_read_async) {
 			this->is_read_async = false;
 
-			Chip_UART_ReadRB(this->uart, &this->rx_ring, this->rx_buffer, this->rx_op_len);
-			auto read_data = std::shared_ptr<UartReadData>(new UartReadData(this->rx_buffer, this->rx_op_len, UART_ERROR_NONE));
+			Chip_UART_ReadRB(this->uart, &this->rx_ring, const_cast<uint8_t*>(this->rx_buffer), this->rx_op_len);
+			auto read_data = std::shared_ptr<UartReadData>(
+					new UartReadData(const_cast<uint8_t*>(this->rx_buffer), this->rx_op_len, UART_ERROR_NONE));
 			(*this->rx_delegate)(read_data);
 		}
 		else {
@@ -352,7 +354,7 @@ void UartIo::uartInterruptHandler(void){
 		}
 	}
 
-	if(RingBuffer_IsEmpty(&this->tx_ring) && this->is_writing);
+	if(RingBuffer_IsEmpty(&this->tx_ring) && this->is_writing)
 	{
 		this->is_writing = false;
 

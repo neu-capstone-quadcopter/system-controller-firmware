@@ -36,7 +36,7 @@ namespace dma_test_task {
 
 	void start(void) {
 		uart = hal::get_driver<UartIo>(hal::CONSOLE_UART);
-		uart->allocate_buffers(100, 100);
+		uart->allocate_buffers(32, 32);
 
 		dma_man = hal::get_driver<GpdmaManager>(hal::GPDMA_MAN);
 		test_channel_tx = dma_man->allocate_channel(0);

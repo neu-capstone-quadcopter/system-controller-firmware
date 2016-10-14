@@ -48,12 +48,16 @@ UartError UartIo::allocate_buffers(uint16_t tx_buffer_size, uint16_t rx_buffer_s
 	this->tx_buffer = new uint8_t[tx_buffer_size];
 	this->rx_buffer = new uint8_t[rx_buffer_size];
 
+	this->tx_buffer_ring = new uint8_t[tx_buffer_size];
+	this->rx_buffer_ring = new uint8_t[rx_buffer_size];
+
 	if(!this->tx_buffer || !this->rx_buffer) {
 		return UART_ERROR_MEMORY_ALLOCATION;
 	}
 
-	RingBuffer_Init(&this->tx_ring, this->tx_buffer, 1, tx_buffer_size);
-	RingBuffer_Init(&this->rx_ring, this->rx_buffer, 1, rx_buffer_size);
+	// TODO: Fuck this ring buffer shit
+	RingBuffer_Init(&this->tx_ring, this->tx_buffer_ring, 1, tx_buffer_size);
+	RingBuffer_Init(&this->rx_ring, this->rx_buffer_ring, 1, rx_buffer_size);
 
 	this->tx_buffer_len = tx_buffer_size;
 	this->rx_buffer_len = rx_buffer_size;
@@ -124,9 +128,11 @@ UartError UartIo::write(uint8_t* data, uint16_t length)
 
 		memcpy(this->tx_buffer, data, length);
 
-		this->rx_dma_channel->register_callback([this](DmaError status){ this->tx_dma_handler(status); });
+		this->tx_dma_channel->register_callback([this](DmaError status){
+			xSemaphoreGiveFromISR(this->tx_transfer_semaphore, NULL);
+		});
 		this->tx_dma_channel->start_transfer(
-				(uint32_t)this->tx_buffer,
+				reinterpret_cast<uint32_t>(this->tx_buffer),
 				get_tx_dmareq(),
 				GPDMA_TRANSFERTYPE_M2P_CONTROLLER_DMA,
 				length);
@@ -163,10 +169,12 @@ UartError UartIo::read(uint8_t* data, uint16_t length)
 			return UART_ERROR_BUFFER_OVERFLOW;
 		}
 
-		this->rx_dma_channel->register_callback([this](DmaError status){ this->rx_dma_handler(status); });
+		this->rx_dma_channel->register_callback([this](DmaError status){
+			xSemaphoreGiveFromISR(this->tx_transfer_semaphore, NULL);
+		});
 		this->rx_dma_channel->start_transfer(
 				get_rx_dmareq(),
-				(uint32_t)data, //(uint32_t)this->rx_buffer,
+				reinterpret_cast<uint32_t>(data),
 				GPDMA_TRANSFERTYPE_P2M_CONTROLLER_DMA,
 				length);
 		xSemaphoreTake(this->rx_transfer_semaphore, portMAX_DELAY);
@@ -177,6 +185,28 @@ UartError UartIo::read(uint8_t* data, uint16_t length)
 	}
 	return UART_ERROR_GENERAL;
 }
+
+UartError UartIo::read_async(uint8_t *data, uint16_t length, UartReadHandler callback) {
+	switch(this->transfer_mode) {
+	case UART_XFER_MODE_POLLING:
+		return UART_ERROR_GENERAL;
+	case UART_XFER_MODE_INTERRUPT:
+	{
+		this->rx_callback = callback;
+		this->async_read_in_progress = true;
+		return UART_ERROR_NONE;
+	}
+	case UART_XFER_MODE_DMA:
+	{
+
+		return UART_ERROR_NONE;
+	}
+	default:
+		configASSERT(0);
+	}
+	return UART_ERROR_GENERAL;
+}
+
 
 void UartIo::readCharAsync(uart_char_read_callback callback)
 {
@@ -236,14 +266,6 @@ uint32_t UartIo::get_rx_dmareq(void) {
 	return GPDMA_CONN_UART0_Rx;
 }
 
-void UartIo::tx_dma_handler(DmaError status) {
-	xSemaphoreGiveFromISR(this->tx_transfer_semaphore, NULL);
-}
-
-void UartIo::rx_dma_handler(DmaError status) {
-	xSemaphoreGiveFromISR(this->rx_transfer_semaphore, NULL);
-}
-
 void UartIo::uartInterruptHandler(void){
 	Chip_UART_IRQRBHandler(this->uart, &this->rx_ring, &this->tx_ring);
 
@@ -253,11 +275,17 @@ void UartIo::uartInterruptHandler(void){
 		write_in_progress = false;
 	}
 
-	if(this->async_read_in_progress && !RingBuffer_IsEmpty(&this->rx_ring))
+	if(this->async_read_in_progress && RingBuffer_GetCount(&this->rx_ring) == this->rx_op_len)
 	{
-		uint8_t data;
-		Chip_UART_ReadRB(this->uart, &this->rx_ring, &data, 1);
-		this->callback(data);
+
+		Chip_UART_ReadRB(this->uart, &this->rx_ring, this->rx_buffer, this->rx_op_len);
+		//this->rx_callback(std::make_tuple(this->rx_buffer, this->rx_op_len, UART_ERROR_NONE));
+		UartReadData data = {
+				.data = this->rx_buffer,
+				.length = this->rx_op_len,
+				.status = UART_ERROR_NONE
+		};
+		this->rx_callback(data);
 		this->async_read_in_progress = false;
 	}
 	else if(this->read_in_progress)

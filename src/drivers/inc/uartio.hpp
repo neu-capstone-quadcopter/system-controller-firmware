@@ -9,6 +9,8 @@
 #define DRIVERS_INC_UARTIO_HPP_
 
 #include <cstdint>
+#include <functional>
+//#include <tuple>
 #include "driver.hpp"
 #include "chip.h"
 #include "FreeRTOS.h"
@@ -32,6 +34,15 @@ enum UartError {
 	UART_ERROR_DMA_IN_USE,
 	UART_ERROR_BUFFER_OVERFLOW
 };
+
+
+struct UartReadData {
+	uint8_t *data;
+	uint16_t length;
+	UartError status;
+};
+
+typedef std::function<void (UartReadData)> UartReadHandler;
 
 class UartIo : public Driver {
 public:
@@ -71,7 +82,18 @@ public:
 	 */
 	UartError set_transfer_mode(UartTransferMode mode);
 
+	/*
+	 * @brief Add references to DMA channels to UART instances
+	 * @param tx_channel: Pointer to tx dma channel
+	 * @param rx_channel: Pointer to rx dma channel
+	 * @return NONE on success
+	 */
 	UartError bind_dma_channels(GpdmaChannel *tx_channel, GpdmaChannel *rx_channel);
+
+	/*
+	 * @brief Unbind refrences to stored DMA channels to free them up for other uses
+	 * @return NONE on success
+	 */
 	UartError unbind_dma_channels(void);
 
 	/*
@@ -94,13 +116,13 @@ public:
 	 */
 	UartError read(uint8_t* data, uint16_t length);
 
+	UartError read_async(uint8_t *data, uint16_t length, UartReadHandler callback);
+
 	inline void readChar(uint8_t* data) {read(data, 1);}
 	inline void writeChar(uint8_t data) {write(&data,1);}
 	void readCharAsync(uart_char_read_callback callback);
 
 	void uartInterruptHandler(void);
-	void tx_dma_handler(DmaError status);
-	void rx_dma_handler(DmaError status);
 private:
 	IRQn_Type get_nvic_irq(void);
 	uint32_t get_tx_dmareq(void);
@@ -124,11 +146,14 @@ private:
 	RINGBUFF_T rx_ring;
 	uint8_t *tx_buffer;
 	uint8_t *rx_buffer;
+	uint8_t *tx_buffer_ring;
+	uint8_t *rx_buffer_ring;
 	uint16_t tx_buffer_len;
 	uint16_t rx_buffer_len;
 	uint16_t rx_op_len;
 
 	uart_char_read_callback callback;
+	UartReadHandler rx_callback;
 };
 
 

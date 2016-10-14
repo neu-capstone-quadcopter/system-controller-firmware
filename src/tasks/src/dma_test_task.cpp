@@ -62,6 +62,7 @@ namespace dma_test_task {
 		// Async example
 		uart->read_async(5, read_del);
 		while(true) {
+			vTaskDelay(800); // Sleep forever!
 			asm("nop;");
 		}
 	}

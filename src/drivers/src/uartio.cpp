@@ -23,6 +23,7 @@
 
 UartReadData::UartReadData(uint8_t* data, uint16_t length, UartError status) {
 	this->data = std::unique_ptr<uint8_t>(new uint8_t[length]);
+	memcpy(this->data.get(), data, length);
 	this->length = length;
 	this->status = status;
 }
@@ -176,7 +177,7 @@ UartError UartIo::read(uint8_t* data, uint16_t length)
 		}
 
 		this->rx_dma_channel->register_callback([this](DmaError status){
-			xSemaphoreGiveFromISR(this->tx_transfer_semaphore, NULL);
+			xSemaphoreGiveFromISR(this->rx_transfer_semaphore, NULL);
 		});
 		this->rx_dma_channel->start_transfer(
 				get_rx_dmareq(),
@@ -205,6 +206,24 @@ UartError UartIo::read_async(uint16_t length, UartReadHandler& callback) {
 	}
 	case UART_XFER_MODE_DMA:
 	{
+		if(this->rx_dma_channel->is_active()) {
+			return UART_ERROR_DMA_IN_USE;
+		}
+
+		if(length > this->rx_buffer_len) {
+			return UART_ERROR_BUFFER_OVERFLOW;
+		}
+
+		this->rx_dma_channel->register_callback([this](DmaError status){
+			std::shared_ptr<UartReadData> read_data =
+					std::shared_ptr<UartReadData>(new UartReadData(this->rx_buffer, this->rx_op_len, UART_ERROR_NONE));
+			(*this->rx_callback)(read_data);
+		});
+		this->rx_dma_channel->start_transfer(
+				get_rx_dmareq(),
+				reinterpret_cast<uint32_t>(this->rx_buffer),
+				GPDMA_TRANSFERTYPE_P2M_CONTROLLER_DMA,
+				length);
 		return UART_ERROR_NONE;
 	}
 	default:
@@ -286,7 +305,7 @@ void UartIo::uartInterruptHandler(void){
 
 		Chip_UART_ReadRB(this->uart, &this->rx_ring, this->rx_buffer, this->rx_op_len);
 		std::shared_ptr<UartReadData> read_data =
-				std::make_shared<UartReadData>(this->rx_buffer, this->rx_op_len, UART_ERROR_NONE);
+				std::shared_ptr<UartReadData>(new UartReadData(this->rx_buffer, this->rx_op_len, UART_ERROR_NONE));
 		(*this->rx_callback)(read_data);
 		this->async_read_in_progress = false;
 	}

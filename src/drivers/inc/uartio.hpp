@@ -125,10 +125,6 @@ public:
 
 	UartError read_async(uint16_t length, UartReadDelegate& delegate);
 
-	inline void readChar(uint8_t* data) {read(data, 1);}
-	inline void writeChar(uint8_t data) {write(&data,1);}
-	void readCharAsync(uart_char_read_callback callback);
-
 	void uartInterruptHandler(void);
 private:
 	IRQn_Type get_nvic_irq(void);

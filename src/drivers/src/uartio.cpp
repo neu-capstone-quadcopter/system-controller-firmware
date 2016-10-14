@@ -276,14 +276,6 @@ UartError UartIo::read_async(uint16_t length, UartReadDelegate& delegate) {
 	return UART_ERROR_GENERAL;
 }
 
-
-void UartIo::readCharAsync(uart_char_read_callback callback)
-{
-	this->callback = callback;
-	this->is_read_async = true;
-
-}
-
 IRQn_Type UartIo::get_nvic_irq(void){
 	switch((uint32_t)this->uart)
 	{

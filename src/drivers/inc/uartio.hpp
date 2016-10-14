@@ -45,7 +45,8 @@ struct UartReadData {
 	UartError status;
 };
 
-typedef dlgt::delegate<void(*)(std::shared_ptr<UartReadData>)> UartReadHandler;
+typedef dlgt::delegate<void(*)(std::shared_ptr<UartReadData>)> UartReadDelegate;
+typedef dlgt::delegate<void(*)(UartError)> UartWriteDelegate;
 
 class UartIo : public Driver {
 public:
@@ -109,6 +110,8 @@ public:
 	 */
 	UartError write(uint8_t* data, uint16_t length);
 
+	UartError write_async(uint8_t* data, uint16_t length, UartWriteDelegate& delegate);
+
 	/*
 	 * @brief Read bytes from UART
 	 * @param data : Pointer to where the data is to be saved
@@ -119,7 +122,7 @@ public:
 	 */
 	UartError read(uint8_t* data, uint16_t length);
 
-	UartError read_async(uint16_t length, UartReadHandler& callback);
+	UartError read_async(uint16_t length, UartReadDelegate& delegate);
 
 	inline void readChar(uint8_t* data) {read(data, 1);}
 	inline void writeChar(uint8_t data) {write(&data,1);}
@@ -139,9 +142,10 @@ private:
 	GpdmaChannel *tx_dma_channel = NULL;
 	GpdmaChannel *rx_dma_channel = NULL;
 
-	bool write_in_progress = false;
-	bool read_in_progress = false;
-	bool async_read_in_progress = false;
+	volatile bool is_writing = false;
+	volatile bool is_reading = false;
+	volatile bool is_write_async = false;
+	volatile bool is_read_async = false;
 
 	LPC_USART_T *uart;
 	uint32_t baud_rate;
@@ -153,10 +157,12 @@ private:
 	uint8_t *rx_buffer_ring;
 	uint16_t tx_buffer_len;
 	uint16_t rx_buffer_len;
+	uint16_t tx_op_len;
 	uint16_t rx_op_len;
 
 	uart_char_read_callback callback;
-	UartReadHandler *rx_callback;
+	UartReadDelegate *rx_delegate;
+	UartWriteDelegate *tx_delegate;
 };
 
 

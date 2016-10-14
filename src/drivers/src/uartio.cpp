@@ -87,10 +87,12 @@ UartError UartIo::set_transfer_mode(UartTransferMode mode) {
 	}
 
 	if(mode == UART_XFER_MODE_DMA) {
-		this->uart->FCR |= UART_FCR_DMAMODE_SEL;
+		Chip_UART_SetupFIFOS(this->uart, (UART_FCR_FIFO_EN | UART_FCR_TRG_LEV2 |
+			                       UART_FCR_RX_RS | UART_FCR_TX_RS | UART_FCR_DMAMODE_SEL));
 	}
 	else {
-		this->uart->FCR &= ~UART_FCR_DMAMODE_SEL;
+		Chip_UART_SetupFIFOS(this->uart, (UART_FCR_FIFO_EN | UART_FCR_TRG_LEV2 |
+			                       UART_FCR_RX_RS | UART_FCR_TX_RS));
 	}
 
 	this->transfer_mode = mode;
@@ -114,12 +116,14 @@ UartError UartIo::unbind_dma_channels(void) {
 
 UartError UartIo::write(uint8_t* data, uint16_t length)
 {
+	this->tx_op_len = length;
+
 	switch(this->transfer_mode) {
 	case UART_XFER_MODE_POLLING:
 		// TODO: Maybe implement this lol
 		return UART_ERROR_GENERAL;
 	case UART_XFER_MODE_INTERRUPT:
-		write_in_progress = true;
+		is_writing = true;
 		Chip_UART_SendRB(this->uart, &this->tx_ring, data, length);
 		xSemaphoreTake(this->tx_transfer_semaphore, portMAX_DELAY);
 		return UART_ERROR_NONE;
@@ -152,16 +156,56 @@ UartError UartIo::write(uint8_t* data, uint16_t length)
 	return UART_ERROR_GENERAL;
 }
 
+UartError UartIo::write_async(uint8_t* data, uint16_t length, UartWriteDelegate& delegate) {
+	this->tx_delegate = &delegate;
+	this->tx_op_len = length;
+
+	switch(this->transfer_mode) {
+	case UART_XFER_MODE_INTERRUPT:
+		this->tx_delegate = &delegate;
+		is_writing = true;
+		is_write_async = true;
+		Chip_UART_SendRB(this->uart, &this->tx_ring, data, length);
+		return UART_ERROR_NONE;
+	case UART_XFER_MODE_DMA:
+	{
+		if(this->tx_dma_channel->is_active()) {
+			return UART_ERROR_DMA_IN_USE;
+		}
+
+		if(length > this->tx_buffer_len) {
+			return UART_ERROR_BUFFER_OVERFLOW;
+		}
+
+		memcpy(this->tx_buffer, data, length);
+
+		this->tx_dma_channel->register_callback([this](DmaError status){
+			(*this->tx_delegate)(UART_ERROR_NONE);
+		});
+		this->tx_dma_channel->start_transfer(
+				reinterpret_cast<uint32_t>(this->tx_buffer),
+				get_tx_dmareq(),
+				GPDMA_TRANSFERTYPE_M2P_CONTROLLER_DMA,
+				length);
+		return UART_ERROR_NONE;
+	}
+	default:
+		configASSERT(0);
+	}
+	return UART_ERROR_GENERAL;
+}
+
 UartError UartIo::read(uint8_t* data, uint16_t length)
 {
+	this->rx_op_len = length;
+
 	switch(this->transfer_mode) {
 	case UART_XFER_MODE_POLLING:
 		// TODO: Maybe implement this lol
 		return UART_ERROR_GENERAL;
 	case UART_XFER_MODE_INTERRUPT:
 	{
-		this->read_in_progress = true;
-		this->rx_op_len = length;
+		this->is_reading = true;
 		xSemaphoreTake(this->rx_transfer_semaphore, portMAX_DELAY);
 		Chip_UART_ReadRB(this->uart, &this->rx_ring, data, length);
 		return UART_ERROR_NONE;
@@ -193,15 +237,15 @@ UartError UartIo::read(uint8_t* data, uint16_t length)
 	return UART_ERROR_GENERAL;
 }
 
-UartError UartIo::read_async(uint16_t length, UartReadHandler& callback) {
+UartError UartIo::read_async(uint16_t length, UartReadDelegate& delegate) {
+	this->rx_delegate = &delegate;
+	this->rx_op_len = length;
+
 	switch(this->transfer_mode) {
-	case UART_XFER_MODE_POLLING:
-		return UART_ERROR_GENERAL;
 	case UART_XFER_MODE_INTERRUPT:
 	{
-		this->rx_callback = &callback;
-		this->rx_op_len = length;
-		this->async_read_in_progress = true;
+		this->is_reading = true;
+		this->is_read_async = true;
 		return UART_ERROR_NONE;
 	}
 	case UART_XFER_MODE_DMA:
@@ -214,10 +258,9 @@ UartError UartIo::read_async(uint16_t length, UartReadHandler& callback) {
 			return UART_ERROR_BUFFER_OVERFLOW;
 		}
 
-		this->rx_dma_channel->register_callback([this](DmaError status){
-			std::shared_ptr<UartReadData> read_data =
-					std::shared_ptr<UartReadData>(new UartReadData(this->rx_buffer, this->rx_op_len, UART_ERROR_NONE));
-			(*this->rx_callback)(read_data);
+		this->rx_dma_channel->register_callback([this](DmaError status) {
+			auto read_data = std::shared_ptr<UartReadData>(new UartReadData(this->rx_buffer, this->rx_op_len, UART_ERROR_NONE));
+			(*this->rx_delegate)(read_data);
 		});
 		this->rx_dma_channel->start_transfer(
 				get_rx_dmareq(),
@@ -236,7 +279,7 @@ UartError UartIo::read_async(uint16_t length, UartReadHandler& callback) {
 void UartIo::readCharAsync(uart_char_read_callback callback)
 {
 	this->callback = callback;
-	this->async_read_in_progress = true;
+	this->is_read_async = true;
 
 }
 
@@ -294,27 +337,31 @@ uint32_t UartIo::get_rx_dmareq(void) {
 void UartIo::uartInterruptHandler(void){
 	Chip_UART_IRQRBHandler(this->uart, &this->rx_ring, &this->tx_ring);
 
-	if(write_in_progress && RingBuffer_IsEmpty(&this->tx_ring));
-	{
-		xSemaphoreGiveFromISR(this->tx_transfer_semaphore, NULL);
-		write_in_progress = false;
-	}
+	if(RingBuffer_GetCount(&this->rx_ring) == this->rx_op_len && this->is_reading) {
+		this->is_reading = false;
 
-	if(this->async_read_in_progress && RingBuffer_GetCount(&this->rx_ring) == this->rx_op_len)
-	{
+		if(this->is_read_async) {
+			this->is_read_async = false;
 
-		Chip_UART_ReadRB(this->uart, &this->rx_ring, this->rx_buffer, this->rx_op_len);
-		std::shared_ptr<UartReadData> read_data =
-				std::shared_ptr<UartReadData>(new UartReadData(this->rx_buffer, this->rx_op_len, UART_ERROR_NONE));
-		(*this->rx_callback)(read_data);
-		this->async_read_in_progress = false;
-	}
-	else if(this->read_in_progress)
-	{
-		if(RingBuffer_GetCount(&this->rx_ring) == this->rx_op_len)
-		{
-			this->read_in_progress = false;
+			Chip_UART_ReadRB(this->uart, &this->rx_ring, this->rx_buffer, this->rx_op_len);
+			auto read_data = std::shared_ptr<UartReadData>(new UartReadData(this->rx_buffer, this->rx_op_len, UART_ERROR_NONE));
+			(*this->rx_delegate)(read_data);
+		}
+		else {
 			xSemaphoreGiveFromISR(this->rx_transfer_semaphore, NULL);
+		}
+	}
+
+
+	if(RingBuffer_IsEmpty(&this->tx_ring) && this->is_writing);
+	{
+		is_writing = false;
+
+		if(this->is_write_async) {
+			this->is_write_async = false;
+		}
+		else {
+			xSemaphoreGiveFromISR(this->tx_transfer_semaphore, NULL);
 		}
 	}
 }

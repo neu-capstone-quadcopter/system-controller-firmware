@@ -40,7 +40,7 @@ enum UartError {
 
 struct UartReadData {
 	UartReadData(uint8_t* data, uint16_t length, UartError status);
-	std::unique_ptr<uint8_t> data;
+	std::unique_ptr<uint8_t[]> data;
 	uint16_t length;
 	UartError status;
 };

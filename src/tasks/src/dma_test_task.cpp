@@ -32,7 +32,7 @@ namespace dma_test_task {
 	const char *str = "test\r\n";
 	uint8_t str_len = 6;
 
-	std::unique_ptr<uint8_t> last_read;
+	std::unique_ptr<uint8_t[]> last_read;
 
 	void start(void) {
 		uart = hal::get_driver<UartIo>(hal::CONSOLE_UART);

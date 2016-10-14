@@ -22,7 +22,7 @@
 #define DEFAULT_TRANSFER_MODE UART_XFER_MODE_INTERRUPT
 
 UartReadData::UartReadData(uint8_t* data, uint16_t length, UartError status) {
-	this->data = std::unique_ptr<uint8_t>(new uint8_t[length]);
+	this->data = std::unique_ptr<uint8_t[]>(new uint8_t[length]());
 	memcpy(this->data.get(), data, length);
 	this->length = length;
 	this->status = status;

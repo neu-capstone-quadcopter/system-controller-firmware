@@ -8,8 +8,9 @@
 #ifndef UTIL_INC_CONSOLE_FUNCTIONS_HPP_
 #define UTIL_INC_CONSOLE_FUNCTIONS_HPP_
 
+#include <cstdio>
+
 #include "hal.hpp"
-#include "uartio.hpp"
 
 namespace console_task {
 	typedef std::unique_ptr<char*[]> CommandArguments;
@@ -49,6 +50,12 @@ namespace console_task {
 		Chip_GPIO_WritePortBit(LPC_GPIO, 2, 10, false);
 	}
 
+	void get_mem(char* output_string, uint8_t argc, CommandArguments argv)
+	{
+		sprintf(output_string, "Free Memory: %d\r\nMemory Watermark: %d\r\n",
+				xPortGetFreeHeapSize(), xPortGetMinimumEverFreeHeapSize());
+	}
+
 	typedef void (*CommandFunction)(char*,uint8_t,CommandArguments);
 
 	struct CommandDescriptor {
@@ -61,6 +68,7 @@ namespace console_task {
 			{"activate_led", &activate_led},
 			{"deactivate_led", &deactivate_led},
 			{"set_led", &set_led},
+			{"get_mem", &get_mem},
 	};
 
 #define NUMBER_COMMANDS (sizeof(command_list) / sizeof(CommandDescriptor))

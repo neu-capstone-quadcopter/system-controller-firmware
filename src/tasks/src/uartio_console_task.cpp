@@ -51,7 +51,7 @@ namespace console_task {
 
 	typedef void (*commandLineFunction)(char*, char*, char*);
 
-	void uartReadHandler(uint8_t data);
+	static void uartReadHandler(std::shared_ptr<UartReadData> read_status);
 	static void task_loop(void *p);
 	function_index commandFunctionLookup(char*);
 	void sampleFunction(char*, char*, char*);
@@ -70,7 +70,9 @@ namespace console_task {
 	static char cmd_param_string[MAX_COMMAND_PARAM_SIZE] = {0};
 	static char last_cmd_input_stringv[MAX_COMMAND_INPUT_SIZE];
 	uint8_t cmd_input_index = 0;
-	char * new_line = "\r\n\r\n";
+	const char * new_line = "\r\n\r\n";
+
+	auto uart_read_del = dlgt::make_delegate(&uartReadHandler);
 
 	//Add any debug function to this array in the same order it appears
 	//in the function_index enum
@@ -81,7 +83,8 @@ namespace console_task {
 
 	void start(void) {
 		// Retrieve driver instances from HAL
-		uart = static_cast<UartIo*>(hal::get_driver(hal::CONSOLE_UART));
+		uart = hal::get_driver<UartIo>(hal::CONSOLE_UART);
+		uart->allocate_buffers(128, 32);
 
 		//Instantiate Queue
 		event_queue = xQueueCreate(EVENT_QUEUE_DEPTH, sizeof(Event));
@@ -94,7 +97,7 @@ namespace console_task {
 
 		for(;;) {
 			//Handle reading and writing at the same time
-			uart->readCharAsync(uartReadHandler);
+			uart->read_async(1, uart_read_del);
 			xQueueReceive(event_queue, &current_event, portMAX_DELAY);
 
 			switch(current_event.type)
@@ -132,7 +135,7 @@ namespace console_task {
 							cmd_input_index--;
 							cmd_input_string[cmd_input_index] = '\0';
 						}
-						char *back = "\b \b";
+						const char *back = "\b \b";
 						uart->write((uint8_t*)back, 3);
 						break;
 					}
@@ -147,7 +150,7 @@ namespace console_task {
 								cmd_input_string[cmd_input_index] = (char)current_event.data[0];
 								cmd_input_index++;
 
-								uart->writeChar(current_event.data[0]);
+								uart->write(current_event.data, 1);
 								break;
 							}
 						}
@@ -164,13 +167,15 @@ namespace console_task {
 		}
 	}
 
-	void uartReadHandler(uint8_t data)
+	void uartReadHandler(std::shared_ptr<UartReadData> read_status)
 	{
+		std::unique_ptr<uint8_t[]> read_data = std::move(read_status->data);
+
 		Event e;
 		e.type = READ_EVENT;
 		e.length = 1;
 
-		e.data[0] = data;
+		e.data[0] = read_data[0];
 		xQueueSendToBackFromISR(event_queue, &e, 0);
 	}
 

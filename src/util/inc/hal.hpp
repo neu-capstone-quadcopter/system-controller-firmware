@@ -14,7 +14,8 @@
 namespace hal {
 	// Add device drivers in order of dependence
 	typedef enum driver_identifier{
-		TELEM_CC1120_SSP = 0,
+		GPDMA_MAN = 0,
+		TELEM_CC1120_SSP,
 		CONSOLE_UART,
 		LED_0,
 		LED_1,
@@ -25,7 +26,8 @@ namespace hal {
 	} driver_identifier;
 
 	void init(void);
-	Driver *get_driver(driver_identifier id);
+	template <class T>
+	T *get_driver(driver_identifier id);
 }
 
 #endif /* UTIL_INC_HAL_HPP_ */

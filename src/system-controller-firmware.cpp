@@ -1,5 +1,5 @@
 /*
- * driver.hpp
+ * system-controller-firmware.cpp
  *
  *  Created on: Sep 2, 2016
  *      Author: nigil
@@ -21,9 +21,12 @@
 #include "telemetry_radio_task.hpp"
 #include "analog_sensor_collection_task.hpp"
 #include "uart_console_task.hpp"
+#include "dma_test_task.hpp"
 
 inline void* operator new (size_t size) { return pvPortMalloc(size); }
 inline void* operator new[] (size_t size) { return pvPortMalloc(size); }
+inline void operator delete (void *p) { vPortFree(p); }
+inline void operator delete[] (void *p) { vPortFree(p); }
 
 int main(void) {
 	board::setup_clocking();
@@ -31,8 +34,9 @@ int main(void) {
 
 	led_task::start();
 	//telemetry_radio_task::start();
-	sensor_task::start();
+	//sensor_task::start();
 	console_task::start();
+	//dma_test_task::start();
 
 	vTaskStartScheduler();
 

@@ -47,7 +47,7 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src/drivers/inc}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src/util/inc}&quot;"/>
 								</option>
-								<option id="com.crt.advproject.cpp.misc.dialect.968569262" name="Language standard" superClass="com.crt.advproject.cpp.misc.dialect" value="com.crt.advproject.misc.dialect.gnupp11" valueType="enumerated"/>
+								<option id="com.crt.advproject.cpp.misc.dialect.968569262" name="Language standard" superClass="com.crt.advproject.cpp.misc.dialect" value="com.crt.advproject.misc.dialect.cpp14" valueType="enumerated"/>
 								<option id="com.crt.advproject.cpp.exe.debug.option.optimization.level.965274617" name="Optimization Level" superClass="com.crt.advproject.cpp.exe.debug.option.optimization.level" value="gnu.cpp.compiler.optimization.level.optimize" valueType="enumerated"/>
 								<inputType id="com.crt.advproject.compiler.cpp.input.956490700" superClass="com.crt.advproject.compiler.cpp.input"/>
 							</tool>

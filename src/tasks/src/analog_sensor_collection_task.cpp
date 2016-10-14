@@ -29,8 +29,10 @@ namespace sensor_task {
 	static QueueHandle_t event_queue;
 
 	void start() {
-		adc = static_cast<Adc*>(hal::get_driver(hal::SENSOR_ADC));
-		mux = static_cast<Cd74hc4067*>(hal::get_driver(hal::CD74HC4067));
+		//adc = static_cast<Adc*>(hal::get_driver(hal::SENSOR_ADC));
+		adc = hal::get_driver<Adc>(hal::SENSOR_ADC);
+		//mux = static_cast<Cd74hc4067*>(hal::get_driver(hal::CD74HC4067));
+		mux = hal::get_driver<Cd74hc4067>(hal::CD74HC4067);
 		xTaskCreate(task_loop, "sensor task", 1536, NULL, 2, &task_handle);
 		event_queue = xQueueCreate(EVENT_QUEUE_DEPTH, sizeof(adc_event_t));
 	}

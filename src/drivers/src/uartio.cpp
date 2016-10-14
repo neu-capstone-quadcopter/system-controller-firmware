@@ -123,7 +123,7 @@ UartError UartIo::write(uint8_t* data, uint16_t length)
 		// TODO: Maybe implement this lol
 		return UART_ERROR_GENERAL;
 	case UART_XFER_MODE_INTERRUPT:
-		is_writing = true;
+		this->is_writing = true;
 		Chip_UART_SendRB(this->uart, &this->tx_ring, data, length);
 		xSemaphoreTake(this->tx_transfer_semaphore, portMAX_DELAY);
 		return UART_ERROR_NONE;
@@ -163,8 +163,8 @@ UartError UartIo::write_async(uint8_t* data, uint16_t length, UartWriteDelegate&
 	switch(this->transfer_mode) {
 	case UART_XFER_MODE_INTERRUPT:
 		this->tx_delegate = &delegate;
-		is_writing = true;
-		is_write_async = true;
+		this->is_writing = true;
+		this->is_write_async = true;
 		Chip_UART_SendRB(this->uart, &this->tx_ring, data, length);
 		return UART_ERROR_NONE;
 	case UART_XFER_MODE_DMA:
@@ -352,13 +352,14 @@ void UartIo::uartInterruptHandler(void){
 		}
 	}
 
-
 	if(RingBuffer_IsEmpty(&this->tx_ring) && this->is_writing);
 	{
-		is_writing = false;
+		this->is_writing = false;
 
 		if(this->is_write_async) {
 			this->is_write_async = false;
+
+			(*this->tx_delegate)(UART_ERROR_NONE);
 		}
 		else {
 			xSemaphoreGiveFromISR(this->tx_transfer_semaphore, NULL);

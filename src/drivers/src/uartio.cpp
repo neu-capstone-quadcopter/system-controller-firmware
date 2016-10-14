@@ -21,6 +21,12 @@
 #define DEFAULT_STOP_BIT UART_LCR_SBS_1BIT
 #define DEFAULT_TRANSFER_MODE UART_XFER_MODE_INTERRUPT
 
+UartReadData::UartReadData(uint8_t* data, uint16_t length, UartError status) {
+	this->data = std::unique_ptr<uint8_t>(new uint8_t[length]);
+	this->length = length;
+	this->status = status;
+}
+
 UartIo::UartIo(LPC_USART_T *uart) {
 	this->uart = uart;
 	this->transfer_mode = DEFAULT_TRANSFER_MODE;
@@ -279,13 +285,9 @@ void UartIo::uartInterruptHandler(void){
 	{
 
 		Chip_UART_ReadRB(this->uart, &this->rx_ring, this->rx_buffer, this->rx_op_len);
-		//this->rx_callback(std::make_tuple(this->rx_buffer, this->rx_op_len, UART_ERROR_NONE));
-		UartReadData data = {
-				.data = this->rx_buffer,
-				.length = this->rx_op_len,
-				.status = UART_ERROR_NONE
-		};
-		(*this->rx_callback)(data);
+		std::shared_ptr<UartReadData> read_data =
+				std::make_shared<UartReadData>(this->rx_buffer, this->rx_op_len, UART_ERROR_NONE);
+		(*this->rx_callback)(read_data);
 		this->async_read_in_progress = false;
 	}
 	else if(this->read_in_progress)

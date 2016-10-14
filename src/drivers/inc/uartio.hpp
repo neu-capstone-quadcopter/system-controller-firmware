@@ -8,15 +8,18 @@
 #ifndef DRIVERS_INC_UARTIO_HPP_
 #define DRIVERS_INC_UARTIO_HPP_
 
-#include <delegate.hpp>
+
 #include <cstdint>
-#include <functional>
-#include "driver.hpp"
-#include "chip.h"
+#include <memory>
+
+#include "delegate.hpp"
+
 #include "FreeRTOS.h"
 #include "semphr.h"
 
 #include "gpdma.hpp"
+#include "driver.hpp"
+#include "chip.h"
 
 typedef void (*uart_char_read_callback)(uint8_t);
 
@@ -35,14 +38,14 @@ enum UartError {
 	UART_ERROR_BUFFER_OVERFLOW
 };
 
-
 struct UartReadData {
-	uint8_t *data;
+	UartReadData(uint8_t* data, uint16_t length, UartError status);
+	std::unique_ptr<uint8_t> data;
 	uint16_t length;
 	UartError status;
 };
 
-typedef dlgt::delegate<void(*)(UartReadData)> UartReadHandler;
+typedef dlgt::delegate<void(*)(std::shared_ptr<UartReadData>)> UartReadHandler;
 
 class UartIo : public Driver {
 public:

@@ -25,8 +25,8 @@
 
 inline void* operator new (size_t size) { return pvPortMalloc(size); }
 inline void* operator new[] (size_t size) { return pvPortMalloc(size); }
-inline void operator delete (void *) { asm("nop;"); }
-inline void operator delete[] (void *) { asm("nop;"); }
+inline void operator delete (void *p) { vPortFree(p); }
+inline void operator delete[] (void *p) { vPortFree(p); }
 
 int main(void) {
 	board::setup_clocking();

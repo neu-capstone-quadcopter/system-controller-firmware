@@ -6,6 +6,7 @@
  */
 
 #include <cstdint>
+#include <memory>
 
 #include "FreeRTOS.h"
 #include "task.h"
@@ -19,7 +20,7 @@
 
 namespace dma_test_task {
 	static void task_loop(void *p);
-	static void read_handler(UartReadData data);
+	static void read_handler(std::shared_ptr<UartReadData> data);
 
 	TaskHandle_t task_handle;
 	SemaphoreHandle_t semphr;
@@ -30,6 +31,8 @@ namespace dma_test_task {
 
 	const char *str = "test\r\n";
 	uint8_t str_len = 6;
+
+	std::unique_ptr<uint8_t> last_read;
 
 	void start(void) {
 		uart = hal::get_driver<UartIo>(hal::CONSOLE_UART);
@@ -52,13 +55,15 @@ namespace dma_test_task {
 			auto del = dlgt::make_delegate(&read_handler);
 			uart->read_async(5, del);
 			xSemaphoreTake(semphr, portMAX_DELAY);
+			uart->write(last_read.get(), 5);
 
 			//uart->write((uint8_t *)str, 6);
 			//uart->read(array, 4);
 		}
 	}
 
-	static void read_handler(UartReadData data) {
+	static void read_handler(std::shared_ptr<UartReadData> read_status) {
+		last_read = std::move(read_status->data);
 		xSemaphoreGive(semphr);
 	}
 }

@@ -330,7 +330,7 @@ uint32_t UartIo::get_rx_dmareq(void) {
 void UartIo::uartInterruptHandler(void){
 	Chip_UART_IRQRBHandler(this->uart, &this->rx_ring, &this->tx_ring);
 
-	if(RingBuffer_GetCount(&this->rx_ring) == this->rx_op_len && this->is_reading) {
+	if(RingBuffer_GetCount(&this->rx_ring) >= this->rx_op_len && this->is_reading) {
 		this->is_reading = false;
 
 		if(this->is_read_async) {

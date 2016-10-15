@@ -60,7 +60,7 @@ namespace console_task {
 	static char cmd_output_string[MAX_COMMAND_OUTPUT_SIZE] = {0};
 	static char cmd_param_string[MAX_COMMAND_PARAM_SIZE] = {0};
 	uint8_t cmd_input_index = 0;
-	const char * new_line = "\r\n\r\n";
+	const char * new_line = "\r\n";
 
 	auto uart_read_del = dlgt::make_delegate(&uart_read_handler);
 
@@ -208,7 +208,7 @@ namespace console_task {
 
 		if(command_function == NULL)
 		{
-			strcpy(output_string,"Invalid Command\r\n\r\n");
+			strcpy(output_string,"Invalid Command\r\n");
 		}
 		else
 		{

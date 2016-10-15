@@ -24,35 +24,36 @@ namespace console_task {
 	{
 		if(!strcmp(argv[0],"on"))
 		{
-			strcpy(output_string,"Turning LED on...\r\n\r\n");
+			strcpy(output_string,"Turning LED on...\r\n");
 			Chip_GPIO_WritePortBit(LPC_GPIO, 2, 10, true);
 		}
 		else if(!strcmp(argv[0],"off"))
 		{
-			strcpy(output_string,"Turning LED off...\r\n\r\n");
+			strcpy(output_string,"Turning LED off...\r\n");
 			Chip_GPIO_WritePortBit(LPC_GPIO, 2, 10, false);
 		}
 		else
 		{
-			strcpy(output_string, "Invalid Parameter -- options: \'on\' or \'off\'...\r\n\r\n");
+			strcpy(output_string, "Invalid Parameter -- options: \'on\' or \'off\'...\r\n");
 		}
 	}
 
 	void activate_led(char* output_string, uint8_t argc, CommandArguments argv)
 	{
-		strcpy(output_string,"Turning LED on...\r\n\r\n");
+		strcpy(output_string,"Turning LED on...\r\n");
 		Chip_GPIO_WritePortBit(LPC_GPIO, 2, 10, true);
 	}
 
 	void deactivate_led(char* output_string, uint8_t argc, CommandArguments argv)
 	{
-		strcpy(output_string,"Turning LED off...\r\n\r\n");
+		strcpy(output_string,"Turning LED off...\r\n");
 		Chip_GPIO_WritePortBit(LPC_GPIO, 2, 10, false);
 	}
 
 	void get_mem(char* output_string, uint8_t argc, CommandArguments argv)
 	{
-		sprintf(output_string, "Free Memory: %d\r\nMemory Watermark: %d\r\n",
+		sprintf(output_string, "Free Memory: %d\r\n"
+				"Memory Watermark: %d\r\n",
 				xPortGetFreeHeapSize(), xPortGetMinimumEverFreeHeapSize());
 	}
 

@@ -109,9 +109,9 @@ public:
 	 * @note
 	 * The data will be send via whatever tx transfer mode you setup
 	 */
-	UartError write(uint8_t* data, uint16_t length);
+	UartError write(const uint8_t* data, uint16_t length);
 
-	UartError write_async(uint8_t* data, uint16_t length, UartWriteDelegate& delegate);
+	UartError write_async(const uint8_t* data, uint16_t length, UartWriteDelegate& delegate);
 
 	/*
 	 * @brief Read bytes from UART

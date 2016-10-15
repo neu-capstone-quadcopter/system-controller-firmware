@@ -114,7 +114,7 @@ UartError UartIo::unbind_dma_channels(void) {
 	return UART_ERROR_NONE;
 }
 
-UartError UartIo::write(uint8_t* data, uint16_t length)
+UartError UartIo::write(const uint8_t* data, uint16_t length)
 {
 	this->tx_op_len = length;
 
@@ -156,7 +156,7 @@ UartError UartIo::write(uint8_t* data, uint16_t length)
 	return UART_ERROR_GENERAL;
 }
 
-UartError UartIo::write_async(uint8_t* data, uint16_t length, UartWriteDelegate& delegate) {
+UartError UartIo::write_async(const uint8_t* data, uint16_t length, UartWriteDelegate& delegate) {
 	this->tx_delegate = &delegate;
 	this->tx_op_len = length;
 

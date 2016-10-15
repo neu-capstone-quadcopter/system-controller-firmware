@@ -24,11 +24,11 @@
 
 
 #define EVENT_QUEUE_DEPTH 10
-#define NEW_LINE_LENGTH 4
 #define MAX_COMMAND_INPUT_SIZE 255
 #define MAX_COMMAND_OUTPUT_SIZE 255
 #define MAX_COMMAND_PARAM_SIZE 255
 #define ASCII_DEL ( 0x7F )
+#define NEWLINE_STR "\r\n"
 
 namespace console_task {
 
@@ -47,7 +47,7 @@ namespace console_task {
 
 	static void uart_read_handler(std::shared_ptr<UartReadData> read_status);
 	static void task_loop(void *p);
-	void interpret_command_call(char*, char*, char*, uint8_t);
+	void interpret_command_call(char* input_string, char* output_string, uint8_t length);
 	CommandFunction command_lookup(char* command);
 	void tokanize_command_string(char *str, uint8_t &argc, char** argv);
 
@@ -58,9 +58,7 @@ namespace console_task {
 	//Command line variables
 	static char cmd_input_string[MAX_COMMAND_INPUT_SIZE] = {0};
 	static char cmd_output_string[MAX_COMMAND_OUTPUT_SIZE] = {0};
-	static char cmd_param_string[MAX_COMMAND_PARAM_SIZE] = {0};
 	uint8_t cmd_input_index = 0;
-	const char * new_line = "\r\n";
 
 	auto uart_read_del = dlgt::make_delegate(&uart_read_handler);
 
@@ -89,15 +87,13 @@ namespace console_task {
 				//If we pressed return key
 				if(current_event.data[0] == '\n' || current_event.data[0] == '\r')
 				{
-					//Write newline/execute command
-					uart->write((uint8_t*)new_line, NEW_LINE_LENGTH);
-					interpret_command_call(cmd_input_string, cmd_output_string, cmd_param_string, (uint8_t)cmd_input_index);
+					uart->write(reinterpret_cast<const uint8_t*>(NEWLINE_STR), sizeof(NEWLINE_STR) - 1);
+					interpret_command_call(cmd_input_string, cmd_output_string, (uint8_t)cmd_input_index);
 
 					//reset control strings
 					cmd_input_index = 0;
 					memset(cmd_input_string, 0x00, MAX_COMMAND_INPUT_SIZE);
 					memset(cmd_output_string, 0x00, MAX_COMMAND_OUTPUT_SIZE);
-					memset(cmd_param_string, 0x00, MAX_COMMAND_PARAM_SIZE);
 					break;
 				}
 				else
@@ -174,39 +170,9 @@ namespace console_task {
 		}
 	}
 
-	void interpret_command_call(char* input_string, char* output_string, char* param_string, uint8_t length)
+	void interpret_command_call(char* input_string, char* output_string, uint8_t length)
 	{
-		/*
-		//Generate command string
-		int space_index = 0;
-		char command[MAX_COMMAND_INPUT_SIZE] = {0};
-
-		//Everything up to first space is command
-		for(int i = 0; i <= length; i++)
-		{
-			char curr_char = input_string[i];
-			if(isspace(curr_char))
-			{
-				//Get current command/param string
-				space_index = i;
-				strncpy(command,input_string,space_index);
-
-				for(int j = space_index + 1; j < MAX_COMMAND_INPUT_SIZE; j++)
-				{
-					int curr_index = j - space_index -1;
-					param_string[curr_index] = input_string[j];
-				}
-
-				break;
-			}
-		}
-
-		//If no params passed, command is whole input string
-		if(space_index == 0)
-			strcpy(command, input_string);
-		*/
-
-		uint8_t cmd_argc;
+		uint8_t cmd_argc = 0;
 		char *cmd_argv[MAX_COMMAND_PARAMS];
 		tokanize_command_string(input_string, cmd_argc, cmd_argv);
 

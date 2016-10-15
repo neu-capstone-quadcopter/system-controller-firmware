@@ -26,7 +26,9 @@ namespace telemetry_radio_task {
 		RECEIVE
 	} TaskState;
 
-	struct Event {};
+	typedef enum {
+		TRANSMIT_SLOT_START,
+	} Event;
 
 
 	static void task_loop(void *p);
@@ -72,14 +74,26 @@ namespace telemetry_radio_task {
 
 		state = IDLE;
 
+		Event current_event;
+
 		for (;;) {
-			asm("nop;");
+			xQueueReceive(event_queue, &current_event, portMAX_DELAY);
+			switch (current_event) {
+			case TRANSMIT_SLOT_START:
+				// extract message contents
+				// serialize data
+				// trigger async send
+				break;
+			default:
+				configASSERT(0);
+				break;
+			}
 		}
 	}
 
 	static void enter_rx_state() {
 		state = RECEIVE;
-		telem_cc1120->access_command_strobe(SRX);
+		telem_cc1120->access_command_strobe_async(SRX, [](){});
 
 		BaseType_t pass;
 		pass = xTimerChangePeriod(state_timer, RX_STATE_TIME, 0);
@@ -92,7 +106,7 @@ namespace telemetry_radio_task {
 
 	static void enter_tx_state() {
 		state = TRANSMIT;
-		telem_cc1120->access_command_strobe(STX);
+		//telem_cc1120->access_command_strobe_async(STX, [](){});
 
 		BaseType_t pass;
 		pass = xTimerChangePeriod(state_timer, TX_STATE_TIME, 0);
@@ -101,6 +115,17 @@ namespace telemetry_radio_task {
 		if (!pass) {
 			configASSERT(0);
 		}
+
+		Event e = TRANSMIT_SLOT_START;
+		xQueueSendToBack(event_queue, &e, 0);
+
+		taskENTER_CRITICAL();
+		if (current_tx_queue == &tx_queue_0) {
+			current_tx_queue = &tx_queue_1;
+		} else {
+			current_tx_queue = &tx_queue_0;
+		}
+		taskEXIT_CRITICAL();
 	}
 
 	static void state_timer_handler(TimerHandle_t timer) {

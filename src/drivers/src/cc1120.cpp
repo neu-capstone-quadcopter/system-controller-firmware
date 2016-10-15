@@ -253,6 +253,10 @@ void Cc1120::access_command_strobe(command_strobe_address address) {
 	send_command(address, NULL, NULL, 0);
 }
 
+void Cc1120::access_command_strobe_async(command_strobe_address address, cc1120_callback_t callback) {
+	configASSERT(0);
+}
+
 void Cc1120::send_command(uint8_t command, uint8_t *tx_data, uint8_t *rx_data, uint8_t data_len) {
 	uint8_t op_tx_data[data_len + 1];
 	op_tx_data[0] = command;

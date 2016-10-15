@@ -57,6 +57,7 @@ public:
 	void read_register_single(uint8_t address, uint8_t *data);
 	void read_extended_register_single(uint8_t address, uint8_t *data);
 	void access_command_strobe(command_strobe_address address);
+	void access_command_strobe_async(command_strobe_address address, cc1120_callback_t callback);
 	void send_command(uint8_t command, uint8_t *tx_data, uint8_t *rx_data, uint8_t data_len);
 	void send_command_extended(uint8_t *command, uint8_t *tx_data, uint8_t *rx_data, uint8_t data_len);
 	bool pinint_handler(void);

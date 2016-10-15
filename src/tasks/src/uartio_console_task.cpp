@@ -7,10 +7,7 @@
 
 
 #include <cstddef>
-#include <stdio.h>
-#include <ctype.h>
 #include <cstring>
-#include <memory>
 
 #include "FreeRTOS.h"
 #include "task.h"

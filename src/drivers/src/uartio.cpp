@@ -114,7 +114,7 @@ UartError UartIo::unbind_dma_channels(void) {
 	return UART_ERROR_NONE;
 }
 
-UartError UartIo::write(uint8_t* data, uint16_t length)
+UartError UartIo::write(const uint8_t* data, uint16_t length)
 {
 	this->tx_op_len = length;
 
@@ -156,7 +156,7 @@ UartError UartIo::write(uint8_t* data, uint16_t length)
 	return UART_ERROR_GENERAL;
 }
 
-UartError UartIo::write_async(uint8_t* data, uint16_t length, UartWriteDelegate& delegate) {
+UartError UartIo::write_async(const uint8_t* data, uint16_t length, UartWriteDelegate& delegate) {
 	this->tx_delegate = &delegate;
 	this->tx_op_len = length;
 
@@ -330,7 +330,7 @@ uint32_t UartIo::get_rx_dmareq(void) {
 void UartIo::uartInterruptHandler(void){
 	Chip_UART_IRQRBHandler(this->uart, &this->rx_ring, &this->tx_ring);
 
-	if(RingBuffer_GetCount(&this->rx_ring) == this->rx_op_len && this->is_reading) {
+	if(RingBuffer_GetCount(&this->rx_ring) >= this->rx_op_len && this->is_reading) {
 		this->is_reading = false;
 
 		if(this->is_read_async) {

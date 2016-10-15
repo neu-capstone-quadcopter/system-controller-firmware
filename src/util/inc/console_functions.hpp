@@ -50,11 +50,21 @@ namespace console_task {
 		Chip_GPIO_WritePortBit(LPC_GPIO, 2, 10, false);
 	}
 
-	void get_mem(char* output_string, uint8_t argc, CommandArguments argv)
+	void get_mem_info(char* output_string, uint8_t argc, CommandArguments argv)
 	{
 		sprintf(output_string, "Free Memory: %d\r\n"
 				"Memory Watermark: %d\r\n",
 				xPortGetFreeHeapSize(), xPortGetMinimumEverFreeHeapSize());
+	}
+
+	void get_task_info(char* output_string, uint8_t argc, CommandArguments argv)
+	{
+		vTaskList(output_string);
+	}
+
+	void get_runtime_info(char* output_string, uint8_t argc, CommandArguments argv)
+	{
+		vTaskGetRunTimeStats(output_string);
 	}
 
 	typedef void (*CommandFunction)(char*,uint8_t,CommandArguments);
@@ -69,7 +79,9 @@ namespace console_task {
 			{"activate_led", &activate_led},
 			{"deactivate_led", &deactivate_led},
 			{"set_led", &set_led},
-			{"get_mem", &get_mem},
+			{"get_mem_info", &get_mem_info},
+			{"get_task_info", &get_task_info},
+			{"get_runtime_info", &get_runtime_info},
 	};
 
 #define NUMBER_COMMANDS (sizeof(command_list) / sizeof(CommandDescriptor))

@@ -9,65 +9,114 @@
 #define UTIL_INC_CONSOLE_FUNCTIONS_HPP_
 
 #include <cstdio>
+#include <cstdlib>
 
 #include "hal.hpp"
 
 namespace console_task {
-	typedef std::unique_ptr<char*[]> CommandArguments;
+#define MAX_COMMAND_PARAMS 5
 
-	void sample_function(char* output_string, uint8_t argc, CommandArguments argv)
-	{
-		strcpy(output_string,"Sample function successfully called.\r\n");
-	}
+	const char *NOT_ENOUGH_ARGS_STR = "Not enough arguments\r\n";
+	const char *INVALID_ARGS_STR = "Invalid argument\r\n";
 
-	void set_led(char* output_string, uint8_t argc, CommandArguments argv)
-	{
-		if(!strcmp(argv[0],"on"))
-		{
-			strcpy(output_string,"Turning LED on...\r\n");
-			Chip_GPIO_WritePortBit(LPC_GPIO, 2, 10, true);
+	/*
+	 * set_pin_dir <port> <pin> <state>
+	 * Set a GPIO on the MCU to input or output
+	 * state: INPUT or OUTPUT
+	 */
+	void set_pin_dir(char* output_string, uint8_t argc, char** argv) {
+		if(argc == 4) {
+			if(!strcmp(argv[3], "OUTPUT")) {
+				Chip_GPIO_WriteDirBit(LPC_GPIO, atoi(argv[1]), atoi(argv[2]), true);
+			}
+			else if(!strcmp(argv[3], "INPUT")) {
+				Chip_GPIO_WriteDirBit(LPC_GPIO, atoi(argv[1]), atoi(argv[2]), false);
+			}
+			else {
+				strcpy(output_string, INVALID_ARGS_STR);
+			}
 		}
-		else if(!strcmp(argv[0],"off"))
-		{
-			strcpy(output_string,"Turning LED off...\r\n");
-			Chip_GPIO_WritePortBit(LPC_GPIO, 2, 10, false);
-		}
-		else
-		{
-			strcpy(output_string, "Invalid Parameter -- options: \'on\' or \'off\'...\r\n");
+		else {
+			strcpy(output_string, NOT_ENOUGH_ARGS_STR);
 		}
 	}
 
-	void activate_led(char* output_string, uint8_t argc, CommandArguments argv)
-	{
-		strcpy(output_string,"Turning LED on...\r\n");
-		Chip_GPIO_WritePortBit(LPC_GPIO, 2, 10, true);
+	/*
+	 * write_pin <port> <pin> <state>
+	 * Set a GPIO output on the MCU
+	 * state: HIGH or LOW
+	 */
+	void write_pin(char* output_string, uint8_t argc, char** argv) {
+		if(argc == 4) {
+			if(!strcmp(argv[3], "HIGH")) {
+				Chip_GPIO_WritePortBit(LPC_GPIO, atoi(argv[1]), atoi(argv[2]), true);
+			}
+			else if(!strcmp(argv[3], "LOW")) {
+				Chip_GPIO_WritePortBit(LPC_GPIO, atoi(argv[1]), atoi(argv[2]), false);
+			}
+			else {
+				strcpy(output_string, argv[2]);
+			}
+		}
+		else {
+			strcpy(output_string, NOT_ENOUGH_ARGS_STR);
+		}
 	}
 
-	void deactivate_led(char* output_string, uint8_t argc, CommandArguments argv)
-	{
-		strcpy(output_string,"Turning LED off...\r\n");
-		Chip_GPIO_WritePortBit(LPC_GPIO, 2, 10, false);
+	/*
+	 * read_pin <port> <pin>
+	 * Read a GPIO on the MCU
+	 */
+	void read_pin(char* output_string, uint8_t argc, char** argv) {
+		if(argc == 3) {
+			sprintf(output_string, "%d\r\n", Chip_GPIO_ReadPortBit(LPC_GPIO, atoi(argv[1]), atoi(argv[2])));
+		}
+		else {
+			strcpy(output_string, NOT_ENOUGH_ARGS_STR);
+		}
 	}
 
-	void get_mem_info(char* output_string, uint8_t argc, CommandArguments argv)
+	void set_led(char* output_string, uint8_t argc, char** argv)
+	{
+		if(argc == 2) {
+			if(!strcmp(argv[1],"on"))
+			{
+				strcpy(output_string,"Turning LED on...\r\n");
+				Chip_GPIO_WritePortBit(LPC_GPIO, 2, 10, true);
+			}
+			else if(!strcmp(argv[1],"off"))
+			{
+				strcpy(output_string,"Turning LED off...\r\n");
+				Chip_GPIO_WritePortBit(LPC_GPIO, 2, 10, false);
+			}
+			else
+			{
+				strcpy(output_string, "Invalid Parameter -- options: \'on\' or \'off\'...\r\n");
+			}
+		}
+		else {
+			strcpy(output_string, NOT_ENOUGH_ARGS_STR);
+		}
+	}
+
+	void get_mem_info(char* output_string, uint8_t argc, char** argv)
 	{
 		sprintf(output_string, "Free Memory: %d\r\n"
 				"Memory Watermark: %d\r\n",
 				xPortGetFreeHeapSize(), xPortGetMinimumEverFreeHeapSize());
 	}
 
-	void get_task_info(char* output_string, uint8_t argc, CommandArguments argv)
+	void get_task_info(char* output_string, uint8_t argc, char** argv)
 	{
 		vTaskList(output_string);
 	}
 
-	void get_runtime_info(char* output_string, uint8_t argc, CommandArguments argv)
+	void get_runtime_info(char* output_string, uint8_t argc, char** argv)
 	{
 		vTaskGetRunTimeStats(output_string);
 	}
 
-	typedef void (*CommandFunction)(char*,uint8_t,CommandArguments);
+	typedef void (*CommandFunction)(char*,uint8_t,char**);
 
 	struct CommandDescriptor {
 		const char *call_string;
@@ -75,9 +124,9 @@ namespace console_task {
 	};
 
 	const CommandDescriptor command_list[] = {
-			{"sample_function", &sample_function},
-			{"activate_led", &activate_led},
-			{"deactivate_led", &deactivate_led},
+			{"set_pin_dir", &set_pin_dir},
+			{"write_pin", &write_pin},
+			{"read_pin", &read_pin},
 			{"set_led", &set_led},
 			{"get_mem_info", &get_mem_info},
 			{"get_task_info", &get_task_info},

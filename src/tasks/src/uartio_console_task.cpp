@@ -49,7 +49,7 @@ namespace console_task {
 	static void task_loop(void *p);
 	void interpret_command_call(char*, char*, char*, uint8_t);
 	CommandFunction command_lookup(char* command);
-	CommandArguments tokanize_params(const char *param_str, uint8_t &argc);
+	void tokanize_command_string(char *str, uint8_t &argc, char** argv);
 
 	QueueHandle_t event_queue;
 	TaskHandle_t task_handle;
@@ -176,6 +176,7 @@ namespace console_task {
 
 	void interpret_command_call(char* input_string, char* output_string, char* param_string, uint8_t length)
 	{
+		/*
 		//Generate command string
 		int space_index = 0;
 		char command[MAX_COMMAND_INPUT_SIZE] = {0};
@@ -203,8 +204,13 @@ namespace console_task {
 		//If no params passed, command is whole input string
 		if(space_index == 0)
 			strcpy(command, input_string);
+		*/
 
-		CommandFunction command_function = command_lookup(command);
+		uint8_t cmd_argc;
+		char *cmd_argv[MAX_COMMAND_PARAMS];
+		tokanize_command_string(input_string, cmd_argc, cmd_argv);
+
+		CommandFunction command_function = command_lookup(cmd_argv[0]);
 
 		if(command_function == NULL)
 		{
@@ -212,9 +218,7 @@ namespace console_task {
 		}
 		else
 		{
-			uint8_t cmd_argc;
-			CommandArguments cmd_argv = tokanize_params(cmd_param_string, cmd_argc);
-			command_function(output_string, cmd_argc, std::move(cmd_argv));
+			command_function(output_string, cmd_argc, cmd_argv);
 		}
 
 		uart->write(reinterpret_cast<uint8_t*>(output_string), (size_t)MAX_COMMAND_OUTPUT_SIZE);
@@ -233,27 +237,13 @@ namespace console_task {
 		return NULL;
 	}
 
-	 CommandArguments tokanize_params(const char *param_str, uint8_t &argc) {
-		char *str = const_cast<char*>(param_str);
-		char *tok = strtok(str, " ");
-		uint8_t i = 0;
-		argc = 0;
-
-		while(tok != NULL) {
-			argc++;
-			tok = strtok(NULL, " ");
+	void tokanize_command_string(char *str, uint8_t &argc, char** argv) {
+		for(char *tok = strtok(str, " "); tok != NULL; tok = strtok(NULL, " ")) {
+			argv[argc++] = tok;
+			if(argc == MAX_COMMAND_PARAMS) {
+				break;
+			}
 		}
-
-		CommandArguments argv = std::unique_ptr<char*[]>(new char*[argc]);
-
-		str = const_cast<char*>(param_str);
-		tok = strtok(str, " ");
-		while(tok != NULL) {
-			argv[i++] = tok;
-			tok = strtok(NULL, " ");
-		}
-
-		return argv;
 	}
 }
 

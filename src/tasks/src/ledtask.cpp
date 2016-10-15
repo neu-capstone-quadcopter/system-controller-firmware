@@ -12,6 +12,8 @@
 
 #include "hal.hpp"
 #include "exampleled.hpp"
+#include "message_types.hpp"
+#include "telemetry_radio_task.hpp"
 
 namespace led_task {
 	static void task_loop(void *p);
@@ -37,6 +39,11 @@ namespace led_task {
 			led0->set_led(true);
 			led1->set_led(false);
 			vTaskDelay(100);
+
+			ExampleMessage* m = new ExampleMessage();
+			m->x = 1337;
+			m->y = "Im in the house!!";
+			telemetry_radio_task::queue_outgoing_message(m);
 		}
 	}
 }

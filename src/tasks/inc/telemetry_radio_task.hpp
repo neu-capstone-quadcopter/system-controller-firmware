@@ -10,9 +10,11 @@
 
 #include "FreeRTOS.h"
 #include "task.h"
+#include "message_types.hpp"
 
 namespace telemetry_radio_task {
 	void start(void);
+	void queue_outgoing_message(Message* message);
 }
 
 

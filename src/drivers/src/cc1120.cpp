@@ -60,10 +60,10 @@
 #define REG_XOSC5 0x32
 #define REG_XOSC1 0x36
 
-#define INIT_IOCONFIG3 0xB0
-#define INIT_IOCONFIG2 0x06
+#define INIT_IOCONFIG3 0x00
+#define INIT_IOCONFIG2 0x02
 #define INIT_IOCONFIG1 0xB0
-#define INIT_IOCONFIG0 0x40
+#define INIT_IOCONFIG0 0x10
 #define INIT_SYNC_CFG1 0x0B
 #define INIT_DEVIATION_M 0x48
 #define INIT_MODCFG_DEV_E 0x05
@@ -160,6 +160,8 @@ void Cc1120::init_device(void) {
 		// do something about the error, eh!
 	}
 
+	access_command_strobe(SNOP);
+
 	/*uint8_t test_data[4] = {0x01, 0x02, 0x03, 0x04};
 	uint8_t test_read[6];
 	read_extended_register_burst(0x00, test_read, 4);
@@ -247,10 +249,16 @@ void Cc1120::read_extended_register_burst(uint8_t address, uint8_t *data, uint8_
 	this->raw_status = data[0];
 }
 
+void Cc1120::access_command_strobe(command_strobe_address address) {
+	send_command(address, NULL, NULL, 0);
+}
+
 void Cc1120::send_command(uint8_t command, uint8_t *tx_data, uint8_t *rx_data, uint8_t data_len) {
 	uint8_t op_tx_data[data_len + 1];
 	op_tx_data[0] = command;
-	memcpy(op_tx_data + 1, tx_data, data_len);
+	if (tx_data) {
+		memcpy(op_tx_data + 1, tx_data, data_len);
+	}
 
 	this->ssp_device->read_write(op_tx_data, rx_data, data_len + 1);
 }

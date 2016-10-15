@@ -23,7 +23,8 @@ namespace telemetry_radio_task {
 	typedef enum {
 		IDLE,
 		TRANSMIT,
-		RECEIVE
+		RECEIVE,
+		RECEIVING_PACKET
 	} TaskState;
 
 	typedef enum {
@@ -47,6 +48,7 @@ namespace telemetry_radio_task {
 	static QueueHandle_t* current_tx_queue;
 	static TimerHandle_t state_timer;
 	static TaskState state;
+	static int16_t pkt_count = 0;
 
 	Cc1120 *telem_cc1120;
 
@@ -134,6 +136,7 @@ namespace telemetry_radio_task {
 			enter_tx_state();
 			break;
 		case TRANSMIT:
+			// TODO: Clean up transmission
 			enter_rx_state();
 			break;
 		default:
@@ -143,17 +146,7 @@ namespace telemetry_radio_task {
 	}
 
 	static void cc1120_gpio3_int_handler(void) {
-		switch (state) {
-		case RECEIVE:
-			// code
-			break;
-		case TRANSMIT:
-			// code
-			break;
-		default:
-			configASSERT(0);
-			break;
-		}
+
 	}
 
 	static void cc1120_gpio2_int_handler(void) {
@@ -173,7 +166,8 @@ namespace telemetry_radio_task {
 	static void cc1120_gpio0_int_handler(void) {
 		switch (state) {
 		case RECEIVE:
-			// code
+			pkt_count++;
+
 			break;
 		case TRANSMIT:
 			// code

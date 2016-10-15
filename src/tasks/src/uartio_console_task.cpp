@@ -154,7 +154,7 @@ namespace console_task {
 		uart->read_async(1, uart_read_del);
 	}
 
-	void sendDebugMessage(uint8_t *data, size_t length)
+	void send_debug_message(uint8_t *data, size_t length)
 	{
 		Event e;
 		e.type = DEBUG_MESSAGE_EVENT;
@@ -165,6 +165,11 @@ namespace console_task {
 			memcpy(e.data, data, length);
 			xQueueSendToBack(event_queue, &e, 0);
 		}
+	}
+
+	void send_debug_message(uint8_t *data, uint32_t length, int32_t *bytes_written) {
+		send_debug_message(data, length);
+		*bytes_written = length;
 	}
 
 	void interpret_command_call(char* input_string, char* output_string, uint8_t length)
@@ -208,5 +213,9 @@ namespace console_task {
 			}
 		}
 	}
+}
+
+void send_debug_message(uint8_t *data, uint32_t length, int32_t *bytes_written) {
+	console_task::send_debug_message(data, length, bytes_written);
 }
 

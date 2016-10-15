@@ -17,7 +17,7 @@ namespace console_task {
 
 	void sample_function(char* output_string, uint8_t argc, CommandArguments argv)
 	{
-		strcpy(output_string,"Sample function successfully called.\r\n\r\n");
+		strcpy(output_string,"Sample function successfully called.\r\n");
 	}
 
 	void set_led(char* output_string, uint8_t argc, CommandArguments argv)

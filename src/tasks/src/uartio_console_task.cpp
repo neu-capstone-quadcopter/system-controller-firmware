@@ -78,9 +78,8 @@ namespace console_task {
 	static void task_loop(void *p) {
 		Event current_event;
 
+		uart->read_async(1, uart_read_del);
 		for(;;) {
-			//Handle reading and writing at the same time
-			uart->read_async(1, uart_read_del);
 			xQueueReceive(event_queue, &current_event, portMAX_DELAY);
 
 			switch(current_event.type)
@@ -159,6 +158,7 @@ namespace console_task {
 
 		e.data[0] = read_data[0];
 		xQueueSendToBackFromISR(event_queue, &e, 0);
+		uart->read_async(1, uart_read_del);
 	}
 
 	void sendDebugMessage(uint8_t *data, size_t length)

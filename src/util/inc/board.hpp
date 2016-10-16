@@ -28,6 +28,7 @@ namespace board {
 	bool cc1120_is_gpio3_int(void);
 	bool cc1120_is_gpio2_int(void);
 	bool cc1120_is_gpio0_int(void);
+	void uart_init(LPC_USART_T *uart);
 }
 
 #endif /* UTIL_INC_BOARD_HPP_ */

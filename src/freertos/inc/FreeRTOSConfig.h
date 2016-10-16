@@ -76,13 +76,10 @@
 #define configCPU_CLOCK_HZ			( ( unsigned long ) Chip_Clock_GetMainClockRate() )
 #define configTICK_RATE_HZ			( ( portTickType ) 1000 )
 #define configMINIMAL_STACK_SIZE	( ( unsigned short ) 128 )
-#ifdef __CODE_RED
-#define configTOTAL_HEAP_SIZE		( ( size_t ) ( 16*1024 ) )
-#else
-#define configTOTAL_HEAP_SIZE		( ( size_t ) ( 0 ) )
-#endif
+#define configTOTAL_HEAP_SIZE		( ( size_t ) ( 22*1024 ) )
 #define configMAX_TASK_NAME_LEN		( 20 )
 #define configUSE_TRACE_FACILITY	1
+#define configUSE_STATS_FORMATTING_FUNCTIONS 1
 #define configUSE_16_BIT_TICKS		0
 #define configIDLE_SHOULD_YIELD		1
 #define configUSE_CO_ROUTINES 		0
@@ -96,7 +93,7 @@
 #define configCHECK_FOR_STACK_OVERFLOW	0
 #define configUSE_RECURSIVE_MUTEXES		1
 #define configQUEUE_REGISTRY_SIZE		10
-#define configGENERATE_RUN_TIME_STATS	0
+#define configGENERATE_RUN_TIME_STATS	1
 
 /* Set the following definitions to 1 to include the API function, or zero
 to exclude the API function. */
@@ -169,10 +166,16 @@ See http://www.FreeRTOS.org/RTOS-Cortex-M3-M4.html. */
 #endif /* defined(CORE_M4) */
 #endif /* defined(CORE_M3) */
 
+/* Defines for run time stats */
+#define portCONFIGURE_TIMER_FOR_RUN_TIME_STATS() init_runtime_stats_timer()
+#define portGET_RUN_TIME_COUNTER_VALUE() LPC_TIMER3->TC
+
 /* Definitions that map the FreeRTOS port interrupt handlers to their CMSIS
 standard names - or at least those used in the unmodified vector table. */
 #define vPortSVCHandler SVC_Handler
 #define xPortPendSVHandler PendSV_Handler
 #define xPortSysTickHandler SysTick_Handler
+
+#include "trcKernelPort.h"
 
 #endif /* FREERTOS_CONFIG_H */

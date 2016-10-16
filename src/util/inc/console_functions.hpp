@@ -136,6 +136,7 @@ namespace console_task {
 			{"get_mem_info", &get_mem_info},
 			{"get_task_info", &get_task_info},
 			{"get_runtime_info", &get_runtime_info},
+			{"start_trace", &start_trace},
 	};
 
 #define NUMBER_COMMANDS (sizeof(command_list) / sizeof(CommandDescriptor))

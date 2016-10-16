@@ -17,7 +17,6 @@ namespace console_task {
 	void start(void);
 
 	void send_debug_message(uint8_t *data, size_t length);
-	void send_debug_message(uint8_t *data, uint32_t length, int32_t *bytes_written);
 }
 
 

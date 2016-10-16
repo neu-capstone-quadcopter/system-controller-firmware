@@ -8,6 +8,7 @@
 #ifndef TRACE_INC_RECORDERDATA_LINKER_PRAGMA_H_
 #define TRACE_INC_RECORDERDATA_LINKER_PRAGMA_H_
 
-#pragma section RamAHB32
+#include <cr_section_macros.h>
+__BSS(RAM2)
 
 #endif /* TRACE_INC_RECORDERDATA_LINKER_PRAGMA_H_ */

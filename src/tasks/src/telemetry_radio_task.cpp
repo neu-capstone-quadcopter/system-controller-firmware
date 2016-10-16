@@ -72,7 +72,7 @@ namespace telemetry_radio_task {
 		telem_cc1120->gpio3_set_interrupt_pin_handler(cc1120_gpio3_int_handler);
 		telem_cc1120->gpio2_set_interrupt_pin_handler(cc1120_gpio2_int_handler);
 		telem_cc1120->gpio0_set_interrupt_pin_handler(cc1120_gpio0_int_handler);
-		telem_cc1120->access_command_strobe(SIDLE);
+		telem_cc1120->access_command_strobe(CommandStrobeAddress::SIDLE);
 
 		state = IDLE;
 
@@ -95,7 +95,7 @@ namespace telemetry_radio_task {
 
 	static void enter_rx_state() {
 		state = RECEIVE;
-		telem_cc1120->access_command_strobe_async(SRX, [](){});
+		telem_cc1120->access_command_strobe_async(CommandStrobeAddress::SRX, [](){});
 
 		BaseType_t pass;
 		pass = xTimerChangePeriod(state_timer, RX_STATE_TIME, 0);

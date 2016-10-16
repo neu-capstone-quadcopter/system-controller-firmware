@@ -160,7 +160,7 @@ void Cc1120::init_device(void) {
 		// do something about the error, eh!
 	}
 
-	access_command_strobe(SNOP);
+	access_command_strobe(CommandStrobeAddress::SNOP);
 
 	/*uint8_t test_data[4] = {0x01, 0x02, 0x03, 0x04};
 	uint8_t test_read[6];
@@ -249,11 +249,11 @@ void Cc1120::read_extended_register_burst(uint8_t address, uint8_t *data, uint8_
 	this->raw_status = data[0];
 }
 
-void Cc1120::access_command_strobe(command_strobe_address address) {
-	send_command(address, NULL, NULL, 0);
+void Cc1120::access_command_strobe(CommandStrobeAddress address) {
+	send_command(static_cast<uint8_t>(address), NULL, NULL, 0);
 }
 
-void Cc1120::access_command_strobe_async(command_strobe_address address, cc1120_callback_t callback) {
+void Cc1120::access_command_strobe_async(CommandStrobeAddress address, cc1120_callback_t callback) {
 	configASSERT(0);
 }
 

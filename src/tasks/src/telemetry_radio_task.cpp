@@ -19,6 +19,7 @@
 #define TX_QUEUE_DEPTH 10
 #define EVENT_QUEUE_DEPTH 10
 
+using namespace driver;
 namespace telemetry_radio_task {
 	typedef enum {
 		IDLE,
@@ -50,7 +51,7 @@ namespace telemetry_radio_task {
 	static TaskState state;
 	static int16_t pkt_count = 0;
 
-	Cc1120 *telem_cc1120;
+	driver::Cc1120 *telem_cc1120;
 
 	void start(void) {
 		// Retrieve driver instances from HAL
@@ -95,7 +96,9 @@ namespace telemetry_radio_task {
 
 	static void enter_rx_state() {
 		state = RECEIVE;
-		telem_cc1120->access_command_strobe_async(CommandStrobeAddress::SRX, [](){});
+		telem_cc1120->access_command_strobe_async(CommandStrobeAddress::SRX, [](Cc1120CommandStatus status){
+			asm("nop");
+		});
 
 		BaseType_t pass;
 		pass = xTimerChangePeriod(state_timer, RX_STATE_TIME, 0);

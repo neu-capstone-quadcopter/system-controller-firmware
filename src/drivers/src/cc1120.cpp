@@ -97,6 +97,8 @@
 #define INIT_XOSC5 0x0E
 #define INIT_XOSC1 0x03
 
+namespace driver {
+
 Cc1120::Cc1120(SspIo *ssp_device) {
 	this->ssp_device = ssp_device;
 }
@@ -175,15 +177,15 @@ void Cc1120::reset(void) {
 	Chip_GPIO_WritePortBit(LPC_GPIO, 2, 13, 1);
 }
 
-void Cc1120::gpio3_set_interrupt_pin_handler(cc1120_callback_t callback) {
+void Cc1120::gpio3_set_interrupt_pin_handler(Cc1120GpioInterruptHandler callback) {
 	gpio3_interrupt_callback = callback;
 }
 
-void Cc1120::gpio2_set_interrupt_pin_handler(cc1120_callback_t callback) {
+void Cc1120::gpio2_set_interrupt_pin_handler(Cc1120GpioInterruptHandler callback) {
 	gpio2_interrupt_callback = callback;
 }
 
-void Cc1120::gpio0_set_interrupt_pin_handler(cc1120_callback_t callback) {
+void Cc1120::gpio0_set_interrupt_pin_handler(Cc1120GpioInterruptHandler callback) {
 	gpio0_interrupt_callback = callback;
 }
 
@@ -191,8 +193,16 @@ void Cc1120::write_register_single(uint8_t address, uint8_t data) {
 	send_command(SPICMD_W_REGISTER(address), &data, NULL, 1);
 }
 
+void Cc1120::write_register_single_async(uint8_t address, uint8_t data, CC1120CommandCallback status) {
+	configASSERT(0);
+}
+
 void Cc1120::write_register_burst(uint8_t address, uint8_t *data, uint8_t data_len) {
 	send_command(SPICMD_W_BURST_REGISTER(address), data, NULL, data_len);
+}
+
+void write_register_burst_async(uint8_t address, uint8_t *data, uint8_t data_len, CC1120CommandCallback callback) {
+	configASSERT(0);
 }
 
 void Cc1120::write_extended_register_single(uint8_t address, uint8_t data) {
@@ -200,9 +210,17 @@ void Cc1120::write_extended_register_single(uint8_t address, uint8_t data) {
 	send_command_extended(command, &data, NULL, 1);
 }
 
+void Cc1120::write_extended_register_single_async(uint8_t address, uint8_t data, CC1120CommandCallback callback) {
+	configASSERT(0);
+}
+
 void Cc1120::write_extended_register_burst(uint8_t address, uint8_t *data, uint8_t data_len) {
 	uint8_t command [2] = {SPICMD_W__BURST_EXTENDED_REGISTER, address};
 	send_command_extended(command, data, NULL, data_len);
+}
+
+void Cc1120::write_extended_register_burst_async(uint8_t address, uint8_t *data, uint8_t data_len, CC1120CommandCallback callback) {
+	configASSERT(0);
 }
 
 void Cc1120::write_verify_register(uint8_t address, uint8_t data) {
@@ -214,6 +232,10 @@ void Cc1120::write_verify_register(uint8_t address, uint8_t data) {
 	}
 }
 
+void Cc1120::write_verify_register_async(uint8_t address, uint8_t data, CC1120CommandCallback callback) {
+	configASSERT(0);
+}
+
 void Cc1120::write_verify_extended_register(uint8_t address, uint8_t data) {
 	uint8_t result[3];
 	write_extended_register_single(address, data);
@@ -223,16 +245,28 @@ void Cc1120::write_verify_extended_register(uint8_t address, uint8_t data) {
 	}
 }
 
+void Cc1120::write_verify_extended_register_async(uint8_t address, uint8_t data, CC1120CommandCallback callback) {
+	configASSERT(0);
+}
+
 void Cc1120::read_register_single(uint8_t address, uint8_t *data) {
 	uint8_t dummy_data;
 	send_command(SPICMD_R_REGISTER(address), &dummy_data, data, 1);
 	this->raw_status = data[0];
 }
 
+void Cc1120::read_register_single_async(uint8_t address, uint8_t *data, CC1120CommandDataCallback callback) {
+	configASSERT(0);
+}
+
 void Cc1120::read_register_burst(uint8_t address, uint8_t *data, uint8_t data_len) {
 	uint8_t dummy_data[data_len];
 	send_command(SPICMD_R_BURST_REGISTER(address), dummy_data, data, data_len);
 	this->raw_status = data[0];
+}
+
+void Cc1120::read_register_burst_async(uint8_t address, uint8_t *data, uint8_t data_len, CC1120CommandDataCallback callback) {
+	configASSERT(0);
 }
 
 void Cc1120::read_extended_register_single(uint8_t address, uint8_t *data) {
@@ -242,6 +276,10 @@ void Cc1120::read_extended_register_single(uint8_t address, uint8_t *data) {
 	this->raw_status = data[0];
 }
 
+void Cc1120::read_extended_register_single_async(uint8_t address, uint8_t *data, CC1120CommandDataCallback callback) {
+	configASSERT(0);
+}
+
 void Cc1120::read_extended_register_burst(uint8_t address, uint8_t *data, uint8_t data_len) {
 	uint8_t dummy_data[data_len];
 	uint8_t command [2] = {SPICMD_R_BURST_EXTENDED_REGISTER, address};
@@ -249,11 +287,15 @@ void Cc1120::read_extended_register_burst(uint8_t address, uint8_t *data, uint8_
 	this->raw_status = data[0];
 }
 
+void Cc1120::read_extended_register_burst_async(uint8_t address, uint8_t *data, uint8_t data_len, CC1120CommandDataCallback callback) {
+	configASSERT(0);
+}
+
 void Cc1120::access_command_strobe(CommandStrobeAddress address) {
 	send_command(static_cast<uint8_t>(address), NULL, NULL, 0);
 }
 
-void Cc1120::access_command_strobe_async(CommandStrobeAddress address, cc1120_callback_t callback) {
+void Cc1120::access_command_strobe_async(CommandStrobeAddress address, CC1120CommandCallback callback) {
 	configASSERT(0);
 }
 
@@ -296,4 +338,5 @@ bool Cc1120::pinint_handler(void) {
 		return true;
 	}
 	return false;
+}
 }

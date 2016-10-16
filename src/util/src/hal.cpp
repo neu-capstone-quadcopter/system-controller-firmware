@@ -17,6 +17,8 @@
 #include "adc.hpp"
 #include "cd74hc4067.hpp"
 
+using namespace driver;
+
 namespace hal {
 	void add_drivers(void);
 

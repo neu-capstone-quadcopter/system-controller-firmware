@@ -43,7 +43,7 @@ enum class CommandStrobeAddress {
 
 typedef void (*Cc1120GpioInterruptHandler)(void);
 typedef void (*CC1120CommandCallback)(Cc1120CommandStatus);
-typedef void (*CC1120CommandDataCallback)(Cc1120CommandStatus, uint8_t*);
+typedef void (*CC1120CommandDataCallback)(Cc1120CommandStatus, uint8_t*, uint8_t);
 
 class Cc1120 : public Driver {
 public:

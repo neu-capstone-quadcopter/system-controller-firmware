@@ -170,4 +170,6 @@ standard names - or at least those used in the unmodified vector table. */
 #define xPortPendSVHandler PendSV_Handler
 #define xPortSysTickHandler SysTick_Handler
 
+#include "trcKernelPort.h"
+
 #endif /* FREERTOS_CONFIG_H */

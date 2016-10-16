@@ -116,6 +116,11 @@ namespace console_task {
 		vTaskGetRunTimeStats(output_string);
 	}
 
+	void start_trace(char* output_string, uint8_t argc, char** argv)
+	{
+		uiTraceStart();
+	}
+
 	typedef void (*CommandFunction)(char*,uint8_t,char**);
 
 	struct CommandDescriptor {
@@ -131,6 +136,7 @@ namespace console_task {
 			{"get_mem_info", &get_mem_info},
 			{"get_task_info", &get_task_info},
 			{"get_runtime_info", &get_runtime_info},
+			{"start_trace", &start_trace},
 	};
 
 #define NUMBER_COMMANDS (sizeof(command_list) / sizeof(CommandDescriptor))

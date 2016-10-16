@@ -30,6 +30,7 @@ inline void operator delete[] (void *p) { vPortFree(p); }
 
 int main(void) {
 	board::setup_clocking();
+	vTraceInitTraceData();
 	hal::init();
 
 	led_task::start();

@@ -16,6 +16,8 @@
 
 #define EVENT_QUEUE_DEPTH 8
 #define MAX_BUFFER_SIZE 255
+#define SBUS_CHANNEL_MASK 0x07ff
+#define SBUS_CHANNEL_BIT_LEN 11
 
 namespace flight_controller_task {
 
@@ -101,12 +103,26 @@ void read_from_uart() {
 
 }
 
-uint8_t* serializeSbusFrame(SBusFrame s)
+uint8_t* serialize_sbus_frame(SBusFrame frame)
 {
 	uint8_t* raw_frame = new uint8_t[25];
 	raw_frame[0] = 0xF0;
-	raw_frame[1] = s.channels[0] >> 3;
-	raw_frame[2] = ((s.channels[0] & 0xF3) << 5) & s.channels[1] ;
+	uint16_t bit_idx = 8; // We have already written start byte
+	uint8_t byte_bits_left = 8;
+
+	for(uint8_t i = 0; i < 16; i++) {
+		uint16_t ch_masked = frame.channels[i] & SBUS_CHANNEL_MASK;
+		uint8_t current_raw_byte = bit_idx / 8;
+		bit_idx += byte_bits_left;
+		byte_bits_left = SBUS_CHANNEL_BIT_LEN % byte_bits_left;
+		d[current_raw_byte] |= ch_masked >> byte_bits_left;
+		current_raw_byte = bit_idx / 8;
+		bit_idx += byte_bits_left;
+		d[current_raw_byte] |= ch_masked << 8 - byte_bits_left;
+		bits_left = 8 - byte_bits_left;
+	}
+
+	return raw_frame;
 }
 
 void fc_bb_read_handler(std::shared_ptr<UartReadData> read_status)

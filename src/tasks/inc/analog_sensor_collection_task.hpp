@@ -22,6 +22,24 @@ namespace sensor_task {
 	  enum adc_event_type type;
 	} adc_event_t;
 
+	/* Values correspond to the following sensors:
+	   SYS_3V3_ISENSE,
+	   SYS_5V_ISENSE,
+	   VGPS_ISENSE,
+	   VUSB_ISENSE,
+	   VFLTCTL_ISENSE,
+	   NAVCMP_ISENSE,
+	   VRADIO_ISENSE,
+	   TP27,
+	   VRADIO_VSENSE,
+	   NAVCMP_VSENSE,
+	   VUSB_VSENSE,
+	   VFLTCTL_VSENSE,
+	   VGPS_VSENSE,
+	   SYS_5V_VSENSE,
+	   VSYS_VSENSE,
+	   SYS_3V3_VSENSE
+	*/
 	typedef struct {
 		uint16_t sensor_values[16];
 	} adc_values_t;

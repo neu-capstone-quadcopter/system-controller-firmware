@@ -9,6 +9,7 @@
 #include "chip.h"
 
 #include "hal.hpp"
+#include "gpdma.hpp"
 #include "sspio.hpp"
 #include "cc1120.hpp"
 #include "driver.hpp"
@@ -19,7 +20,7 @@
 namespace hal {
 	void add_drivers(void);
 
-	Driver *drivers[NUM_IDENTIFIERS];
+	static Driver *drivers[NUM_IDENTIFIERS];
 
 	Cd74hc4067_gpio_map gpio_map = {
 			.s0_port = 0,
@@ -40,6 +41,8 @@ namespace hal {
 		Chip_GPIO_Init(LPC_GPIO);
 		Chip_IOCON_Init(LPC_IOCON);
 
+		Chip_GPIO_WriteDirBit(LPC_GPIO, 2, 10, true); // Random Debug LED...
+
 		add_drivers();
 
 		// Initialize all drivers
@@ -50,6 +53,7 @@ namespace hal {
 
 	void add_drivers(void) {
 		// Instantiate drivers
+		GpdmaManager *gpdma_man = new GpdmaManager(LPC_GPDMA);
 		SspIo *telem_cc1120_ssp = new SspIo(LPC_SSP1);
 		UartIo *console_uart = new UartIo(LPC_UART3);
 		UartIo *fc_blackbox_uart = new UartIo(LPC_UART0);
@@ -61,6 +65,7 @@ namespace hal {
 		Cc1120 *telem_cc1120 = new Cc1120(telem_cc1120_ssp);
 
 		// Add drivers to driver array
+		drivers[GPDMA_MAN] = gpdma_man;
 		drivers[TELEM_CC1120_SSP] = telem_cc1120_ssp;
 		drivers[LED_0] = led_0;
 		drivers[LED_1] = led_1;
@@ -72,13 +77,26 @@ namespace hal {
 		drivers[FC_SBUS_UART] = fc_sbus_uart;
 	}
 
-	Driver *get_driver(driver_identifier id) {
-		return drivers[id];
+	template <class T>
+	T *get_driver(driver_identifier id) {
+		return static_cast<T *>(drivers[id]);
 	}
+
+	template class GpdmaManager *get_driver(driver_identifier);
+	template class SspIo *get_driver(driver_identifier);
+	template class UartIo *get_driver(driver_identifier);
+	template class Adc *get_driver(driver_identifier);
+	template class Cd74hc4067 *get_driver(driver_identifier);
+	template class Cc1120 *get_driver(driver_identifier);
+	template class ExampleLed *get_driver(driver_identifier);
 }
 
 extern "C" {
 	using namespace hal;
+	void DMA_IRQHandler() {
+		static_cast<GpdmaManager*>(drivers[GPDMA_MAN])->interrupt_handler();
+	}
+
 	void SSP1_IRQHandler() {
 		static_cast<SspIo*>(drivers[TELEM_CC1120_SSP])->ssp_interrupt_handler();
 	}

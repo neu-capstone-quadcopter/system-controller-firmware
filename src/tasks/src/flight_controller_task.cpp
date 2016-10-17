@@ -23,20 +23,26 @@ static void task_loop(void *p);
 void send_data(uint8_t *data);
 void write_to_sbus(uint8_t *data, uint8_t len);
 void read_from_uart();
+void fc_bb_read_handler(std::shared_ptr<UartReadData> read_status);
 
 UartIo* fc_blackbox_uart;
 UartIo* fc_sbus_uart;
 static TaskHandle_t task_handle;
 
+auto fc_bb_read_del = dlgt::make_delegate(&fc_bb_read_handler);
+
 void start() {
-	fc_blackbox_uart = static_cast<UartIo*>(hal::get_driver(hal::FC_BLACKBOX_UART));
-	fc_sbus_uart = static_cast<UartIo*>(hal::get_driver(hal::FC_SBUS_UART));
+	fc_blackbox_uart = hal::get_driver<UartIo>(hal::FC_BLACKBOX_UART);
+	fc_sbus_uart = hal::get_driver<UartIo>(hal::FC_SBUS_UART);
 	xTaskCreate(task_loop, "flight controller", 400, NULL, 2, &task_handle);
 	flight_cont_event_queue = xQueueCreate(EVENT_QUEUE_DEPTH, sizeof(flight_cont_event_t));
 }
 
 static void task_loop(void *p) {
 	flight_cont_event_t current_event;
+	fc_blackbox_uart->allocate_buffers(150,150);
+	//Checking for blackbox data on async basis
+	fc_blackbox_uart->read_async(100, fc_bb_read_del);
 	for(;;) {
 		xQueueReceive(flight_cont_event_queue, &current_event, portMAX_DELAY);
 		switch (current_event.type) {
@@ -88,6 +94,19 @@ void read_from_uart() {
 	buffer[127] = 0x00;
 
 }
+
+void fc_bb_read_handler(std::shared_ptr<UartReadData> read_status)
+	{
+		std::unique_ptr<uint8_t[]> read_data = std::move(read_status->data);
+
+		flight_cont_event_t e;
+		e.type = BLACKBOX_READ;
+		e.length = 100;
+
+		e.data = read_data.get();
+		xQueueSendToBackFromISR(flight_cont_event_queue, &e, 0);
+		fc_blackbox_uart->read_async(100, fc_bb_read_del);
+	}
 
 //This function will package up our data to then
 //send over our SBUS

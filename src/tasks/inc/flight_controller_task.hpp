@@ -25,6 +25,7 @@ namespace flight_controller_task {
 	typedef struct {
 	  enum flight_cont_event_type type;
 	  uint8_t* data;
+	  uint16_t length;
 	} flight_cont_event_t;
 
 	void add_event_to_queue(flight_cont_event_t event);

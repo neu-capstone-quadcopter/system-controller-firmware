@@ -18,6 +18,7 @@
 #define TX_BUFFER_SIZE 128
 
 typedef void (*uart_char_read_callback)(uint8_t);
+typedef void (*uart_str_read_callback)(uint8_t*);
 
 class UartIo : public Driver {
 public:
@@ -54,6 +55,7 @@ private:
 	uint8_t txbuff[TX_BUFFER_SIZE];
 
 	uart_char_read_callback callback;
+	uart_str_read_callback str_callback;
 };
 
 

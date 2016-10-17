@@ -52,6 +52,8 @@ namespace hal {
 		// Instantiate drivers
 		SspIo *telem_cc1120_ssp = new SspIo(LPC_SSP1);
 		UartIo *console_uart = new UartIo(LPC_UART3);
+		UartIo *fc_blackbox_uart = new UartIo(LPC_UART0);
+		UartIo *fc_sbus_uart = new UartIo(LPC_UART2);
 		ExampleLed *led_0 = new ExampleLed(2, 11);
 		ExampleLed *led_1 = new ExampleLed(2, 12);
 		Adc *adc = new Adc(LPC_ADC);
@@ -66,6 +68,8 @@ namespace hal {
 		drivers[CD74HC4067] = adc_mux;
 		drivers[TELEM_CC1120] = telem_cc1120;
 		drivers[CONSOLE_UART] = console_uart;
+		drivers[FC_BLACKBOX_UART] = fc_blackbox_uart;
+		drivers[FC_SBUS_UART] = fc_sbus_uart;
 	}
 
 	Driver *get_driver(driver_identifier id) {
@@ -82,4 +86,12 @@ extern "C" {
 	void UART3_IRQHandler(void){
 		static_cast<UartIo*>(drivers[CONSOLE_UART])->uartInterruptHandler();
 	}
+
+	void UART2_IRQHandler(void){
+			static_cast<UartIo*>(drivers[FC_SBUS_UART])->uartInterruptHandler();
+		}
+
+	void UART0_IRQHandler(void){
+			static_cast<UartIo*>(drivers[FC_BLACKBOX_UART])->uartInterruptHandler();
+		}
 }

@@ -16,6 +16,8 @@ namespace hal {
 	typedef enum driver_identifier{
 		TELEM_CC1120_SSP = 0,
 		CONSOLE_UART,
+		FC_BLACKBOX_UART,
+		FC_SBUS_UART,
 		LED_0,
 		LED_1,
 		SENSOR_ADC,

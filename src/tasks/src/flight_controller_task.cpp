@@ -19,6 +19,12 @@
 
 namespace flight_controller_task {
 
+struct SBusFrame{
+	uint16 channels[18];
+	bool frame_lost;
+	bool fail_safe_activated;
+};
+
 static void task_loop(void *p);
 void send_data(uint8_t *data);
 void write_to_sbus(uint8_t *data, uint8_t len);
@@ -48,7 +54,7 @@ static void task_loop(void *p) {
 		switch (current_event.type) {
 		case BLACKBOX_READ:
 			// Receive data frame from blackbox
-			read_from_uart();
+			//read_from_uart();
 			break;
 		case FLIGHT_COMMAND:
 			//Do operations to send command
@@ -93,6 +99,14 @@ void read_from_uart() {
 	//Do something with this message
 	buffer[127] = 0x00;
 
+}
+
+uint8_t* serializeSbusFrame(SBusFrame s)
+{
+	uint8_t* raw_frame = new uint8_t[25];
+	raw_frame[0] = 0xF0;
+	raw_frame[1] = s.channels[0] >> 3;
+	raw_frame[2] = ((s.channels[0] & 0xF3) << 5) & s.channels[1] ;
 }
 
 void fc_bb_read_handler(std::shared_ptr<UartReadData> read_status)

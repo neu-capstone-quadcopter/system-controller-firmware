@@ -17,11 +17,14 @@
 #define SPICMD_W_REGISTER(reg) (0x00 | reg)
 #define SPICMD_W_BURST_REGISTER(reg) (0x40 | reg)
 #define SPICMD_W_EXTENDED_REGISTER 0x2F
-#define SPICMD_W__BURST_EXTENDED_REGISTER 0x6F
+#define SPICMD_W_BURST_EXTENDED_REGISTER 0x6F
+#define SPICMD_W_FIFO_STD 0x7F
 #define SPICMD_R_REGISTER(reg) (0x80 | reg)
 #define SPICMD_R_BURST_REGISTER(reg) (0xC0 | reg)
 #define SPICMD_R_EXTENDED_REGISTER 0xAF
 #define SPICMD_R_BURST_EXTENDED_REGISTER 0xEF
+#define SPICMD_R_FIFO_STD 0xFF
+
 
 #define REG_IOCONFIG3 0x00
 #define REG_IOCONFIG2 0x01
@@ -215,7 +218,7 @@ void Cc1120::write_extended_register_single_async(uint8_t address, uint8_t data,
 }
 
 void Cc1120::write_extended_register_burst(uint8_t address, uint8_t *data, uint8_t data_len) {
-	uint8_t command [2] = {SPICMD_W__BURST_EXTENDED_REGISTER, address};
+	uint8_t command [2] = {SPICMD_W_BURST_EXTENDED_REGISTER, address};
 	send_command_extended(command, data, NULL, data_len);
 }
 
@@ -296,6 +299,22 @@ void Cc1120::access_command_strobe(CommandStrobeAddress address) {
 }
 
 void Cc1120::access_command_strobe_async(CommandStrobeAddress address, CC1120CommandCallback callback) {
+	configASSERT(0);
+}
+
+void Cc1120::write_tx_fifo(uint8_t *data, uint8_t write_len) {
+	configASSERT(0);
+}
+
+void Cc1120::write_tx_fifo_async(uint8_t *data, uint8_t write_len, CC1120CommandCallback callback) {
+	configASSERT(0);
+}
+
+void Cc1120::read_rx_fifo(uint8_t *data, uint8_t read_len) {
+	configASSERT(0);
+}
+
+void Cc1120::read_rx_fifo_async(uint8_t *data, uint8_t read_len, CC1120CommandDataCallback callback) {
 	configASSERT(0);
 }
 

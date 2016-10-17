@@ -82,13 +82,6 @@ void send_data(sensor_task::adc_values_t data) {
 
 	monarcpb_SysCtrlToNavCPU message = monarcpb_SysCtrlToNavCPU_init_zero;
 	package_data(data, message);
-	/*
-	message.has_telemetry = true;
-	message.telemetry.has_altitude = true;
-	message.telemetry.altitude = data.sensor_values[8];
-	message.telemetry.has_atmospheric_pressure = true;
-	message.telemetry.atmospheric_pressure = data.sensor_values[13];
-	*/
 
 	/* Create a stream that will write to our buffer. */
 	pb_ostream_t stream = pb_ostream_from_buffer(buffer, sizeof(buffer));

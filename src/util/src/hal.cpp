@@ -101,15 +101,15 @@ extern "C" {
 		static_cast<SspIo*>(drivers[TELEM_CC1120_SSP])->ssp_interrupt_handler();
 	}
 
-	void UART3_IRQHandler(void){
-		static_cast<UartIo*>(drivers[CONSOLE_UART])->uartInterruptHandler();
+	void UART0_IRQHandler(void){
+		static_cast<UartIo*>(drivers[FC_BLACKBOX_UART])->uartInterruptHandler();
 	}
 
 	void UART2_IRQHandler(void){
-			static_cast<UartIo*>(drivers[FC_SBUS_UART])->uartInterruptHandler();
-		}
+		static_cast<UartIo*>(drivers[FC_SBUS_UART])->uartInterruptHandler();
+	}
 
-	void UART0_IRQHandler(void){
-			static_cast<UartIo*>(drivers[FC_BLACKBOX_UART])->uartInterruptHandler();
-		}
+	void UART3_IRQHandler(void){
+		static_cast<UartIo*>(drivers[CONSOLE_UART])->uartInterruptHandler();
+	}
 }

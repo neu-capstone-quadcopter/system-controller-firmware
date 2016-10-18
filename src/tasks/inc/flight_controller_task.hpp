@@ -15,8 +15,6 @@
 namespace flight_controller_task {
 
 	static QueueHandle_t flight_cont_event_queue;
-	void start(void);
-
 	enum flight_cont_event_type {
 		BLACKBOX_READ = 0,
 		FLIGHT_COMMAND = 1
@@ -28,7 +26,9 @@ namespace flight_controller_task {
 	  uint16_t length;
 	} flight_cont_event_t;
 
+	void start(void);
 	void add_event_to_queue(flight_cont_event_t event);
+	void set_frame_channel_cmd(uint8_t channel, uint16_t value);
 
 } // End flight_controller_task namespace.
 

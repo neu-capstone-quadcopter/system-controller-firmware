@@ -21,9 +21,6 @@
 #include "driver.hpp"
 #include "chip.h"
 
-typedef void (*uart_char_read_callback)(uint8_t);
-typedef void (*uart_str_read_callback)(uint8_t*);
-
 enum UartTransferMode {
 	UART_XFER_MODE_POLLING,
 	UART_XFER_MODE_INTERRUPT,
@@ -158,7 +155,6 @@ private:
 	uint16_t tx_op_len;
 	uint16_t rx_op_len;
 
-	uart_char_read_callback callback;
 	UartReadDelegate *rx_delegate;
 	UartWriteDelegate *tx_delegate;
 };

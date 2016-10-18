@@ -19,7 +19,8 @@ namespace nav_computer_task {
 	void start(void);
 
 	enum nav_event_type {
-		ADC_SCAN = 0
+		ADC_SCAN = 0,
+		WRITE_MESSAGE
 	};
 
 	typedef struct {

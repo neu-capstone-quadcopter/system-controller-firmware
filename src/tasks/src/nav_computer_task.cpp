@@ -6,10 +6,12 @@
  */
 
 #include "nav_computer_task.hpp"
+#include "gpdma.hpp"
 #include "hal.hpp"
 #include "uartio.hpp"
 #include "FreeRTOS.h"
 #include "task.h"
+#include "timers.h"
 #include "pb_encode.h"
 #include "pb_decode.h"
 #include "api.pb.h"
@@ -26,9 +28,14 @@ void send_data(sensor_task::adc_values_t data);
 void package_data(sensor_task::adc_values_t data, monarcpb_SysCtrlToNavCPU &message);
 void write_to_uart(uint8_t *data, uint16_t len);
 void read_from_uart();
+//static void read_handler(std::shared_ptr<UartReadData> data);
+void timer_handler(TimerHandle_t xTimer);
 
 UartIo* nav_uart;
 static TaskHandle_t task_handle;
+TimerHandle_t* timer;
+
+//auto read_del = dlgt::make_delegate(&read_handler);
 
 void start() {
 	nav_uart = hal::get_driver<UartIo>(hal::NAV_COMPUTER);
@@ -36,8 +43,15 @@ void start() {
 	nav_event_queue = xQueueCreate(EVENT_QUEUE_DEPTH, sizeof(nav_event_t));
 }
 
+void initialize_timer() {
+	*timer = xTimerCreate("NavTimer", 10, pdTRUE, ( void * ) 0, timer_handler);
+	xTimerStart(*timer, 0);
+}
+
 static void task_loop(void *p) {
+	initialize_timer();
 	nav_event_t current_event;
+	//nav_uart->read_async(2, read_del);
 	for(;;) {
 		xQueueReceive(nav_event_queue, &current_event, portMAX_DELAY);
 		switch (current_event.type) {
@@ -46,6 +60,8 @@ static void task_loop(void *p) {
 			send_data(current_event.data);
 			read_from_uart();
 			break;
+		case WRITE_MESSAGE:
+			asm("nop;");
 		default:
 			break;
 		}
@@ -92,6 +108,20 @@ void send_data(sensor_task::adc_values_t data) {
 
 	write_to_uart(buffer, message_len);
 	return;
+}
+/*
+static void read_handler(std::shared_ptr<UartReadData> read_status) {
+	std::unique_ptr<uint8_t[]> read_data = std::move(read_status->data);
+	uint8_t *data_ptr = read_data.get();
+
+	nav_uart->read_async(read_status->length, read_del);
+	//nav_uart->write_async(data_ptr, read_status->length, write_del);
+}
+*/
+void timer_handler(TimerHandle_t xTimer) {
+	nav_event_t event;
+	event.type = WRITE_MESSAGE;
+	add_event_to_queue(event);
 }
 
 void package_data(sensor_task::adc_values_t data, monarcpb_SysCtrlToNavCPU &message) {

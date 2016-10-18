@@ -29,23 +29,24 @@ void package_data(sensor_task::adc_values_t data, monarcpb_SysCtrlToNavCPU &mess
 void write_to_uart(uint8_t *data, uint16_t len);
 void read_from_uart();
 //static void read_handler(std::shared_ptr<UartReadData> data);
-void timer_handler(TimerHandle_t xTimer);
+static void timer_handler(TimerHandle_t xTimer);
 
 UartIo* nav_uart;
 static TaskHandle_t task_handle;
-TimerHandle_t* timer;
+TimerHandle_t timer;
 
 //auto read_del = dlgt::make_delegate(&read_handler);
 
 void start() {
 	nav_uart = hal::get_driver<UartIo>(hal::NAV_COMPUTER);
+	nav_uart->allocate_buffers(32, 32);
 	xTaskCreate(task_loop, "nav computer", 400, NULL, 2, &task_handle);
 	nav_event_queue = xQueueCreate(EVENT_QUEUE_DEPTH, sizeof(nav_event_t));
 }
 
 void initialize_timer() {
-	*timer = xTimerCreate("NavTimer", 10, pdTRUE, ( void * ) 0, timer_handler);
-	xTimerStart(*timer, 0);
+	timer = xTimerCreate("NavTimer", 10, pdTRUE, NULL, timer_handler);
+	xTimerStart(timer, 0);
 }
 
 static void task_loop(void *p) {
@@ -58,7 +59,7 @@ static void task_loop(void *p) {
 		case ADC_SCAN:
 			// Package and send data frame
 			send_data(current_event.data);
-			read_from_uart();
+			//read_from_uart();
 			break;
 		case WRITE_MESSAGE:
 			asm("nop;");
@@ -118,7 +119,7 @@ static void read_handler(std::shared_ptr<UartReadData> read_status) {
 	//nav_uart->write_async(data_ptr, read_status->length, write_del);
 }
 */
-void timer_handler(TimerHandle_t xTimer) {
+static void timer_handler(TimerHandle_t xTimer) {
 	nav_event_t event;
 	event.type = WRITE_MESSAGE;
 	add_event_to_queue(event);
@@ -134,7 +135,7 @@ void package_data(sensor_task::adc_values_t data, monarcpb_SysCtrlToNavCPU &mess
 			message.analog_sensors.sys_3v3_isense = data.sensor_values[i];
 			break;
 		case 1:
-			message.analog_sensors.has_sys_3v3_isense = true;
+			message.analog_sensors.has_sys_5v_isense = true;
 			message.analog_sensors.sys_5v_isense = data.sensor_values[i];
 			break;
 		case 2:

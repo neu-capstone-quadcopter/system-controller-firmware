@@ -20,12 +20,15 @@ namespace nav_computer_task {
 
 	enum nav_event_type {
 		ADC_SCAN = 0,
-		WRITE_MESSAGE
+		WRITE_MESSAGE,
+		PROCESS_READ
 	};
 
 	typedef struct {
 	  enum nav_event_type type;
 	  sensor_task::adc_values_t data;
+	  uint16_t length;
+	  uint8_t *buffer;
 	} nav_event_t;
 
 	void add_event_to_queue(nav_event_t event);

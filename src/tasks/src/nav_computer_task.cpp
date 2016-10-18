@@ -28,14 +28,17 @@ void send_data(sensor_task::adc_values_t data);
 void package_data(sensor_task::adc_values_t data, monarcpb_SysCtrlToNavCPU &message);
 void write_to_uart(uint8_t *data, uint16_t len);
 void read_from_uart();
-//static void read_handler(std::shared_ptr<UartReadData> data);
 static void timer_handler(TimerHandle_t xTimer);
+void distribute_data(uint8_t *data, uint16_t length);
+static void read_len_handler(std::shared_ptr<UartReadData> data);
+static void read_data_handler(std::shared_ptr<UartReadData> data);
 
 UartIo* nav_uart;
 static TaskHandle_t task_handle;
 TimerHandle_t timer;
 
-//auto read_del = dlgt::make_delegate(&read_handler);
+auto read_len = dlgt::make_delegate(&read_len_handler);
+auto read_data = dlgt::make_delegate(&read_data_handler);
 
 void start() {
 	nav_uart = hal::get_driver<UartIo>(hal::NAV_COMPUTER);
@@ -52,7 +55,7 @@ void initialize_timer() {
 static void task_loop(void *p) {
 	initialize_timer();
 	nav_event_t current_event;
-	//nav_uart->read_async(2, read_del);
+	nav_uart->read_async(2, read_data);
 	for(;;) {
 		xQueueReceive(nav_event_queue, &current_event, portMAX_DELAY);
 		switch (current_event.type) {
@@ -63,6 +66,10 @@ static void task_loop(void *p) {
 			break;
 		case WRITE_MESSAGE:
 			asm("nop;");
+			break;
+		case PROCESS_READ:
+			distribute_data(current_event.buffer, current_event.length);
+			break;
 		default:
 			break;
 		}
@@ -78,6 +85,13 @@ void write_to_uart(uint8_t *data, uint16_t len) {
 	nav_uart->write(data, (uint8_t) len);
 }
 
+void distribute_data(uint8_t* data, uint16_t length) {
+	// Decode message.
+	pb_istream_t stream = pb_istream_from_buffer(data, (uint8_t) length);
+	monarcpb_NavCPUToSysCtrl message = monarcpb_NavCPUToSysCtrl_init_zero;
+	pb_decode(&stream, monarcpb_NavCPUToSysCtrl_fields, &message);
+}
+
 void read_from_uart() {
 	uint8_t buffer[128];
 	// Read length of incoming message.
@@ -90,7 +104,6 @@ void read_from_uart() {
 	// Decode message.
 	monarcpb_NavCPUToSysCtrl message = monarcpb_NavCPUToSysCtrl_init_zero;
 	pb_decode(&stream, monarcpb_NavCPUToSysCtrl_fields, &message);
-	int32_t gps = message.telemetry.GPS;
 }
 
 void send_data(sensor_task::adc_values_t data) {
@@ -110,15 +123,24 @@ void send_data(sensor_task::adc_values_t data) {
 	write_to_uart(buffer, message_len);
 	return;
 }
-/*
-static void read_handler(std::shared_ptr<UartReadData> read_status) {
+
+static void read_len_handler(std::shared_ptr<UartReadData> read_status) {
+	nav_uart->read_async(read_status->length, read_data);
+}
+
+static void read_data_handler(std::shared_ptr<UartReadData> read_status) {
 	std::unique_ptr<uint8_t[]> read_data = std::move(read_status->data);
 	uint8_t *data_ptr = read_data.get();
 
-	nav_uart->read_async(read_status->length, read_del);
-	//nav_uart->write_async(data_ptr, read_status->length, write_del);
+	nav_event_t event;
+	event.type = PROCESS_READ;
+	event.buffer = data_ptr;
+	event.length = read_status->length;
+	add_event_to_queue(event);
+
+	nav_uart->read_async(2, read_len);
 }
-*/
+
 static void timer_handler(TimerHandle_t xTimer) {
 	nav_event_t event;
 	event.type = WRITE_MESSAGE;

@@ -18,19 +18,59 @@
 #define MAX_BUFFER_SIZE 255
 #define SBUS_CHANNEL_MASK 0x07ff
 #define SBUS_CHANNEL_BIT_LEN 11
+#define SBUS_CHANNEL_17 16
+#define SBUS_CHANNEL_18 17
 
 namespace flight_controller_task {
 
 struct SBusFrame{
-	uint16 channels[18];
+	uint16_t channels[18];
 	bool frame_lost;
 	bool fail_safe_activated;
+
+	/*
+	 * Make a raw data copy of the frame suitable for sending to cleanflight
+	 */
+	uint8_t* serialize() {
+		uint8_t* raw_frame = new uint8_t[25];
+		memset(raw_frame, 0, 25);
+		raw_frame[0] = 0xF0;
+		uint8_t byte_idx = 1;
+		int8_t start_pos = 8;
+
+		for(uint8_t i = 0; i < 16; i++) {
+			uint16_t ch_masked = this->channels[i] & SBUS_CHANNEL_MASK;
+			int8_t bits_to_write = 11;
+			raw_frame[byte_idx++] |= ch_masked >> (bits_to_write -= start_pos);
+			start_pos = 8 - bits_to_write;
+			if(start_pos > 0) {
+				raw_frame[byte_idx] |= ch_masked << start_pos;
+			}
+			else {
+				start_pos += 8 - start_pos;
+				raw_frame[byte_idx++] |= ch_masked >> (bits_to_write -= start_pos);
+				start_pos = 8 - bits_to_write;
+				raw_frame[byte_idx] |= ch_masked << start_pos;
+			}
+		}
+
+		if(this->channels[SBUS_CHANNEL_17]) {
+			raw_frame[23] |= (1 << 8);
+		}
+
+		if(this->channels[SBUS_CHANNEL_18]) {
+			raw_frame[23] |= (1 << 7);
+		}
+
+		return raw_frame;
+	}
 };
 
 static void task_loop(void *p);
 void send_data(uint8_t *data);
 void write_to_sbus(uint8_t *data, uint8_t len);
 void read_from_uart();
+uint8_t* serialize_sbus_frame(SBusFrame frame);
 void fc_bb_read_handler(std::shared_ptr<UartReadData> read_status);
 
 UartIo* fc_blackbox_uart;
@@ -47,6 +87,18 @@ void start() {
 }
 
 static void task_loop(void *p) {
+	SBusFrame test_frame;
+	uint8_t *raw_frame;
+	test_frame.channels[0] = 0x401;
+	test_frame.channels[1] = 0x401;
+	test_frame.channels[2] = 0x401;
+	test_frame.channels[3] = 0x401;
+	test_frame.channels[4] = 0x401;
+	test_frame.channels[5] = 0x401;
+	test_frame.channels[6] = 0x401;
+	raw_frame = test_frame.serialize();
+
+
 	flight_cont_event_t current_event;
 	fc_blackbox_uart->allocate_buffers(150,150);
 	//Checking for blackbox data on async basis
@@ -101,28 +153,6 @@ void read_from_uart() {
 	//Do something with this message
 	buffer[127] = 0x00;
 
-}
-
-uint8_t* serialize_sbus_frame(SBusFrame frame)
-{
-	uint8_t* raw_frame = new uint8_t[25];
-	raw_frame[0] = 0xF0;
-	uint16_t bit_idx = 8; // We have already written start byte
-	uint8_t byte_bits_left = 8;
-
-	for(uint8_t i = 0; i < 16; i++) {
-		uint16_t ch_masked = frame.channels[i] & SBUS_CHANNEL_MASK;
-		uint8_t current_raw_byte = bit_idx / 8;
-		bit_idx += byte_bits_left;
-		byte_bits_left = SBUS_CHANNEL_BIT_LEN % byte_bits_left;
-		d[current_raw_byte] |= ch_masked >> byte_bits_left;
-		current_raw_byte = bit_idx / 8;
-		bit_idx += byte_bits_left;
-		d[current_raw_byte] |= ch_masked << 8 - byte_bits_left;
-		bits_left = 8 - byte_bits_left;
-	}
-
-	return raw_frame;
 }
 
 void fc_bb_read_handler(std::shared_ptr<UartReadData> read_status)

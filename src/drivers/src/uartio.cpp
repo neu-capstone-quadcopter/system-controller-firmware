@@ -21,13 +21,6 @@
 #define DEFAULT_STOP_BIT UART_LCR_SBS_1BIT
 #define DEFAULT_TRANSFER_MODE UART_XFER_MODE_INTERRUPT
 
-UartReadData::UartReadData(uint8_t* data, uint16_t length, UartError status) {
-	this->data = std::unique_ptr<uint8_t[]>(new uint8_t[length]());
-	memcpy(this->data.get(), data, length);
-	this->length = length;
-	this->status = status;
-}
-
 UartIo::UartIo(LPC_USART_T *uart) {
 	this->uart = uart;
 	this->transfer_mode = DEFAULT_TRANSFER_MODE;
@@ -259,9 +252,9 @@ UartError UartIo::read_async(uint16_t length, UartReadDelegate& delegate) {
 		}
 
 		this->rx_dma_channel->register_callback([this](DmaError status) {
-			auto read_data = std::shared_ptr<UartReadData>(
-					new UartReadData(const_cast<uint8_t*>(this->rx_buffer), this->rx_op_len, UART_ERROR_NONE));
-			(*this->rx_delegate)(read_data);
+			uint8_t *data_cpy = new uint8_t[this->rx_op_len];
+			memcpy(data_cpy, const_cast<uint8_t*>(this->rx_buffer), this->rx_op_len);
+			(*this->rx_delegate)(UART_ERROR_NONE, data_cpy, this->rx_op_len);
 		});
 		this->rx_dma_channel->start_transfer(
 				get_rx_dmareq(),
@@ -337,9 +330,9 @@ void UartIo::uartInterruptHandler(void){
 			this->is_read_async = false;
 
 			Chip_UART_ReadRB(this->uart, &this->rx_ring, const_cast<uint8_t*>(this->rx_buffer), this->rx_op_len);
-			auto read_data = std::shared_ptr<UartReadData>(
-					new UartReadData(const_cast<uint8_t*>(this->rx_buffer), this->rx_op_len, UART_ERROR_NONE));
-			(*this->rx_delegate)(read_data);
+			uint8_t *data_cpy = new uint8_t[this->rx_op_len];
+			memcpy(data_cpy, const_cast<uint8_t*>(this->rx_buffer), this->rx_op_len);
+			(*this->rx_delegate)(UART_ERROR_NONE, data_cpy, this->rx_op_len);
 		}
 		else {
 			xSemaphoreGiveFromISR(this->rx_transfer_semaphore, NULL);

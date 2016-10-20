@@ -20,7 +20,7 @@
 
 namespace dma_test_task {
 	static void task_loop(void *p);
-	static void read_handler(std::shared_ptr<UartReadData> data);
+	static void read_handler(UartError status, uint8_t *data, uint16_t len);
 	static void write_handler(UartError status);
 
 	TaskHandle_t task_handle;
@@ -67,11 +67,8 @@ namespace dma_test_task {
 		}
 	}
 
-	static void read_handler(std::shared_ptr<UartReadData> read_status) {
-		std::unique_ptr<uint8_t[]> read_data = std::move(read_status->data);
-		uint8_t *data_ptr = read_data.get();
-
-		uart->write_async(data_ptr, read_status->length, write_del);
+	static void read_handler(UartError status, uint8_t *data, uint16_t len) {
+		uart->write_async(data, len, write_del);
 	}
 
 	static void write_handler(UartError status) {

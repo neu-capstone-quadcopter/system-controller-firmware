@@ -36,6 +36,9 @@ static void read_data_handler(UartError status, uint8_t *data, uint16_t len);
 UartIo* nav_uart;
 static TaskHandle_t task_handle;
 TimerHandle_t timer;
+GpdmaManager *dma_man;
+GpdmaChannel *dma_channel_tx;
+GpdmaChannel *dma_channel_rx;
 
 auto read_len = dlgt::make_delegate(&read_len_handler);
 auto read_data = dlgt::make_delegate(&read_data_handler);
@@ -43,19 +46,27 @@ auto read_data = dlgt::make_delegate(&read_data_handler);
 void start() {
 	nav_uart = hal::get_driver<UartIo>(hal::NAV_COMPUTER);
 	nav_uart->allocate_buffers(32, 32);
+	dma_man = hal::get_driver<GpdmaManager>(hal::GPDMA_MAN);
+	dma_channel_tx = dma_man->allocate_channel(0);
+	dma_channel_rx = dma_man->allocate_channel(1);
+
+	// Enabled DMA (Optional)
+	nav_uart->bind_dma_channels(dma_channel_tx, dma_channel_rx);
+	//nav_uart->set_transfer_mode(UART_XFER_MODE_DMA);
 	xTaskCreate(task_loop, "nav computer", 400, NULL, 2, &task_handle);
 	nav_event_queue = xQueueCreate(EVENT_QUEUE_DEPTH, sizeof(nav_event_t));
 }
 
-void initialize_timer() {
+void initialize_timers() {
 	timer = xTimerCreate("NavTimer", 10, pdTRUE, NULL, timer_handler);
 	xTimerStart(timer, 0);
 }
 
 static void task_loop(void *p) {
-	initialize_timer();
+	initialize_timers();
 	nav_event_t current_event;
-	nav_uart->read_async(2, read_data);
+	nav_uart->read_async(30, read_len);
+	//nav_uart->read_async(4, read_len);
 	for(;;) {
 		xQueueReceive(nav_event_queue, &current_event, portMAX_DELAY);
 		switch (current_event.type) {
@@ -91,7 +102,7 @@ void distribute_data(uint8_t* data, uint16_t length) {
 	monarcpb_NavCPUToSysCtrl message = monarcpb_NavCPUToSysCtrl_init_zero;
 	pb_decode(&stream, monarcpb_NavCPUToSysCtrl_fields, &message);
 }
-
+/*
 void read_from_uart() {
 	uint8_t buffer[128];
 	// Read length of incoming message.
@@ -105,7 +116,7 @@ void read_from_uart() {
 	monarcpb_NavCPUToSysCtrl message = monarcpb_NavCPUToSysCtrl_init_zero;
 	pb_decode(&stream, monarcpb_NavCPUToSysCtrl_fields, &message);
 }
-
+*/
 void send_data(sensor_task::adc_values_t data) {
 	static uint8_t buffer[MAX_BUFFER_SIZE];
 	memset(buffer, 0x00, MAX_BUFFER_SIZE);
@@ -125,7 +136,19 @@ void send_data(sensor_task::adc_values_t data) {
 }
 
 static void read_len_handler(UartError status, uint8_t *data, uint16_t len) {
-	nav_uart->read_async(len, read_data);
+/*	uint16_t sync = data[1] << 8 | data[0];
+	if (sync != 0x91D3) {
+		TimerHandle_t timer_sync = xTimerCreate("SyncTimer", 1, pdTRUE, NULL, [](TimerHandle_t xTimer) {
+			nav_uart->read_async(4, read_len);
+			xTimerDelete(xTimer, 10);
+		});
+		xTimerStart(timer_sync, 0);
+		delete[] data;
+		return;
+	}*/
+	uint16_t length = data[3] << 8 | data[2];
+	nav_uart->read_async(length, read_data);
+	delete[] data;
 }
 
 static void read_data_handler(UartError status, uint8_t *data, uint16_t len) {
@@ -135,7 +158,8 @@ static void read_data_handler(UartError status, uint8_t *data, uint16_t len) {
 	event.length = len;
 	add_event_to_queue(event);
 
-	nav_uart->read_async(2, read_len);
+	nav_uart->read_async(4, read_len);
+	delete[] data;
 }
 
 static void timer_handler(TimerHandle_t xTimer) {

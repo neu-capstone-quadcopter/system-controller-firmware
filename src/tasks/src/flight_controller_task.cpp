@@ -35,27 +35,36 @@ struct SBusFrame{
 
 	/*
 	 * Make a raw data copy of the frame suitable for sending to cleanflight
+	 * This function encodes the data in a format ready for sending via S.BUS
+	 * S.BUS signal has 16, 11 bit channels along with 2 digital channels. The
+	 * data is to be sent in a big endian format while the LPC1759 is little endian
+	 * as such after building a byte we need to reverse the bits contained.
+	 * To do this we use the __RBIT function which calls the RBIT instruction. This
+	 * instruction operates on words so we need to shift the result to get the expected
+	 * value.
 	 */
 	void serialize(uint8_t* raw_frame) {
 		memset(raw_frame, 0, 25);
-		//raw_frame[0] = __RBIT(0xF0) >> 24;
-		raw_frame[0] = 0xF0;
+		raw_frame[0] = __RBIT(0xF0) >> 24;
 		uint8_t byte_idx = 1;
 		int8_t start_pos = 8;
 
 		for(uint8_t i = 0; i < 16; i++) {
 			uint16_t channel = this->channels[i] & SBUS_CHANNEL_MASK;
-			//channel = __RBIT(channel) >> (32 - 11);
+			uint8_t non_rev_byte;
 
 			int8_t bits_to_write = 11;
-			raw_frame[byte_idx++] |= channel >> (bits_to_write -= start_pos);
+			non_rev_byte = (channel >> (bits_to_write -= start_pos)) | raw_frame[byte_idx];
+			raw_frame[byte_idx++] |= __RBIT(non_rev_byte) >> 24;
+
 			start_pos = 8 - bits_to_write;
 			if(start_pos > 0) {
 				raw_frame[byte_idx] |= channel << start_pos;
 			}
 			else {
 				start_pos += 8 - start_pos;
-				raw_frame[byte_idx++] |= channel >> (bits_to_write -= start_pos);
+				non_rev_byte = channel >> (bits_to_write -= start_pos) | raw_frame[byte_idx];
+				raw_frame[byte_idx++] = __RBIT(non_rev_byte) >> 24;
 				start_pos = 8 - bits_to_write;
 				raw_frame[byte_idx] |= channel << start_pos;
 			}
@@ -69,10 +78,7 @@ struct SBusFrame{
 			raw_frame[23] |= (1 << 7);
 		}
 
-		//raw_frame[23] = __RBIT(raw_frame[23]) >> 24;
-		for(uint8_t j = 0; j < 25; j++) {
-			raw_frame[j]= __RBIT(raw_frame[j]) >> 24;
-		}
+		raw_frame[23] = __RBIT(raw_frame[23]) >> 24;
 	}
 };
 
@@ -119,18 +125,9 @@ static void task_loop(void *p) {
 	fc_sbus_uart->bind_dma_channels(test_channel_tx, test_channel_rx);
 	fc_sbus_uart->set_transfer_mode(UART_XFER_MODE_DMA);
 
-	/*
-	sbus_frame.channels[0] = 0x401;
-	sbus_frame.channels[1] = 0x401;
-	sbus_frame.channels[2] = 0x401;
-	sbus_frame.channels[3] = 0x401;
-	sbus_frame.channels[4] = 0x401;
-	sbus_frame.channels[5] = 0x401;
-	sbus_frame.channels[6] = 0x401;
-	*/
 	//memset(sbus_frame.channels, 0, 18);
 	for(uint8_t i = 0; i< 18; i++) {
-		sbus_frame.channels[i] = 1500;
+		sbus_frame.channels[i] = 2040;
 	}
 	setup_ritimer();
 

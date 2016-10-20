@@ -42,7 +42,7 @@ void UartIo::init_driver(void)
 	this->rx_transfer_semaphore = xSemaphoreCreateBinary();
 
 	set_baud(DEFAULT_BAUD);
-	config_data_mode(DEFAULT_WORD_LENGTH, DEFAULT_PARITY, DEFAULT_STOP_BIT);
+	config_data_mode(DEFAULT_WORD_LENGTH | DEFAULT_PARITY | DEFAULT_STOP_BIT);
 	Chip_UART_TXEnable(this->uart);
 	Chip_UART_SetupFIFOS(this->uart, (UART_FCR_FIFO_EN | UART_FCR_TRG_LEV2 |
 	                       UART_FCR_RX_RS | UART_FCR_TX_RS));
@@ -77,8 +77,8 @@ void UartIo::set_baud(uint32_t baud) {
 	Chip_UART_SetBaud(this->uart, baud);
 }
 
-void UartIo::config_data_mode(uint32_t word_length, uint32_t parity, uint32_t stop_bits){
-	Chip_UART_ConfigData(this->uart, (word_length | stop_bits));
+void UartIo::config_data_mode(uint32_t config){
+	Chip_UART_ConfigData(this->uart, config);
 }
 
 UartError UartIo::set_transfer_mode(UartTransferMode mode) {

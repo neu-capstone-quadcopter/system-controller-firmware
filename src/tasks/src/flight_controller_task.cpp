@@ -14,6 +14,8 @@
 #include <stdlib.h>
 #include <cstring>
 
+#include "gpdma.hpp"
+
 #define EVENT_QUEUE_DEPTH 8
 #define MAX_BUFFER_SIZE 255
 #define SBUS_CHANNEL_MASK 0x07ff
@@ -23,7 +25,7 @@
 
 namespace flight_controller_task {
 
-const uint8_t SBUS_INTERVAL_MS = 7;
+const uint8_t SBUS_INTERVAL_MS = 14;
 const uint8_t SBUS_FRAME_LEN = 25;
 
 struct SBusFrame{
@@ -36,23 +38,26 @@ struct SBusFrame{
 	 */
 	void serialize(uint8_t* raw_frame) {
 		memset(raw_frame, 0, 25);
+		//raw_frame[0] = __RBIT(0xF0) >> 24;
 		raw_frame[0] = 0xF0;
 		uint8_t byte_idx = 1;
 		int8_t start_pos = 8;
 
 		for(uint8_t i = 0; i < 16; i++) {
-			uint16_t ch_masked = this->channels[i] & SBUS_CHANNEL_MASK;
+			uint16_t channel = this->channels[i] & SBUS_CHANNEL_MASK;
+			//channel = __RBIT(channel) >> (32 - 11);
+
 			int8_t bits_to_write = 11;
-			raw_frame[byte_idx++] |= ch_masked >> (bits_to_write -= start_pos);
+			raw_frame[byte_idx++] |= channel >> (bits_to_write -= start_pos);
 			start_pos = 8 - bits_to_write;
 			if(start_pos > 0) {
-				raw_frame[byte_idx] |= ch_masked << start_pos;
+				raw_frame[byte_idx] |= channel << start_pos;
 			}
 			else {
 				start_pos += 8 - start_pos;
-				raw_frame[byte_idx++] |= ch_masked >> (bits_to_write -= start_pos);
+				raw_frame[byte_idx++] |= channel >> (bits_to_write -= start_pos);
 				start_pos = 8 - bits_to_write;
-				raw_frame[byte_idx] |= ch_masked << start_pos;
+				raw_frame[byte_idx] |= channel << start_pos;
 			}
 		}
 
@@ -62,6 +67,11 @@ struct SBusFrame{
 
 		if(this->channels[SBUS_CHANNEL_18]) {
 			raw_frame[23] |= (1 << 7);
+		}
+
+		//raw_frame[23] = __RBIT(raw_frame[23]) >> 24;
+		for(uint8_t j = 0; j < 25; j++) {
+			raw_frame[j]= __RBIT(raw_frame[j]) >> 24;
 		}
 	}
 };
@@ -82,6 +92,10 @@ static SBusFrame sbus_frame;
 auto fc_bb_read_del = dlgt::make_delegate(&fc_bb_read_handler);
 auto sbus_written_del = dlgt::make_delegate(&sbus_frame_written_handler);
 
+GpdmaManager *dma_man;
+GpdmaChannel *test_channel_tx;
+GpdmaChannel *test_channel_rx;
+
 void start() {
 	fc_blackbox_uart = hal::get_driver<UartIo>(hal::FC_BLACKBOX_UART);
 	fc_sbus_uart = hal::get_driver<UartIo>(hal::FC_SBUS_UART);
@@ -90,8 +104,20 @@ void start() {
 }
 
 static void task_loop(void *p) {
-	fc_sbus_uart->allocate_buffers(30, 0);
 	fc_blackbox_uart->allocate_buffers(0,150);
+
+
+	fc_sbus_uart->allocate_buffers(30, 0);
+	fc_sbus_uart->set_baud(100000);
+	fc_sbus_uart->config_data_mode(UART_LCR_WLEN8 | UART_LCR_SBS_2BIT |
+			UART_LCR_PARITY_EN | UART_LCR_PARITY_EVEN);
+	dma_man = hal::get_driver<GpdmaManager>(hal::GPDMA_MAN);
+	test_channel_tx = dma_man->allocate_channel(0);
+	test_channel_rx = dma_man->allocate_channel(1);
+
+	// Enabled DMA (Optional)
+	fc_sbus_uart->bind_dma_channels(test_channel_tx, test_channel_rx);
+	fc_sbus_uart->set_transfer_mode(UART_XFER_MODE_DMA);
 
 	/*
 	sbus_frame.channels[0] = 0x401;
@@ -102,7 +128,10 @@ static void task_loop(void *p) {
 	sbus_frame.channels[5] = 0x401;
 	sbus_frame.channels[6] = 0x401;
 	*/
-	memset(sbus_frame.channels, 0, 18);
+	//memset(sbus_frame.channels, 0, 18);
+	for(uint8_t i = 0; i< 18; i++) {
+		sbus_frame.channels[i] = 1500;
+	}
 	setup_ritimer();
 
 	//Checking for blackbox data on async basis
@@ -204,9 +233,9 @@ void send_data(uint8_t* data) {
 extern "C" {
 	using namespace flight_controller_task;
 	void RIT_IRQHandler(void) {
-		Chip_RIT_ClearInt(LPC_RITIMER);
 		uint8_t raw_frame[SBUS_FRAME_LEN];
 		sbus_frame.serialize(raw_frame);
 		fc_sbus_uart->write_async(raw_frame, SBUS_FRAME_LEN, sbus_written_del);
+		Chip_RIT_ClearInt(LPC_RITIMER);
 	}
 }

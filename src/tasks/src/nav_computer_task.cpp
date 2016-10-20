@@ -30,8 +30,8 @@ void write_to_uart(uint8_t *data, uint16_t len);
 void read_from_uart();
 static void timer_handler(TimerHandle_t xTimer);
 void distribute_data(uint8_t *data, uint16_t length);
-static void read_len_handler(std::shared_ptr<UartReadData> data);
-static void read_data_handler(std::shared_ptr<UartReadData> data);
+static void read_len_handler(UartError status, uint8_t *data, uint16_t len);
+static void read_data_handler(UartError status, uint8_t *data, uint16_t len);
 
 UartIo* nav_uart;
 static TaskHandle_t task_handle;
@@ -124,18 +124,15 @@ void send_data(sensor_task::adc_values_t data) {
 	return;
 }
 
-static void read_len_handler(std::shared_ptr<UartReadData> read_status) {
-	nav_uart->read_async(read_status->length, read_data);
+static void read_len_handler(UartError status, uint8_t *data, uint16_t len) {
+	nav_uart->read_async(len, read_data);
 }
 
-static void read_data_handler(std::shared_ptr<UartReadData> read_status) {
-	std::unique_ptr<uint8_t[]> read_data = std::move(read_status->data);
-	uint8_t *data_ptr = read_data.get();
-
+static void read_data_handler(UartError status, uint8_t *data, uint16_t len) {
 	nav_event_t event;
 	event.type = PROCESS_READ;
-	event.buffer = data_ptr;
-	event.length = read_status->length;
+	event.buffer = data;
+	event.length = len;
 	add_event_to_queue(event);
 
 	nav_uart->read_async(2, read_len);

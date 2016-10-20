@@ -150,6 +150,7 @@ namespace console_task {
 		e.data[0] = data[0];
 		xQueueSendToBackFromISR(event_queue, &e, 0);
 		uart->read_async(1, uart_read_del);
+		delete[] data;
 	}
 
 	void send_debug_message(uint8_t *data, size_t length)

@@ -69,6 +69,7 @@ namespace dma_test_task {
 
 	static void read_handler(UartError status, uint8_t *data, uint16_t len) {
 		uart->write_async(data, len, write_del);
+		delete[] data;
 	}
 
 	static void write_handler(UartError status) {

@@ -47,26 +47,31 @@ struct SBusFrame{
 		memset(raw_frame, 0, 25);
 		raw_frame[0] = __RBIT(0xF0) >> 24;
 		uint8_t byte_idx = 1;
-		int8_t start_pos = 8;
+		int8_t start_pos = 0;
 
 		for(uint8_t i = 0; i < 16; i++) {
 			uint16_t channel = this->channels[i] & SBUS_CHANNEL_MASK;
-			uint8_t non_rev_byte;
 
 			int8_t bits_to_write = 11;
-			non_rev_byte = (channel >> (bits_to_write -= start_pos)) | raw_frame[byte_idx];
-			raw_frame[byte_idx++] |= __RBIT(non_rev_byte) >> 24;
+			raw_frame[byte_idx++] |= channel << (start_pos);
+			bits_to_write -= 8 - start_pos;
 
-			start_pos = 8 - bits_to_write;
-			if(start_pos > 0) {
-				raw_frame[byte_idx] |= channel << start_pos;
+			start_pos = 11 - bits_to_write;
+			if(bits_to_write <= 8) {
+				raw_frame[byte_idx] |= channel >> (start_pos);
+				if(bits_to_write == 8) {
+					byte_idx++;
+					start_pos = 0;
+				}
+				else {
+					start_pos = bits_to_write;
+				}
 			}
 			else {
-				start_pos += 8 - start_pos;
-				non_rev_byte = channel >> (bits_to_write -= start_pos) | raw_frame[byte_idx];
-				raw_frame[byte_idx++] = __RBIT(non_rev_byte) >> 24;
-				start_pos = 8 - bits_to_write;
-				raw_frame[byte_idx] |= channel << start_pos;
+				raw_frame[byte_idx++] |= channel >> (start_pos);
+				bits_to_write -= 8;
+				start_pos = bits_to_write;
+				raw_frame[byte_idx] |= channel >> (11 - start_pos);
 			}
 		}
 

@@ -39,13 +39,10 @@ struct SBusFrame{
 	 * S.BUS signal has 16, 11 bit channels along with 2 digital channels. The
 	 * data is to be sent in a big endian format while the LPC1759 is little endian
 	 * as such after building a byte we need to reverse the bits contained.
-	 * To do this we use the __RBIT function which calls the RBIT instruction. This
-	 * instruction operates on words so we need to shift the result to get the expected
-	 * value.
 	 */
 	void serialize(uint8_t* raw_frame) {
 		memset(raw_frame, 0, 25);
-		raw_frame[0] = __RBIT(0xF0) >> 24;
+		raw_frame[0] = 0x0F; // Reversed start byte
 		uint8_t byte_idx = 1;
 		int8_t start_pos = 0;
 
@@ -76,14 +73,12 @@ struct SBusFrame{
 		}
 
 		if(this->channels[SBUS_CHANNEL_17]) {
-			raw_frame[23] |= (1 << 8);
+			raw_frame[23] |= (1 << 0); // Bit 0 due to reversed nature
 		}
 
 		if(this->channels[SBUS_CHANNEL_18]) {
-			raw_frame[23] |= (1 << 7);
+			raw_frame[23] |= (1 << 1); // Bit 1 due to reversed nature
 		}
-
-		raw_frame[23] = __RBIT(raw_frame[23]) >> 24;
 	}
 };
 

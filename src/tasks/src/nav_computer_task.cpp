@@ -27,13 +27,9 @@
 
 namespace nav_computer_task {
 
-enum class LoopTriggerEvent {
-	SEND_FRAME,
-};
-
 static void task_loop(void *p);
-void send_data(sensor_task::adc_values_t data);
-void package_data(sensor_task::adc_values_t data, monarcpb_SysCtrlToNavCPU &message);
+//void send_data(sensor_task::adc_values_t data);
+//void package_data(sensor_task::adc_values_t data, monarcpb_SysCtrlToNavCPU &message);
 void write_to_uart(uint8_t *data, uint16_t len);
 void read_from_uart();
 static void timer_handler(TimerHandle_t xTimer);
@@ -80,10 +76,10 @@ static void task_loop(void *p) {
 	nav_uart->read_async(4, read_len);
 	//nav_uart->read_async(4, read_len);
 	current_frame = monarcpb_SysCtrlToNavCPU_init_zero;
-	LoopTriggerEvent event;
+	nav_event_t event;
 	for(;;) {
 		xQueueReceive(nav_event_queue, &event, portMAX_DELAY);
-		switch (event) {
+		switch (event.type) {
 		case LoopTriggerEvent::SEND_FRAME:
 			// TODO: Serialize data
 			// TODO: Send data
@@ -92,10 +88,7 @@ static void task_loop(void *p) {
 			//send_data(current_event.data);
 			//read_from_uart();
 			break;
-		case WRITE_MESSAGE:
-			asm("nop;");
-			break;
-		case PROCESS_READ:
+		case LoopTriggerEvent::PROCESS_READ:
 			distribute_data(current_event.buffer, current_event.length);
 			break;
 		default:
@@ -123,38 +116,6 @@ void distribute_data(uint8_t* data, uint16_t length) {
 	monarcpb_NavCPUToSysCtrl message = monarcpb_NavCPUToSysCtrl_init_zero;
 	pb_decode(&stream, monarcpb_NavCPUToSysCtrl_fields, &message);
 }
-/*
-void read_from_uart() {
-	uint8_t buffer[128];
-	// Read length of incoming message.
-	uint8_t len[2];
-	nav_uart->read(len, 2);
-	uint16_t message_len = *((uint16_t*)len);
-	// Read message.
-	nav_uart->read(buffer, message_len);
-	pb_istream_t stream = pb_istream_from_buffer(buffer, (uint8_t) message_len);
-	// Decode message.
-	monarcpb_NavCPUToSysCtrl message = monarcpb_NavCPUToSysCtrl_init_zero;
-	pb_decode(&stream, monarcpb_NavCPUToSysCtrl_fields, &message);
-}
-*/
-void send_data(sensor_task::adc_values_t data) {
-	static uint8_t buffer[MAX_BUFFER_SIZE];
-	memset(buffer, 0x00, MAX_BUFFER_SIZE);
-
-	monarcpb_SysCtrlToNavCPU message = monarcpb_SysCtrlToNavCPU_init_zero;
-	package_data(data, message);
-
-	/* Create a stream that will write to our buffer. */
-	pb_ostream_t stream = pb_ostream_from_buffer(buffer, sizeof(buffer));
-
-	/* Now we are ready to encode the message! */
-	pb_encode(&stream, monarcpb_SysCtrlToNavCPU_fields, &message);
-	uint16_t message_len = stream.bytes_written;
-
-	write_to_uart(buffer, message_len);
-	return;
-}
 
 static void read_len_handler(UartError status, uint8_t *data, uint16_t len) {
 	uint16_t sync = data[1] << 8 | data[0];
@@ -174,7 +135,7 @@ static void read_len_handler(UartError status, uint8_t *data, uint16_t len) {
 
 static void read_data_handler(UartError status, uint8_t *data, uint16_t len) {
 	nav_event_t event;
-	event.type = PROCESS_READ;
+	event.type = LoopTriggerEvent::PROCESS_READ;
 	event.buffer = data;
 	event.length = len;
 	add_event_to_queue(event);
@@ -185,9 +146,42 @@ static void read_data_handler(UartError status, uint8_t *data, uint16_t len) {
 
 static void timer_handler(TimerHandle_t xTimer) {
 	nav_event_t event;
-	event.type = WRITE_MESSAGE;
+	event.type = LoopTriggerEvent::SEND_FRAME;
 	add_event_to_queue(event);
 }
+
+/*
+void read_from_uart() {
+	uint8_t buffer[128];
+	// Read length of incoming message.
+	uint8_t len[2];
+	nav_uart->read(len, 2);
+	uint16_t message_len = *((uint16_t*)len);
+	// Read message.
+	nav_uart->read(buffer, message_len);
+	pb_istream_t stream = pb_istream_from_buffer(buffer, (uint8_t) message_len);
+	// Decode message.
+	monarcpb_NavCPUToSysCtrl message = monarcpb_NavCPUToSysCtrl_init_zero;
+	pb_decode(&stream, monarcpb_NavCPUToSysCtrl_fields, &message);
+}
+*/
+/*
+void send_data(sensor_task::adc_values_t data) {
+	static uint8_t buffer[MAX_BUFFER_SIZE];
+	memset(buffer, 0x00, MAX_BUFFER_SIZE);
+
+	monarcpb_SysCtrlToNavCPU message = monarcpb_SysCtrlToNavCPU_init_zero;
+	package_data(data, message);
+
+	pb_ostream_t stream = pb_ostream_from_buffer(buffer, sizeof(buffer));
+
+	pb_encode(&stream, monarcpb_SysCtrlToNavCPU_fields, &message);
+	uint16_t message_len = stream.bytes_written;
+
+	write_to_uart(buffer, message_len);
+	return;
+}
+*/
 
 
 } // End nav_computer_task namespace.

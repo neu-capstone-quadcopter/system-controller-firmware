@@ -42,10 +42,7 @@
 								<option id="com.crt.advproject.cpp.hdrlib.2012186373" name="Library headers" superClass="com.crt.advproject.cpp.hdrlib" value="com.crt.advproject.cpp.hdrlib.newlib" valueType="enumerated"/>
 								<option id="gnu.cpp.compiler.option.include.paths.27202048" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src/lpcopen/inc}&quot;"/>
-<<<<<<< HEAD
-=======
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src/messages/inc}&quot;"/>
->>>>>>> origin/nl-message-types
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/monarcpb/nanopb}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/monarcpb/build/nano}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src/tasks/inc}&quot;"/>

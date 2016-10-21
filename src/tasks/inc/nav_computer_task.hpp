@@ -23,6 +23,10 @@ namespace nav_computer_task {
 		NO_ERROR
 	};
 
+	enum class LoopTriggerEvent {
+		SEND_FRAME = 0,
+		PROCESS_READ,
+	};
 	enum nav_event_type {
 		ADC_SCAN = 0,
 		WRITE_MESSAGE,
@@ -30,8 +34,8 @@ namespace nav_computer_task {
 	};
 
 	typedef struct {
-	  enum nav_event_type type;
-	  sensor_task::adc_values_t data;
+	  enum LoopTriggerEvent type;
+	  //sensor_task::adc_values_t data;
 	  uint16_t length;
 	  uint8_t *buffer;
 	} nav_event_t;

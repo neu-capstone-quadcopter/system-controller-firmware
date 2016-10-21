@@ -31,6 +31,8 @@ UartIo* nav_uart;
 static QueueHandle_t nav_event_queue;
 static TaskHandle_t task_handle;
 
+static monarcpb_SysCtrlToNavCPU current_frame;
+
 void start() {
 	nav_uart = hal::get_driver<UartIo>(hal::NAV_COMPUTER);
 	xTaskCreate(task_loop, "nav computer", 400, NULL, 2, &task_handle);
@@ -38,6 +40,8 @@ void start() {
 }
 
 static void task_loop(void *p) {
+	current_frame = monarcpb_SysCtrlToNavCPU_init_zero;
+
 	nav_event_t current_event;
 	for(;;) {
 		xQueueReceive(nav_event_queue, &current_event, portMAX_DELAY);
@@ -57,8 +61,8 @@ void add_event_to_queue(nav_event_t event) {
 	xQueueSendToBack(nav_event_queue, &event, 0);
 }
 
-void queue_message_send(Message msg) {
-	monarcpb_SysCtrlToNavCPU message = monarcpb_SysCtrlToNavCPU_init_zero;
+void add_message_to_outgoing_frame(OutgoingNavComputerMessage &msg) {
+	msg.serialize_protobuf(current_frame);
 }
 
 void write_to_uart(uint8_t *data, uint16_t len) {
@@ -101,76 +105,7 @@ void send_data(sensor_task::adc_values_t data) {
 
 void package_data(sensor_task::adc_values_t data, monarcpb_SysCtrlToNavCPU &message) {
 	int i = 0;
-	message.has_analog_sensors = true;
-	while (i < 16) {
-		switch (i) {
-		case 0:
-			message.analog_sensors.has_sys_3v3_isense = true;
-			message.analog_sensors.sys_3v3_isense = data.sensor_values[i];
-			break;
-		case 1:
-			message.analog_sensors.has_sys_3v3_isense = true;
-			message.analog_sensors.sys_5v_isense = data.sensor_values[i];
-			break;
-		case 2:
-			message.analog_sensors.has_vgps_isense = true;
-			message.analog_sensors.vgps_isense = data.sensor_values[i];
-			break;
-		case 3:
-			message.analog_sensors.has_vusb_isense = true;
-			message.analog_sensors.vusb_isense = data.sensor_values[i];
-			break;
-		case 4:
-			message.analog_sensors.has_vfltctl_isense = true;
-			message.analog_sensors.vfltctl_isense = data.sensor_values[i];
-			break;
-		case 5:
-			message.analog_sensors.has_navcmp_isense = true;
-			message.analog_sensors.navcmp_isense = data.sensor_values[i];
-			break;
-		case 6:
-			message.analog_sensors.has_vradio_isense = true;
-			message.analog_sensors.vradio_isense = data.sensor_values[i];
-			break;
-		case 7:
-			message.analog_sensors.has_tp27 = true;
-			message.analog_sensors.tp27 = data.sensor_values[i];
-			break;
-		case 8:
-			message.analog_sensors.has_vradio_vsense = true;
-			message.analog_sensors.vradio_vsense = data.sensor_values[i];
-			break;
-		case 9:
-			message.analog_sensors.has_navcmp_vsense = true;
-			message.analog_sensors.navcmp_vsense = data.sensor_values[i];
-			break;
-		case 10:
-			message.analog_sensors.has_vusb_vsense = true;
-			message.analog_sensors.vusb_vsense = data.sensor_values[i];
-			break;
-		case 11:
-			message.analog_sensors.has_vfltctl_vsense = true;
-			message.analog_sensors.vfltctl_vsense = data.sensor_values[i];
-			break;
-		case 12:
-			message.analog_sensors.has_vgps_vsense = true;
-			message.analog_sensors.vgps_vsense = data.sensor_values[i];
-			break;
-		case 13:
-			message.analog_sensors.has_sys_5v_vsense = true;
-			message.analog_sensors.sys_5v_vsense = data.sensor_values[i];
-			break;
-		case 14:
-			message.analog_sensors.has_vsys_vsense = true;
-			message.analog_sensors.vsys_vsense = data.sensor_values[i];
-			break;
-		case 15:
-			message.analog_sensors.has_sys_3v3_vsense = true;
-			message.analog_sensors.sys_3v3_vsense = data.sensor_values[i];
-			break;
-		}
-		i++;
-	}
+
 	return;
 }
 

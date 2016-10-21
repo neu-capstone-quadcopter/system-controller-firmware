@@ -30,7 +30,7 @@ namespace nav_computer_task {
 	} nav_event_t;
 
 	void add_event_to_queue(nav_event_t event);
-	void queue_message_send(Message msg);
+	void add_message_to_outgoing_frame(OutgoingNavComputerMessage &msg);
 
 } // End nav_computer_task namespace.
 

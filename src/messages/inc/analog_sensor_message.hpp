@@ -17,7 +17,7 @@ typedef uint16_t AdcSensorValue;
 struct AnalogSensorMessage : OutgoingNavComputerMessage {
 	AdcSensorValue adc_values[16];
 
-	void serialize_protobuf(monarcpb_SysCtrlToNavCPU protobuf);
+	void serialize_protobuf(monarcpb_SysCtrlToNavCPU &protobuf);
 };
 
 #endif /* MESSAGES_INC_ANALOG_SENSOR_MESSAGE_HPP_ */

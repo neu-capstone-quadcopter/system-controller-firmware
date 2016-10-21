@@ -13,7 +13,7 @@ struct Message {
 };
 
 struct OutgoingNavComputerMessage : Message {
-	virtual void serialize_protobuf(monarcpb_SysCtrlToNavCPU protobuf) = 0;
+	virtual void serialize_protobuf(monarcpb_SysCtrlToNavCPU &protobuf) = 0;
 };
 
 

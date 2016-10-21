@@ -9,6 +9,7 @@
 #define TASKS_INC_NAV_COMPUTER_TASK_HPP_
 
 #include "analog_sensor_collection_task.hpp"
+#include "message_base_types.hpp"
 #include "FreeRTOS.h"
 #include "queue.h"
 #include "task.h"
@@ -26,7 +27,6 @@ namespace nav_computer_task {
 
 	typedef struct {
 	  enum nav_event_type type;
-	  sensor_task::adc_values_t data;
 	} nav_event_t;
 
 	void add_event_to_queue(nav_event_t event);

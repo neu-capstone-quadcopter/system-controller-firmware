@@ -8,6 +8,8 @@
 #ifndef UTIL_INC_MESSAGE_TYPES_HPP_
 #define UTIL_INC_MESSAGE_TYPES_HPP_
 
+#include "api.pb.h"
+
 struct Message {
 
 };

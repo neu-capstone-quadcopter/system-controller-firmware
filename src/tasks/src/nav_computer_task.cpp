@@ -1,5 +1,5 @@
 /*
- * nav_computer_task.cpp
+ * nav_computer_task.cp
  *
  *  Created on: Sep 27, 2016
  *      Author: bsoper
@@ -21,9 +21,14 @@
 
 namespace nav_computer_task {
 
+enum class LoopTriggerEvent {
+	SEND_FRAME,
+};
+
 static void task_loop(void *p);
-void send_data(sensor_task::adc_values_t data);
-void package_data(sensor_task::adc_values_t data, monarcpb_SysCtrlToNavCPU &message);
+// TODO: Crate a function that serializes the frame
+//void send_data(sensor_task::adc_values_t data); TODO: Make this just send data
+
 void write_to_uart(uint8_t *data, uint16_t len);
 void read_from_uart();
 
@@ -42,14 +47,13 @@ void start() {
 static void task_loop(void *p) {
 	current_frame = monarcpb_SysCtrlToNavCPU_init_zero;
 
-	nav_event_t current_event;
+	LoopTriggerEvent event;
 	for(;;) {
-		xQueueReceive(nav_event_queue, &current_event, portMAX_DELAY);
-		switch (current_event.type) {
-		case ADC_SCAN:
-			// Package and send data frame
-			send_data(current_event.data);
-			read_from_uart();
+		xQueueReceive(nav_event_queue, &event, portMAX_DELAY);
+		switch (event) {
+		case LoopTriggerEvent::SEND_FRAME:
+			// TODO: Serialize data
+			// TODO: Send data
 			break;
 		default:
 			break;
@@ -82,32 +86,27 @@ void read_from_uart() {
 	// Decode message.
 	monarcpb_NavCPUToSysCtrl message = monarcpb_NavCPUToSysCtrl_init_zero;
 	pb_decode(&stream, monarcpb_NavCPUToSysCtrl_fields, &message);
-	int32_t gps = message.telemetry.GPS;
+	//int32_t gps = message.telemetry.GPS;
 }
 
-void send_data(sensor_task::adc_values_t data) {
-	static uint8_t buffer[MAX_BUFFER_SIZE];
-	memset(buffer, 0x00, MAX_BUFFER_SIZE);
+//void send_data(sensor_task::adc_values_t data) {
+//	static uint8_t buffer[MAX_BUFFER_SIZE];
+//	memset(buffer, 0x00, MAX_BUFFER_SIZE);
+//
+//	monarcpb_SysCtrlToNavCPU message = monarcpb_SysCtrlToNavCPU_init_zero;
+//	package_data(data, message);
+//
+//	/* Create a stream that will write to our buffer. */
+//	pb_ostream_t stream = pb_ostream_from_buffer(buffer, sizeof(buffer));
+//
+//	/* Now we are ready to encode the message! */
+//	pb_encode(&stream, monarcpb_SysCtrlToNavCPU_fields, &message);
+//	uint16_t message_len = stream.bytes_written;
+//
+//	write_to_uart(buffer, message_len);
+//	return;
+//}
 
-	monarcpb_SysCtrlToNavCPU message = monarcpb_SysCtrlToNavCPU_init_zero;
-	package_data(data, message);
-
-	/* Create a stream that will write to our buffer. */
-	pb_ostream_t stream = pb_ostream_from_buffer(buffer, sizeof(buffer));
-
-	/* Now we are ready to encode the message! */
-	pb_encode(&stream, monarcpb_SysCtrlToNavCPU_fields, &message);
-	uint16_t message_len = stream.bytes_written;
-
-	write_to_uart(buffer, message_len);
-	return;
-}
-
-void package_data(sensor_task::adc_values_t data, monarcpb_SysCtrlToNavCPU &message) {
-	int i = 0;
-
-	return;
-}
 
 } // End nav_computer_task namespace.
 

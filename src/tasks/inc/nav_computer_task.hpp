@@ -14,9 +14,11 @@
 #include "task.h"
 
 namespace nav_computer_task {
-
-	static QueueHandle_t nav_event_queue;
 	void start(void);
+
+	enum class NavComputerCmdStatus {
+		NO_ERROR
+	};
 
 	enum nav_event_type {
 		ADC_SCAN = 0
@@ -28,6 +30,7 @@ namespace nav_computer_task {
 	} nav_event_t;
 
 	void add_event_to_queue(nav_event_t event);
+	void queue_message_send(Message msg);
 
 } // End nav_computer_task namespace.
 

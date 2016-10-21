@@ -28,6 +28,7 @@ void write_to_uart(uint8_t *data, uint16_t len);
 void read_from_uart();
 
 UartIo* nav_uart;
+static QueueHandle_t nav_event_queue;
 static TaskHandle_t task_handle;
 
 void start() {
@@ -54,6 +55,10 @@ static void task_loop(void *p) {
 
 void add_event_to_queue(nav_event_t event) {
 	xQueueSendToBack(nav_event_queue, &event, 0);
+}
+
+void queue_message_send(Message msg) {
+	monarcpb_SysCtrlToNavCPU message = monarcpb_SysCtrlToNavCPU_init_zero;
 }
 
 void write_to_uart(uint8_t *data, uint16_t len) {

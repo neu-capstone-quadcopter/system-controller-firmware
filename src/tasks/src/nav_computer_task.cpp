@@ -45,7 +45,7 @@ auto read_data = dlgt::make_delegate(&read_data_handler);
 
 void start() {
 	nav_uart = hal::get_driver<UartIo>(hal::NAV_COMPUTER);
-	nav_uart->allocate_buffers(32, 32);
+	nav_uart->allocate_buffers(128, 128);
 	dma_man = hal::get_driver<GpdmaManager>(hal::GPDMA_MAN);
 	dma_channel_tx = dma_man->allocate_channel(0);
 	dma_channel_rx = dma_man->allocate_channel(1);
@@ -65,7 +65,7 @@ void initialize_timers() {
 static void task_loop(void *p) {
 	initialize_timers();
 	nav_event_t current_event;
-	nav_uart->read_async(30, read_len);
+	nav_uart->read_async(4, read_len);
 	//nav_uart->read_async(4, read_len);
 	for(;;) {
 		xQueueReceive(nav_event_queue, &current_event, portMAX_DELAY);
@@ -136,7 +136,7 @@ void send_data(sensor_task::adc_values_t data) {
 }
 
 static void read_len_handler(UartError status, uint8_t *data, uint16_t len) {
-/*	uint16_t sync = data[1] << 8 | data[0];
+	uint16_t sync = data[1] << 8 | data[0];
 	if (sync != 0x91D3) {
 		TimerHandle_t timer_sync = xTimerCreate("SyncTimer", 1, pdTRUE, NULL, [](TimerHandle_t xTimer) {
 			nav_uart->read_async(4, read_len);
@@ -145,7 +145,7 @@ static void read_len_handler(UartError status, uint8_t *data, uint16_t len) {
 		xTimerStart(timer_sync, 0);
 		delete[] data;
 		return;
-	}*/
+	}
 	uint16_t length = data[3] << 8 | data[2];
 	nav_uart->read_async(length, read_data);
 	delete[] data;

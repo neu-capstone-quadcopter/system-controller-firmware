@@ -42,10 +42,12 @@ struct SBusFrame{
 	 */
 	void serialize(uint8_t* raw_frame) {
 		memset(raw_frame, 0, 25);
+
 		raw_frame[0] = 0x0F; // Reversed start byte
 		uint8_t byte_idx = 1;
 		int8_t start_pos = 0;
 
+		// TODO: Could have just used a packed struct...
 		for(uint8_t i = 0; i < 16; i++) {
 			uint16_t channel = this->channels[i] & SBUS_CHANNEL_MASK;
 
@@ -127,7 +129,7 @@ static void task_loop(void *p) {
 
 	//memset(sbus_frame.channels, 0, 18);
 	for(uint8_t i = 0; i< 18; i++) {
-		sbus_frame.channels[i] = 2040;
+		sbus_frame.channels[i] = 1500; //2040;
 	}
 	setup_ritimer();
 

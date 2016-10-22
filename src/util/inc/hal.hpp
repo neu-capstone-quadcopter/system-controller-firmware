@@ -21,6 +21,7 @@ namespace hal {
 		LED_1,
 		SENSOR_ADC,
 		CD74HC4067,
+		NAV_COMPUTER,
 		TELEM_CC1120,
 		NUM_IDENTIFIERS = TELEM_CC1120 + 1 // Add all entries before this and update
 	} driver_identifier;

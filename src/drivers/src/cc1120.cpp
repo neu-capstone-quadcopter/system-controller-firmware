@@ -166,12 +166,6 @@ void Cc1120::init_device(void) {
 	}
 
 	access_command_strobe(CommandStrobeAddress::SNOP);
-
-	/*uint8_t test_data[4] = {0x01, 0x02, 0x03, 0x04};
-	uint8_t test_read[6];
-	read_extended_register_burst(0x00, test_read, 4);
-	write_extended_register_burst(0x00, test_data, 4);
-	read_extended_register_burst(0x00, test_read, 4);*/
 }
 
 void Cc1120::reset(void) {
@@ -258,7 +252,7 @@ void Cc1120::read_register_single(uint8_t address, uint8_t *data) {
 	this->raw_status = data[0];
 }
 
-void Cc1120::read_register_single_async(uint8_t address, uint8_t *data, CC1120CommandDataCallback callback) {
+void Cc1120::read_register_single_async(uint8_t address, CC1120CommandDataCallback callback) {
 	configASSERT(0);
 }
 
@@ -268,7 +262,7 @@ void Cc1120::read_register_burst(uint8_t address, uint8_t *data, uint8_t data_le
 	this->raw_status = data[0];
 }
 
-void Cc1120::read_register_burst_async(uint8_t address, uint8_t *data, uint8_t data_len, CC1120CommandDataCallback callback) {
+void Cc1120::read_register_burst_async(uint8_t address, uint8_t data_len, CC1120CommandDataCallback callback) {
 	configASSERT(0);
 }
 
@@ -279,7 +273,7 @@ void Cc1120::read_extended_register_single(uint8_t address, uint8_t *data) {
 	this->raw_status = data[0];
 }
 
-void Cc1120::read_extended_register_single_async(uint8_t address, uint8_t *data, CC1120CommandDataCallback callback) {
+void Cc1120::read_extended_register_single_async(uint8_t address, CC1120CommandDataCallback callback) {
 	configASSERT(0);
 }
 
@@ -290,7 +284,7 @@ void Cc1120::read_extended_register_burst(uint8_t address, uint8_t *data, uint8_
 	this->raw_status = data[0];
 }
 
-void Cc1120::read_extended_register_burst_async(uint8_t address, uint8_t *data, uint8_t data_len, CC1120CommandDataCallback callback) {
+void Cc1120::read_extended_register_burst_async(uint8_t address, uint8_t data_len, CC1120CommandDataCallback callback) {
 	configASSERT(0);
 }
 
@@ -314,7 +308,7 @@ void Cc1120::read_rx_fifo(uint8_t *data, uint8_t read_len) {
 	configASSERT(0);
 }
 
-void Cc1120::read_rx_fifo_async(uint8_t *data, uint8_t read_len, CC1120CommandDataCallback callback) {
+void Cc1120::read_rx_fifo_async(uint8_t read_len, CC1120CommandDataCallback callback) {
 	configASSERT(0);
 }
 

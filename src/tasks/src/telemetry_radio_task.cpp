@@ -24,18 +24,24 @@ namespace telemetry_radio_task {
 	typedef enum {
 		IDLE,
 		TRANSMIT,
+		TRANSMIT_TX_FIFO_ABOVE_THR,
 		RECEIVE,
 		RECEIVING_PACKET
 	} TaskState;
 
 	typedef enum {
 		TRANSMIT_SLOT_START,
+		TRANSMIT_MESSAGE,
+		TX_FIFO_FILL,
 	} Event;
+
+	const uint8_t TX_FIFO_THRESHOLD = 50;
 
 
 	static void task_loop(void *p);
 	static void enter_rx_state();
 	static void enter_tx_state();
+	static void end_tx_state();
 	static void state_timer_handler(TimerHandle_t timer);
 	static void cc1120_gpio3_int_handler(void);
 	static void cc1120_gpio2_int_handler(void);
@@ -50,6 +56,9 @@ namespace telemetry_radio_task {
 	static TimerHandle_t state_timer;
 	static TaskState state;
 	static int16_t pkt_count = 0;
+	static uint8_t current_tx_pkt_length = 0;
+	static uint8_t current_tx_pkt_sent;
+	static uint8_t* tx_message_serialized;
 
 	driver::Cc1120 *telem_cc1120;
 
@@ -78,14 +87,32 @@ namespace telemetry_radio_task {
 		state = IDLE;
 
 		Event current_event;
+		Message tx_message;
 
 		for (;;) {
 			xQueueReceive(event_queue, &current_event, portMAX_DELAY);
 			switch (current_event) {
 			case TRANSMIT_SLOT_START:
-				// extract message contents
-				// serialize data
-				// trigger async send
+				current_tx_pkt_sent = 0;
+				telem_cc1120->access_command_strobe(driver::CommandStrobeAddress::SFTX);
+				// Transmit slot is starting.
+
+				// We've received a message to trasmit
+				// Serialize Protobuf
+				// serialize_message(&tx_message, tx_message_serialized);
+				if (current_tx_pkt_length > 128) {
+					telem_cc1120->write_tx_fifo_async(tx_message_serialized, 128,
+						[](Cc1120CommandStatus status){
+							asm("nop");
+						});
+					current_tx_pkt_sent = 128;
+				} else {
+					telem_cc1120->write_tx_fifo_async(tx_message_serialized, current_tx_pkt_length,
+						[](Cc1120CommandStatus status){
+							asm("nop");
+						});
+					end_tx_state();
+				}
 				break;
 			default:
 				configASSERT(0);
@@ -124,13 +151,18 @@ namespace telemetry_radio_task {
 		Event e = TRANSMIT_SLOT_START;
 		xQueueSendToBack(event_queue, &e, 0);
 
-		taskENTER_CRITICAL();
+		/*taskENTER_CRITICAL();
 		if (current_tx_queue == &tx_queue_0) {
 			current_tx_queue = &tx_queue_1;
 		} else {
 			current_tx_queue = &tx_queue_0;
 		}
-		taskEXIT_CRITICAL();
+		taskEXIT_CRITICAL();*/
+	}
+
+	static void end_tx_state() {
+		xTimerStop(state_timer, 0);
+		enter_rx_state();
 	}
 
 	static void state_timer_handler(TimerHandle_t timer) {
@@ -158,7 +190,27 @@ namespace telemetry_radio_task {
 			// code
 			break;
 		case TRANSMIT:
-			// code
+			state = TRANSMIT_TX_FIFO_ABOVE_THR;
+			board::cc1120_gpio2_set_falling_edge_int(true);
+			board::cc1120_gpio2_set_rising_edge_int(false);
+			break;
+		case TRANSMIT_TX_FIFO_ABOVE_THR:
+			state = TRANSMIT;
+			board::cc1120_gpio2_set_falling_edge_int(false);
+			board::cc1120_gpio2_set_rising_edge_int(true);
+			if (128 - TX_FIFO_THRESHOLD > current_tx_pkt_length - current_tx_pkt_sent) {
+				telem_cc1120->write_tx_fifo_async(tx_message_serialized + current_tx_pkt_sent, current_tx_pkt_length - current_tx_pkt_sent,
+						[](Cc1120CommandStatus status){
+							asm("nop");
+						});
+				end_tx_state();
+			}
+			else {
+				telem_cc1120->write_tx_fifo_async(tx_message_serialized + current_tx_pkt_sent, 128 - TX_FIFO_THRESHOLD, [](Cc1120CommandStatus status){
+							asm("nop");
+						});
+				current_tx_pkt_sent += 128 - TX_FIFO_THRESHOLD;
+			}
 			break;
 		default:
 			configASSERT(0);

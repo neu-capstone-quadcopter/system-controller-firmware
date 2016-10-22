@@ -25,6 +25,8 @@ namespace board {
 	void setup_clocking(void);
 	void ssp_init(LPC_SSP_T *ssp);
 	void cc1120_init();
+	void cc1120_gpio2_set_rising_edge_int(bool enable);
+	void cc1120_gpio2_set_falling_edge_int(bool enable);
 	bool cc1120_is_gpio3_int(void);
 	bool cc1120_is_gpio2_int(void);
 	bool cc1120_is_gpio0_int(void);

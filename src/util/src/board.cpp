@@ -88,6 +88,24 @@ namespace board {
 		Chip_GPIOINT_SetIntRising(LPC_GPIOINT, CC1120_GPIO0_INTPORT, CC1120_GPIO0_PIN);
 	}
 
+	void cc1120_gpio2_set_rising_edge_int(bool enable) {
+		if (enable) {
+			LPC_GPIOINT->IO2.ENR |= (1 << CC1120_GPIO2_PIN);
+		}
+		else {
+			LPC_GPIOINT->IO2.ENR &= ~(1 << CC1120_GPIO2_PIN);
+		}
+	}
+
+	void cc1120_gpio2_set_falling_edge_int(bool enable) {
+		if (enable) {
+			LPC_GPIOINT->IO2.ENF |= (1 << CC1120_GPIO2_PIN);
+		}
+		else {
+			LPC_GPIOINT->IO2.ENF &= ~(1 << CC1120_GPIO2_PIN);
+		}
+	}
+
 	bool cc1120_is_gpio3_int(void) {
 		if (Chip_GPIOINT_GetStatusRising(LPC_GPIOINT, CC1120_GPIO3_INTPORT) & (1 << CC1120_GPIO3_PIN)) {
 			Chip_GPIOINT_ClearIntStatus(LPC_GPIOINT, CC1120_GPIO3_INTPORT, 1 << CC1120_GPIO3_PIN);

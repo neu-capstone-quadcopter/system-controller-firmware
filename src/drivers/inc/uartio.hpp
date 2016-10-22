@@ -21,8 +21,6 @@
 #include "driver.hpp"
 #include "chip.h"
 
-typedef void (*uart_char_read_callback)(uint8_t);
-
 enum UartTransferMode {
 	UART_XFER_MODE_POLLING,
 	UART_XFER_MODE_INTERRUPT,
@@ -38,14 +36,7 @@ enum UartError {
 	UART_ERROR_BUFFER_OVERFLOW
 };
 
-struct UartReadData {
-	UartReadData(uint8_t* data, uint16_t length, UartError status);
-	std::unique_ptr<uint8_t[]> data;
-	uint16_t length;
-	UartError status;
-};
-
-typedef dlgt::delegate<void(*)(std::shared_ptr<UartReadData>)> UartReadDelegate;
+typedef dlgt::delegate<void(*)(UartError, uint8_t*, uint16_t)> UartReadDelegate;
 typedef dlgt::delegate<void(*)(UartError)> UartWriteDelegate;
 
 class UartIo : public Driver {
@@ -157,7 +148,6 @@ private:
 	uint16_t tx_op_len;
 	uint16_t rx_op_len;
 
-	uart_char_read_callback callback;
 	UartReadDelegate *rx_delegate;
 	UartWriteDelegate *tx_delegate;
 };

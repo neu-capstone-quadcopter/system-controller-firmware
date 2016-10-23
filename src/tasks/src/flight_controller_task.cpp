@@ -16,11 +16,66 @@
 
 #define EVENT_QUEUE_DEPTH 8
 #define MAX_BUFFER_SIZE 255
+#define STREAM_BUFFER_SIZE 200
+#define ERROR_VAL 999999
 
 namespace flight_controller_task {
 
+class Stream {
+public:
+
+	Stream()
+	{
+		read_ptr = stream_buffer;
+		write_ptr = stream_buffer;
+	}
+
+	void addToStream(uint8_t* data, uint8_t len)
+	{
+
+		if(len >= STREAM_BUFFER_SIZE)
+		{
+			//Potentially throw some error if len too large for buffer
+		}
+
+		if((write_ptr + len) <= (stream_buffer + STREAM_BUFFER_SIZE))
+		{
+			memcpy(write_ptr, data, len);
+			write_ptr += len;
+		}
+		else
+		{
+			uint8_t rollover = (uint8_t)((write_ptr + len) - (stream_buffer + STREAM_BUFFER_SIZE));
+			uint8_t amt_to_write = (reinterpret_cast<uint32_t>(write_ptr) + len) - rollover;
+			memcpy(write_ptr, data, amt_to_write);
+			write_ptr = stream_buffer;
+			memcpy(write_ptr, data + amt_to_write, rollover);
+			write_ptr += rollover;
+		}
+
+
+	}
+
+	uint8_t popFromStream()
+	{
+		//Pop one byte at a time based on our read ptr
+		uint8_t val = *read_ptr;
+		if(read_ptr < (stream_buffer + STREAM_BUFFER_SIZE))
+			read_ptr ++;
+		else
+			read_ptr = stream_buffer;
+
+		return val;
+	}
+
+private:
+	uint8_t stream_buffer[STREAM_BUFFER_SIZE]; //Use char* to leverage str functions
+	uint8_t *read_ptr;
+	uint8_t *write_ptr;
+};
+
 struct SBusFrame{
-	uint16 channels[18];
+	uint16_t channels[18];
 	bool frame_lost;
 	bool fail_safe_activated;
 };
@@ -36,6 +91,8 @@ UartIo* fc_sbus_uart;
 static TaskHandle_t task_handle;
 
 auto fc_bb_read_del = dlgt::make_delegate(&fc_bb_read_handler);
+
+Stream blackbox_stream;
 
 void start() {
 	fc_blackbox_uart = hal::get_driver<UartIo>(hal::FC_BLACKBOX_UART);
@@ -53,8 +110,8 @@ static void task_loop(void *p) {
 		xQueueReceive(flight_cont_event_queue, &current_event, portMAX_DELAY);
 		switch (current_event.type) {
 		case BLACKBOX_READ:
-			// Receive data frame from blackbox
-			//read_from_uart();
+			// Now that we have gotten read event, we know that we
+			// have new data in our stream
 			break;
 		case FLIGHT_COMMAND:
 			//Do operations to send command
@@ -83,24 +140,6 @@ void write_to_sbus(uint8_t *data, uint8_t len) {
 
 }
 
-//Modify this function to read in blackbox data from
-//the serial interface
-void read_from_uart() {
-	//Our initial buffer
-	uint8_t buffer[128];
-	memset(buffer, 0x00, 128);
-
-	//Figure out length of our incoming message
-	uint8_t length = 128;
-
-	//Read incoming message into buffer
-	fc_blackbox_uart->read(buffer, length);
-
-	//Do something with this message
-	buffer[127] = 0x00;
-
-}
-
 uint8_t* serializeSbusFrame(SBusFrame s)
 {
 	uint8_t* raw_frame = new uint8_t[25];
@@ -111,13 +150,18 @@ uint8_t* serializeSbusFrame(SBusFrame s)
 
 void fc_bb_read_handler(std::shared_ptr<UartReadData> read_status)
 	{
-		std::unique_ptr<uint8_t[]> read_data = std::move(read_status->data);
+		//std::unique_ptr<uint8_t[]> read_data = std::move(read_status->data);
+		uint16_t len = 16;
+		uint8_t *data;
 
+		//Add data to stream
+		blackbox_stream.addToStream(data, len);
+
+		//Create read event
 		flight_cont_event_t e;
-		e.type = BLACKBOX_READ;
-		e.length = 100;
+		e.type = BLACKBOX_READ;;
 
-		e.data = read_data.get();
+		//Add to the queue
 		xQueueSendToBackFromISR(flight_cont_event_queue, &e, 0);
 		fc_blackbox_uart->read_async(100, fc_bb_read_del);
 	}

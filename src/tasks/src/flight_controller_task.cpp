@@ -10,6 +10,7 @@
 #include "uartio.hpp"
 #include "FreeRTOS.h"
 #include "task.h"
+#include "blackbox_parser.hpp"
 
 #include <stdlib.h>
 #include <cstring>
@@ -18,63 +19,9 @@
 
 #define EVENT_QUEUE_DEPTH 8
 #define MAX_BUFFER_SIZE 255
-#define STREAM_BUFFER_SIZE 200
 #define ERROR_VAL 999999
 
 namespace flight_controller_task {
-
-class Stream {
-public:
-
-	Stream()
-	{
-		read_ptr = stream_buffer;
-		write_ptr = stream_buffer;
-	}
-
-	void addToStream(uint8_t* data, uint8_t len)
-	{
-
-		if(len >= STREAM_BUFFER_SIZE)
-		{
-			//Potentially throw some error if len too large for buffer
-		}
-
-		if((write_ptr + len) <= (stream_buffer + STREAM_BUFFER_SIZE))
-		{
-			memcpy(write_ptr, data, len);
-			write_ptr += len;
-		}
-		else
-		{
-			uint8_t rollover = (uint8_t)((write_ptr + len) - (stream_buffer + STREAM_BUFFER_SIZE));
-			uint8_t amt_to_write = (reinterpret_cast<uint32_t>(write_ptr) + len) - rollover;
-			memcpy(write_ptr, data, amt_to_write);
-			write_ptr = stream_buffer;
-			memcpy(write_ptr, data + amt_to_write, rollover);
-			write_ptr += rollover;
-		}
-
-
-	}
-
-	uint8_t popFromStream()
-	{
-		//Pop one byte at a time based on our read ptr
-		uint8_t val = *read_ptr;
-		if(read_ptr < (stream_buffer + STREAM_BUFFER_SIZE))
-			read_ptr ++;
-		else
-			read_ptr = stream_buffer;
-
-		return val;
-	}
-
-private:
-	uint8_t stream_buffer[STREAM_BUFFER_SIZE]; //Use char* to leverage str functions
-	uint8_t *read_ptr;
-	uint8_t *write_ptr;
-};
 
 #define SBUS_CHANNEL_MASK 0x07ff
 #define SBUS_CHANNEL_BIT_LEN 11
@@ -199,7 +146,8 @@ static void task_loop(void *p) {
 		switch (current_event.type) {
 		case BLACKBOX_READ:
 			// Now that we have gotten read event, we know that we
-			// have new data in our stream
+			// have new data in our stream and should call our parser
+
 			break;
 		case FLIGHT_COMMAND:
 			//Do operations to send command

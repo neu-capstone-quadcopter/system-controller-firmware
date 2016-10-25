@@ -12,6 +12,11 @@ public:
 		write_ptr = stream_buffer;
 	}
 
+	bool streamIsEmpty()
+	{
+		return read_ptr == write_ptr;
+	}
+
 	void addToStream(uint8_t* data, uint8_t len)
 	{
 

@@ -70,13 +70,11 @@ namespace telemetry_radio_task {
 		telem_cc1120 = hal::get_driver<Cc1120>(hal::TELEM_CC1120);
 		xTaskCreate(task_loop, "telem radio task", 1536, NULL, 2, &task_handle);
 
-		tx_queue_0 = xQueueCreate(TX_QUEUE_DEPTH, sizeof(Message*));
-		tx_queue_1 = xQueueCreate(TX_QUEUE_DEPTH, sizeof(Message*));
 		event_queue = xQueueCreateCountingSemaphore(EVENT_QUEUE_DEPTH, sizeof(Event));
 	}
 
 	void queue_outgoing_message(Message* message) {
-		xQueueSendToBack(*current_tx_queue, message, 0);
+		// Adds each message to outgoing protobuf object
 	}
 
 	static void task_loop(void *p) {
@@ -107,14 +105,13 @@ namespace telemetry_radio_task {
 					telem_cc1120->write_tx_fifo_async(tx_message_serialized, 128,
 						[](Cc1120CommandStatus status){
 							asm("nop");
+							current_tx_pkt_sent = 128;
 						});
-					current_tx_pkt_sent = 128;
 				} else {
 					telem_cc1120->write_tx_fifo_async(tx_message_serialized, current_tx_pkt_length,
 						[](Cc1120CommandStatus status){
-							asm("nop");
+							end_tx_state();
 						});
-					end_tx_state();
 				}
 				break;
 			default:
@@ -210,15 +207,13 @@ namespace telemetry_radio_task {
 			if (128 - TX_FIFO_THRESHOLD > current_tx_pkt_length - current_tx_pkt_sent) {
 				telem_cc1120->write_tx_fifo_async(tx_message_serialized + current_tx_pkt_sent, current_tx_pkt_length - current_tx_pkt_sent,
 						[](Cc1120CommandStatus status){
-							asm("nop");
+							end_tx_state();
 						});
-				end_tx_state();
 			}
 			else {
 				telem_cc1120->write_tx_fifo_async(tx_message_serialized + current_tx_pkt_sent, 128 - TX_FIFO_THRESHOLD, [](Cc1120CommandStatus status){
-							asm("nop");
-						});
-				current_tx_pkt_sent += 128 - TX_FIFO_THRESHOLD;
+						current_tx_pkt_sent += 128 - TX_FIFO_THRESHOLD;
+					});
 			}
 			break;
 		default:
@@ -240,7 +235,7 @@ namespace telemetry_radio_task {
 							xQueueSendToBack(event_queue, &e, 0);
 						});
 				}
-				else if (*message_length < 128 - RX_FIFO_THRESHOLD && message_length_received > 0) {
+				else if (*message_length - message_length_received < 128 - RX_FIFO_THRESHOLD) {
 					telem_cc1120->read_rx_fifo_async(*message_length, [](Cc1120CommandStatus status, uint8_t* message_data, uint8_t message_length) {
 							memcpy(rx_message_data + message_length_received, message_data, message_length);
 							message_length_received = 0;

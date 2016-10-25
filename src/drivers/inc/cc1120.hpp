@@ -21,8 +21,9 @@
 
 namespace driver {
 enum class Cc1120CommandStatus {
-	SUCCESS,
-	GENERAL_ERROR,
+	SUCCESS = 0,
+	GENERAL_ERROR = 1,
+	WRITE_VERIFY_ERROR = 2,
 };
 
 enum class CommandStrobeAddress {
@@ -50,39 +51,39 @@ class Cc1120 : public Driver {
 public:
 	Cc1120(SspIo *ssp_device);
 	void init_driver(void);
-	void init_device(void);
-	void reset();
-	void gpio3_set_interrupt_pin_handler(Cc1120GpioInterruptHandler callback);
-	void gpio2_set_interrupt_pin_handler(Cc1120GpioInterruptHandler callback);
-	void gpio0_set_interrupt_pin_handler(Cc1120GpioInterruptHandler callback);
-	void write_register_single(uint8_t address, uint8_t data);
-	void write_register_single_async(uint8_t address, uint8_t data, CC1120CommandCallback status);
-	void write_register_burst(uint8_t address, uint8_t *data, uint8_t data_len);
-	void write_register_burst_async(uint8_t address, uint8_t *data, uint8_t data_len, CC1120CommandCallback callback);
-	void write_extended_register_single(uint8_t address, uint8_t data);
-	void write_extended_register_single_async(uint8_t address, uint8_t data, CC1120CommandCallback callback);
-	void write_extended_register_burst(uint8_t address, uint8_t *data, uint8_t data_len);
-	void write_extended_register_burst_async(uint8_t address, uint8_t *data, uint8_t data_len, CC1120CommandCallback callback);
-	void write_verify_register(uint8_t address, uint8_t data);
-	void write_verify_register_async(uint8_t address, uint8_t data, CC1120CommandCallback callback);
-	void write_verify_extended_register(uint8_t address, uint8_t data);
-	void write_verify_extended_register_async(uint8_t address, uint8_t data, CC1120CommandCallback callback);
-	void read_register_single(uint8_t address, uint8_t *data);
-	void read_register_single_async(uint8_t address, CC1120CommandDataCallback callback);
-	void read_register_burst(uint8_t address, uint8_t *data, uint8_t data_len);
-	void read_register_burst_async(uint8_t address, uint8_t data_len, CC1120CommandDataCallback callback);
-	void read_extended_register_single(uint8_t address, uint8_t *data);
-	void read_extended_register_single_async(uint8_t address, CC1120CommandDataCallback callback);
-	void read_extended_register_burst(uint8_t address, uint8_t *data, uint8_t data_len);
-	void read_extended_register_burst_async(uint8_t address, uint8_t data_len, CC1120CommandDataCallback callback);
-	void access_command_strobe(CommandStrobeAddress address);
-	void access_command_strobe_async(CommandStrobeAddress address, CC1120CommandCallback callback);
-	void write_tx_fifo(uint8_t *data, uint8_t write_len);
-	void write_tx_fifo_async(uint8_t *data, uint8_t write_len, CC1120CommandCallback callback);
-	void read_rx_fifo(uint8_t *data, uint8_t read_len);
-	void read_rx_fifo_async(uint8_t read_len, CC1120CommandDataCallback callback);
-	void send_command(uint8_t command, uint8_t *tx_data, uint8_t *rx_data, uint8_t data_len);
-	void send_command_extended(uint8_t *command, uint8_t *tx_data, uint8_t *rx_data, uint8_t data_len);
+	Cc1120CommandStatus init_device(void);
+	Cc1120CommandStatus reset();
+	Cc1120CommandStatus gpio3_set_interrupt_pin_handler(Cc1120GpioInterruptHandler callback);
+	Cc1120CommandStatus gpio2_set_interrupt_pin_handler(Cc1120GpioInterruptHandler callback);
+	Cc1120CommandStatus gpio0_set_interrupt_pin_handler(Cc1120GpioInterruptHandler callback);
+	Cc1120CommandStatus write_register_single(uint8_t address, uint8_t data);
+	Cc1120CommandStatus write_register_single_async(uint8_t address, uint8_t data, CC1120CommandCallback status);
+	Cc1120CommandStatus write_register_burst(uint8_t address, uint8_t *data, uint8_t data_len);
+	Cc1120CommandStatus write_register_burst_async(uint8_t address, uint8_t *data, uint8_t data_len, CC1120CommandCallback callback);
+	Cc1120CommandStatus write_extended_register_single(uint8_t address, uint8_t data);
+	Cc1120CommandStatus write_extended_register_single_async(uint8_t address, uint8_t data, CC1120CommandCallback callback);
+	Cc1120CommandStatus write_extended_register_burst(uint8_t address, uint8_t *data, uint8_t data_len);
+	Cc1120CommandStatus write_extended_register_burst_async(uint8_t address, uint8_t *data, uint8_t data_len, CC1120CommandCallback callback);
+	Cc1120CommandStatus write_verify_register(uint8_t address, uint8_t data);
+	Cc1120CommandStatus write_verify_register_async(uint8_t address, uint8_t data, CC1120CommandCallback callback);
+	Cc1120CommandStatus write_verify_extended_register(uint8_t address, uint8_t data);
+	Cc1120CommandStatus write_verify_extended_register_async(uint8_t address, uint8_t data, CC1120CommandCallback callback);
+	Cc1120CommandStatus read_register_single(uint8_t address, uint8_t *data);
+	Cc1120CommandStatus read_register_single_async(uint8_t address, CC1120CommandDataCallback callback);
+	Cc1120CommandStatus read_register_burst(uint8_t address, uint8_t *data, uint8_t data_len);
+	Cc1120CommandStatus read_register_burst_async(uint8_t address, uint8_t data_len, CC1120CommandDataCallback callback);
+	Cc1120CommandStatus read_extended_register_single(uint8_t address, uint8_t *data);
+	Cc1120CommandStatus read_extended_register_single_async(uint8_t address, CC1120CommandDataCallback callback);
+	Cc1120CommandStatus read_extended_register_burst(uint8_t address, uint8_t *data, uint8_t data_len);
+	Cc1120CommandStatus read_extended_register_burst_async(uint8_t address, uint8_t data_len, CC1120CommandDataCallback callback);
+	Cc1120CommandStatus access_command_strobe(CommandStrobeAddress address);
+	Cc1120CommandStatus access_command_strobe_async(CommandStrobeAddress address, CC1120CommandCallback callback);
+	Cc1120CommandStatus write_tx_fifo(uint8_t *data, uint8_t write_len);
+	Cc1120CommandStatus write_tx_fifo_async(uint8_t *data, uint8_t write_len, CC1120CommandCallback callback);
+	Cc1120CommandStatus read_rx_fifo(uint8_t *data, uint8_t read_len);
+	Cc1120CommandStatus read_rx_fifo_async(uint8_t read_len, CC1120CommandDataCallback callback);
+	Cc1120CommandStatus send_command(uint8_t command, uint8_t *tx_data, uint8_t *rx_data, uint8_t data_len);
+	Cc1120CommandStatus send_command_extended(uint8_t *command, uint8_t *tx_data, uint8_t *rx_data, uint8_t data_len);
 	bool pinint_handler(void);
 
 private:

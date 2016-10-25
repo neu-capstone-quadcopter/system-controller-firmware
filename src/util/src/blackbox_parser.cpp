@@ -107,6 +107,19 @@ void BlackboxParser::decodeFrame(Stream &bb_stream, char frame_type){
 			decodeTAG8_8SVB(curr_byte);
 			break;
 		case 7:
+			if(!header_read)
+			{
+				header_bytes = curr_byte;
+				header_read = true;
+				if(!bb_stream.streamIsEmpty())
+				{
+					curr_byte = bb_stream.popFromStream();
+				}
+				else
+				{
+					break;
+				}
+			}
 			decodeTAG2_2S32(curr_byte);
 			break;
 		case 8:
@@ -216,7 +229,7 @@ void BlackboxParser::decodeSVB(uint8_t byte, uint8_t num_bytes)
 	curr_value = byte << (num_bytes * 8 - 1);
 
 	//Right shift byte by 1
-	byte>>1;
+	byte = byte >> 1;
 
 	//Xor curr_value with byte
 	curr_value = curr_value ^ byte;
@@ -225,7 +238,29 @@ void BlackboxParser::decodeSVB(uint8_t byte, uint8_t num_bytes)
 
 void BlackboxParser::decodeTAG2_2S32(uint8_t byte)
 {
-	//Add code
+	//Check header to see how many bytes required to encode current field
+	if(tag32_bytes_required == 0)
+	{
+		uint8_t header_mask = 0x03;
+		tag32_bytes_required = header_bytes & header_mask;
+		header_bytes = header_bytes >> 2;
+	}
+
+	if(tag32_bytes_decoded < tag32_bytes_required)
+	{
+		curr_value += byte;
+		curr_value << 8;
+		tag32_bytes_decoded++;
+	}
+	else
+	{
+		final_value = true;
+		tag32_bytes_decoded = 0;
+		tag32_bytes_required = 0;
+	}
+
+
+
 }
 
 void BlackboxParser::decodeTAG8_4S16(uint8_t byte)
@@ -256,7 +291,8 @@ void BlackboxParser::decodeTAG8_8SVB(uint8_t byte)
 
 void BlackboxParser::decodeNULL(uint8_t byte)
 {
-	//Add code
+	curr_value = byte;
+	final_value = true;
 }
 
 

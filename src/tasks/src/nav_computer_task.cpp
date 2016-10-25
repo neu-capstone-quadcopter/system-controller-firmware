@@ -63,6 +63,14 @@ void start() {
 	//nav_uart->set_transfer_mode(UART_XFER_MODE_DMA);
 	xTaskCreate(task_loop, "nav computer", 400, NULL, 2, &task_handle);
 	nav_event_queue = xQueueCreate(EVENT_QUEUE_DEPTH, sizeof(nav_event_t));
+
+	nav_uart->set_baud(230400);
+	Chip_UART_EnableDivisorAccess(nav_uart->uart);
+	nav_uart->uart->FDR = 0xA3;
+	nav_uart->uart->DLL = 0x5;
+	nav_uart->uart->DLM = 0x0;
+	Chip_UART_DisableDivisorAccess(nav_uart->uart);
+
 }
 
 void initialize_timers() {
@@ -73,12 +81,13 @@ void initialize_timers() {
 static void task_loop(void *p) {
 	initialize_timers();
 	nav_event_t current_event;
-	nav_uart->read_async(4, read_len);
+	//nav_uart->read_async(4, read_len);
 	//nav_uart->read_async(4, read_len);
 	current_frame = monarcpb_SysCtrlToNavCPU_init_zero;
 	nav_event_t event;
 	for(;;) {
 		xQueueReceive(nav_event_queue, &event, portMAX_DELAY);
+		char buffer[20] = "AAAAAAAAAA";
 		switch (event.type) {
 		case LoopTriggerEvent::SEND_FRAME:
 			// TODO: Serialize data
@@ -87,6 +96,7 @@ static void task_loop(void *p) {
 			// Package and send data frame
 			//send_data(current_event.data);
 			//read_from_uart();
+			write_to_uart((uint8_t*)buffer, 20);
 			break;
 		case LoopTriggerEvent::PROCESS_READ:
 			distribute_data(current_event.buffer, current_event.length);
@@ -115,7 +125,6 @@ void distribute_data(uint8_t* data, uint16_t length) {
 	pb_istream_t stream = pb_istream_from_buffer(data, (uint8_t) length);
 	monarcpb_NavCPUToSysCtrl message = monarcpb_NavCPUToSysCtrl_init_zero;
 	pb_decode(&stream, monarcpb_NavCPUToSysCtrl_fields, &message);
-	delete[] data;
 }
 
 static void read_len_handler(UartError status, uint8_t *data, uint16_t len) {

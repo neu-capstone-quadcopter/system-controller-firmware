@@ -94,6 +94,8 @@ private:
 	uint8_t tag8_fields_completed = 0;
 	uint8_t tag32_bytes_required = 0;
 	uint8_t tag32_bytes_decoded = 0;
+	uint8_t tag16_bytes_required = 0;
+	uint8_t tag16_bytes_decoded = 0;
 
 
 	//Flags indicating decoding

@@ -123,6 +123,19 @@ void BlackboxParser::decodeFrame(Stream &bb_stream, char frame_type){
 			decodeTAG2_2S32(curr_byte);
 			break;
 		case 8:
+			if(!header_read)
+			{
+				header_bytes = curr_byte;
+				header_read = true;
+				if(!bb_stream.streamIsEmpty())
+				{
+					curr_byte = bb_stream.popFromStream();
+				}
+				else
+				{
+					break;
+				}
+			}
 			decodeTAG8_4S16(curr_byte);
 			break;
 		case 9:
@@ -259,13 +272,43 @@ void BlackboxParser::decodeTAG2_2S32(uint8_t byte)
 		tag32_bytes_required = 0;
 	}
 
-
-
 }
 
 void BlackboxParser::decodeTAG8_4S16(uint8_t byte)
 {
-	//Add code
+	if(tag16_bytes_required == 0)
+	{
+		uint8_t header_mask = 0x03;
+		tag16_bytes_required = header_bytes & header_mask;
+
+		if(tag16_bytes_required == 1 || tag16_bytes_required == 2)
+		{
+			tag16_bytes_required = 1;
+		}
+		else if(tag16_bytes_required == 3)
+		{
+			tag16_bytes_required = 2;
+		}
+
+		header_bytes = header_bytes >> 2;
+	}
+
+	if(tag16_bytes_decoded < tag16_bytes_required)
+	{
+		curr_value += byte;
+		tag16_bytes_decoded++;
+		if(tag16_bytes_decoded < tag16_bytes_required)
+		{
+			curr_value << 8;
+		}
+		else
+		{
+			final_value = true;
+			tag16_bytes_decoded = 0;
+			tag16_bytes_required = 0;
+		}
+	}
+
 }
 
 void BlackboxParser::decodeTAG8_8SVB(uint8_t byte)
@@ -277,7 +320,7 @@ void BlackboxParser::decodeTAG8_8SVB(uint8_t byte)
 	if((header_bytes & (1 << 0)) == 1)
 	{
 		decodeSVB(byte, 1);
-		header_bytes << 1;
+		header_bytes = header_bytes << 1;
 		final_value = true;
 	}
 	else

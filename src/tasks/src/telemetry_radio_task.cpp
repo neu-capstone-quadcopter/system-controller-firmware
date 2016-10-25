@@ -31,11 +31,12 @@ namespace telemetry_radio_task {
 
 	typedef enum {
 		TRANSMIT_SLOT_START,
-		TRANSMIT_MESSAGE,
 		TX_FIFO_FILL,
+		MESSAGE_RECEIVED,
 	} Event;
 
 	const uint8_t TX_FIFO_THRESHOLD = 50;
+	const uint8_t RX_FIFO_THRESHOLD = 50;
 
 
 	static void task_loop(void *p);
@@ -59,6 +60,8 @@ namespace telemetry_radio_task {
 	static uint8_t current_tx_pkt_length = 0;
 	static uint8_t current_tx_pkt_sent;
 	static uint8_t* tx_message_serialized;
+	static uint8_t* rx_message_data;
+	static uint8_t message_length_received = 0;
 
 	driver::Cc1120 *telem_cc1120;
 
@@ -134,6 +137,9 @@ namespace telemetry_radio_task {
 		if (!pass) {
 			configASSERT(0);
 		}
+
+		board::cc1120_gpio0_set_rising_edge_int(true);
+		board::cc1120_gpio0_set_falling_edge_int(false);
 	}
 
 	static void enter_tx_state() {
@@ -147,6 +153,9 @@ namespace telemetry_radio_task {
 		if (!pass) {
 			configASSERT(0);
 		}
+
+		board::cc1120_gpio2_set_rising_edge_int(true);
+		board::cc1120_gpio2_set_falling_edge_int(false);
 
 		Event e = TRANSMIT_SLOT_START;
 		xQueueSendToBack(event_queue, &e, 0);
@@ -221,8 +230,35 @@ namespace telemetry_radio_task {
 	static void cc1120_gpio0_int_handler(void) {
 		switch (state) {
 		case RECEIVE:
-			pkt_count++;
-
+			telem_cc1120->read_rx_fifo_async(1, [](Cc1120CommandStatus status, uint8_t* message_length, uint8_t data_len) {
+				rx_message_data = new uint8_t [*message_length];
+				if (*message_length < 128 - RX_FIFO_THRESHOLD && message_length_received == 0) {
+					telem_cc1120->read_rx_fifo_async(*message_length, [](Cc1120CommandStatus status, uint8_t* message_data, uint8_t message_length) {
+							memcpy(rx_message_data, message_data, message_length);
+							message_length_received = 0;
+							Event e = MESSAGE_RECEIVED;
+							xQueueSendToBack(event_queue, &e, 0);
+						});
+				}
+				else if (*message_length < 128 - RX_FIFO_THRESHOLD && message_length_received > 0) {
+					telem_cc1120->read_rx_fifo_async(*message_length, [](Cc1120CommandStatus status, uint8_t* message_data, uint8_t message_length) {
+							memcpy(rx_message_data + message_length_received, message_data, message_length);
+							message_length_received = 0;
+							Event e = MESSAGE_RECEIVED;
+							xQueueSendToBack(event_queue, &e, 0);
+						});
+				}
+				else {
+					board::cc1120_gpio0_set_falling_edge_int(true);
+					board::cc1120_gpio0_set_rising_edge_int(false);
+					telem_cc1120->read_rx_fifo_async(128 - RX_FIFO_THRESHOLD, [](Cc1120CommandStatus stats, uint8_t* message_data, uint8_t message_length) {
+						memcpy(rx_message_data + message_length_received, message_data, message_length);
+						message_length_received += message_length;
+						board::cc1120_gpio0_set_rising_edge_int(true);
+						board::cc1120_gpio0_set_falling_edge_int(false);
+					});
+				}
+			});
 			break;
 		case TRANSMIT:
 			// code

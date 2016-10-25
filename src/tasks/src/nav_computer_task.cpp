@@ -115,6 +115,7 @@ void distribute_data(uint8_t* data, uint16_t length) {
 	pb_istream_t stream = pb_istream_from_buffer(data, (uint8_t) length);
 	monarcpb_NavCPUToSysCtrl message = monarcpb_NavCPUToSysCtrl_init_zero;
 	pb_decode(&stream, monarcpb_NavCPUToSysCtrl_fields, &message);
+	delete[] data;
 }
 
 static void read_len_handler(UartError status, uint8_t *data, uint16_t len) {

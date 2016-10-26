@@ -80,9 +80,7 @@ void initialize_timers() {
 
 static void task_loop(void *p) {
 	initialize_timers();
-	nav_event_t current_event;
-	//nav_uart->read_async(4, read_len);
-	//nav_uart->read_async(4, read_len);
+	nav_uart->read_async(4, read_len);
 	current_frame = monarcpb_SysCtrlToNavCPU_init_zero;
 	nav_event_t event;
 	for(;;) {
@@ -99,7 +97,7 @@ static void task_loop(void *p) {
 			write_to_uart((uint8_t*)buffer, 20);
 			break;
 		case LoopTriggerEvent::PROCESS_READ:
-			distribute_data(current_event.buffer, current_event.length);
+			distribute_data(event.buffer, event.length);
 			break;
 		default:
 			break;

@@ -19,6 +19,7 @@
 #include "pb_encode.h"
 #include "pb_decode.h"
 #include "api.pb.h"
+#include <cr_section_macros.h>
 
 #include <stdlib.h>
 
@@ -49,6 +50,9 @@ GpdmaChannel *dma_channel_rx;
 
 static monarcpb_SysCtrlToNavCPU current_frame;
 
+__BSS(RAM2)
+static uint8_t serialization_buffer[MAX_BUFFER_SIZE];
+
 auto read_len = dlgt::make_delegate(&read_len_handler);
 auto read_data = dlgt::make_delegate(&read_data_handler);
 
@@ -62,7 +66,7 @@ void start() {
 	// Enabled DMA (Optional)
 	nav_uart->bind_dma_channels(dma_channel_tx, dma_channel_rx);
 	//nav_uart->set_transfer_mode(UART_XFER_MODE_DMA);
-	xTaskCreate(task_loop, "nav computer", 700, NULL, 2, &task_handle);
+	xTaskCreate(task_loop, "nav computer", 1200, NULL, 2, &task_handle);
 	nav_event_queue = xQueueCreate(EVENT_QUEUE_DEPTH, sizeof(nav_event_t));
 
 	//nav_uart->set_baud(230400);
@@ -75,7 +79,7 @@ void start() {
 }
 
 void initialize_timers() {
-	timer = xTimerCreate("NavTimer", 10, pdTRUE, NULL, timer_handler);
+	timer = xTimerCreate("NavTimer", 4, pdTRUE, NULL, timer_handler);
 	xTimerStart(timer, 0);
 }
 
@@ -97,7 +101,7 @@ static void task_loop(void *p) {
 			//read_from_uart();
 			serialize_and_send_frame(current_frame);
 			current_frame = monarcpb_SysCtrlToNavCPU_init_zero;
-			//write_to_uart((uint8_t*)buffer, 20);
+			//write_to_uart((uint8_t*)serialization_buffer, 20);
 			break;
 		case LoopTriggerEvent::PROCESS_READ:
 			distribute_data(event.buffer, event.length);
@@ -109,16 +113,13 @@ static void task_loop(void *p) {
 }
 
 void serialize_and_send_frame(monarcpb_SysCtrlToNavCPU frame) {
-	static uint8_t *buffer = new uint8_t[MAX_BUFFER_SIZE];
-	memset(buffer, 0x00, MAX_BUFFER_SIZE);
-
 	frame.has_telemetry = true;
 	frame.telemetry.has_atmospheric_pressure = true;
 	frame.telemetry.atmospheric_pressure = 103;
-	pb_ostream_t stream = pb_ostream_from_buffer(buffer, MAX_BUFFER_SIZE);//sizeof(buffer));
+	pb_ostream_t stream = pb_ostream_from_buffer(serialization_buffer, MAX_BUFFER_SIZE);//sizeof(serialization_buffer));
 	pb_encode(&stream, monarcpb_SysCtrlToNavCPU_fields, &frame);
 
-	write_to_uart(buffer, stream.bytes_written);
+	write_to_uart(serialization_buffer, stream.bytes_written);
 	return;
 }
 
@@ -180,7 +181,7 @@ static void timer_handler(TimerHandle_t xTimer) {
 
 /*
 void read_from_uart() {
-	uint8_t buffer[128];
+	uint8_t serialization_buffer[128];
 	// Read length of incoming message.
 	uint8_t len[2];
 	nav_uart->read(len, 2);

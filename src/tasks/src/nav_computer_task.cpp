@@ -23,7 +23,7 @@
 #include <stdlib.h>
 
 #define EVENT_QUEUE_DEPTH 8
-#define MAX_BUFFER_SIZE 1150
+#define MAX_BUFFER_SIZE 575
 
 namespace nav_computer_task {
 
@@ -36,6 +36,7 @@ static void timer_handler(TimerHandle_t xTimer);
 void distribute_data(uint8_t *data, uint16_t length);
 static void read_len_handler(UartError status, uint8_t *data, uint16_t len);
 static void read_data_handler(UartError status, uint8_t *data, uint16_t len);
+void serialize_and_send_frame(monarcpb_SysCtrlToNavCPU frame);
 // TODO: Crate a function that serializes the frame
 //void send_data(sensor_task::adc_values_t data); TODO: Make this just send data
 
@@ -61,10 +62,10 @@ void start() {
 	// Enabled DMA (Optional)
 	nav_uart->bind_dma_channels(dma_channel_tx, dma_channel_rx);
 	//nav_uart->set_transfer_mode(UART_XFER_MODE_DMA);
-	xTaskCreate(task_loop, "nav computer", 400, NULL, 2, &task_handle);
+	xTaskCreate(task_loop, "nav computer", 700, NULL, 2, &task_handle);
 	nav_event_queue = xQueueCreate(EVENT_QUEUE_DEPTH, sizeof(nav_event_t));
 
-	nav_uart->set_baud(230400);
+	//nav_uart->set_baud(230400);
 	Chip_UART_EnableDivisorAccess(nav_uart->uart);
 	nav_uart->uart->FDR = 0xA3;
 	nav_uart->uart->DLL = 0x5;
@@ -94,7 +95,9 @@ static void task_loop(void *p) {
 			// Package and send data frame
 			//send_data(current_event.data);
 			//read_from_uart();
-			write_to_uart((uint8_t*)buffer, 20);
+			serialize_and_send_frame(current_frame);
+			current_frame = monarcpb_SysCtrlToNavCPU_init_zero;
+			//write_to_uart((uint8_t*)buffer, 20);
 			break;
 		case LoopTriggerEvent::PROCESS_READ:
 			distribute_data(event.buffer, event.length);
@@ -103,6 +106,20 @@ static void task_loop(void *p) {
 			break;
 		}
 	}
+}
+
+void serialize_and_send_frame(monarcpb_SysCtrlToNavCPU frame) {
+	static uint8_t *buffer = new uint8_t[MAX_BUFFER_SIZE];
+	memset(buffer, 0x00, MAX_BUFFER_SIZE);
+
+	frame.has_telemetry = true;
+	frame.telemetry.has_atmospheric_pressure = true;
+	frame.telemetry.atmospheric_pressure = 103;
+	pb_ostream_t stream = pb_ostream_from_buffer(buffer, MAX_BUFFER_SIZE);//sizeof(buffer));
+	pb_encode(&stream, monarcpb_SysCtrlToNavCPU_fields, &frame);
+
+	write_to_uart(buffer, stream.bytes_written);
+	return;
 }
 
 void add_event_to_queue(nav_event_t event) {
@@ -114,6 +131,8 @@ void add_message_to_outgoing_frame(OutgoingNavComputerMessage &msg) {
 }
 
 void write_to_uart(uint8_t *data, uint16_t len) {
+	uint16_t sync_bytes = 0x91D3;
+	nav_uart->write((uint8_t*) &sync_bytes, 2);
 	nav_uart->write((uint8_t*) &len, 2);
 	nav_uart->write(data, (uint8_t) len);
 }
@@ -123,6 +142,7 @@ void distribute_data(uint8_t* data, uint16_t length) {
 	pb_istream_t stream = pb_istream_from_buffer(data, (uint8_t) length);
 	monarcpb_NavCPUToSysCtrl message = monarcpb_NavCPUToSysCtrl_init_zero;
 	pb_decode(&stream, monarcpb_NavCPUToSysCtrl_fields, &message);
+	// TODO: Distribute data to sysctrl nodes as needed.
 }
 
 static void read_len_handler(UartError status, uint8_t *data, uint16_t len) {

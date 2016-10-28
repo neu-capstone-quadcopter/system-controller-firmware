@@ -8,9 +8,19 @@
 
 #define NUM_FIELDS 30
 
-enum bb_frame_fields{
+enum bb_unsigned_frame_fields{
 	LOOP_ITERAION,
 	TIME,
+	RC_COMMAND3,
+	AMPERAGE_LATEST,
+	RSSI,
+	MOTOR0,
+	MOTOR1,
+	MOTOR2,
+	MOTOR3
+};
+
+enum bb_signed_frame_fields{
 	AXIS_P0,
 	AXIS_P1,
 	AXIS_P2,
@@ -22,32 +32,37 @@ enum bb_frame_fields{
 	RC_COMMAND0,
 	RC_COMMAND1,
 	RC_COMMAND2,
-	RC_COMMAND3,
-	AMPERAGE_LATEST,
 	MAG_ADC0,
 	MAG_ADC1,
 	MAG_ADC2,
 	BARO_ALT,
-	RSSI,
 	GYRO_ADC0,
 	GYRO_ADC1,
 	GYRO_ADC2,
 	ACC_SMOOTH0,
 	ACC_SMOOTH1,
-	ACC_SMOOTH2,
-	MOTOR0,
-	MOTOR1,
-	MOTOR2,
-	MOTOR3
+	ACC_SMOOTH2
 };
 
 struct blackbox_frame {
 
-	uint16_t field_values[NUM_FIELDS] = {0};
+	uint32_t unsigned_field_values[MOTOR3 + 1] = {0};
+	int32_t signed_field_values[ACC_SMOOTH2 + 1] = {0};
+	bool isEmpty = true;
 
-	void addField(uint8_t curr_field, uint8_t curr_byte)
+	void addUnsignedField(uint8_t curr_field, uint32_t curr_value)
 	{
-		field_values[curr_field] = curr_byte;
+		unsigned_field_values[curr_field] = curr_value;
+	}
+
+	void addSignedField(uint8_t curr_field, int32_t scurr_value)
+	{
+		signed_field_values[curr_field] = scurr_value;
+	}
+
+	bool isFrameEmpty()
+	{
+		return isEmpty;
 	}
 
 };
@@ -70,22 +85,25 @@ public:
 	void decodeNULL(uint8_t); //9
 
 	//Field Predictors
-	void predictZero(uint8_t); //0
-	void predictLastValue(uint8_t); //1
-	void predictStraightLine(uint8_t); //2
-	void predictAverage2(uint8_t); //3
-	void predictMinThrottle(uint8_t); //4
-	void predictMotor0(uint8_t); //5
-	void predictIncrement(uint8_t); //6
+	void predictZero(bool); //0
+	void predictLastValue(bool); //1
+	void predictStraightLine(bool); //2
+	void predictAverage2(bool); //3
+	void predictMinThrottle(bool); //4
+	void predictMotor0(bool); //5
+	void predictIncrement(bool); //6
 
 
 private:
 
 	//Flag value used to keep track of which field we are decoding
 	uint8_t curr_field = 0;
+	uint8_t curr_unsigned_field = 0;
+	uint8_t curr_signed_field = 0;
 
 	//Used if a field requires more than one byte to represent
 	uint32_t curr_value = 0;
+	int32_t scurr_value;
 	uint8_t num_bytes_used = 0;
 
 	//This used to store header byte of TAG decoders
@@ -104,13 +122,17 @@ private:
 	bool final_value = true;
 	bool frame_complete = false;
 
-	uint8_t field_signs[NUM_FIELDS] = {0,0,1,1,1,1,1,1,1,1,1,1,1,0,0,1,1,1,1,0,1,1,1,1,1,1,0,0,0,0};
+	//Min throttle value for prediction
+	uint32_t min_throttle = 1150;
+
+	bool field_signs[NUM_FIELDS] = {0,0,1,1,1,1,1,1,1,1,1,1,1,0,0,1,1,1,1,0,1,1,1,1,1,1,0,0,0,0};
 	uint8_t i_field_predictors[NUM_FIELDS] = {0,0,0,0,0,0,0,0,0,0,0,0,0,4,0,0,0,0,0,0,0,0,0,0,0,0,4,5,5,5};
 	uint8_t p_field_predictors[NUM_FIELDS] = {6,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,3,3,3,3,3,3,3,3,3,3};
 	uint8_t i_field_encodings[NUM_FIELDS] = {1,1,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0};
 	uint8_t p_field_encodings[NUM_FIELDS] = {9,0,0,0,0,7,7,7,0,0,8,8,8,8,6,6,6,6,6,6,0,0,0,0,0,0,0,0,0,0};
 
 	//Working Frames
+	blackbox_frame prev_frame2;
 	blackbox_frame prev_frame;
 	blackbox_frame curr_frame;
 };

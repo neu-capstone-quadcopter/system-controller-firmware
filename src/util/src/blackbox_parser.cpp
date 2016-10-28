@@ -34,7 +34,7 @@ void BlackboxParser::decodeFrameType(Stream &bb_stream){
 				}
 				else if(next_byte == 'P')
 				{
-					decodeFrame(bb_stream, 'I');
+					decodeFrame(bb_stream, 'P');
 					found_frame_id = true;
 				}
 			}
@@ -64,6 +64,7 @@ void BlackboxParser::decodeFrame(Stream &bb_stream, char frame_type){
 
 	uint8_t curr_predictor;
 	uint8_t curr_encoding;
+	bool curr_sign;
 
 	//Loop through everything in stream
 	while(!frame_complete && !bb_stream.streamIsEmpty())
@@ -79,6 +80,7 @@ void BlackboxParser::decodeFrame(Stream &bb_stream, char frame_type){
 			curr_encoding = p_field_encodings[curr_field];
 		}
 
+		curr_sign = field_signs[curr_field];
 		uint8_t curr_byte = bb_stream.popFromStream();
 
 		//Let's decode this byte
@@ -149,25 +151,25 @@ void BlackboxParser::decodeFrame(Stream &bb_stream, char frame_type){
 		switch(curr_predictor)
 		{
 		case 0:
-			predictZero(curr_byte);
+			predictZero(curr_sign);
 			break;
 		case 1:
-			predictLastValue(curr_byte);
+			predictLastValue(curr_sign);
 			break;
 		case 2:
-			predictStraightLine(curr_byte);
+			predictStraightLine(curr_sign);
 			break;
 		case 3:
-			predictAverage2(curr_byte);
+			predictAverage2(curr_sign);
 			break;
 		case 4:
-			predictMinThrottle(curr_byte);
+			predictMinThrottle(curr_sign);
 			break;
 		case 5:
-			predictMotor0(curr_byte);
+			predictMotor0(curr_sign);
 			break;
 		case 6:
-			predictIncrement(curr_byte);
+			predictIncrement(curr_sign);
 			break;
 		default:
 			configASSERT(0);
@@ -177,16 +179,24 @@ void BlackboxParser::decodeFrame(Stream &bb_stream, char frame_type){
 		if(final_value)
 		{
 			//Add current value to particular field
-			curr_frame.addField(curr_field,curr_value);
+			if(curr_sign == 0)
+				curr_frame.addUnsignedField(curr_unsigned_field,curr_value);
+			else
+				curr_frame.addSignedField(curr_signed_field,scurr_value);
 
 			//Increment current field
-			if(curr_field < (NUM_FIELDS - 1))
-				curr_field++;
+			if((curr_signed_field + curr_unsigned_field) < (NUM_FIELDS - 1))
+				if(curr_sign == 0)
+					curr_unsigned_field++;
+				else
+					curr_signed_field++;
 			else
 			{
 				frame_complete = true;
-				curr_field = 0;
+				curr_unsigned_field = 0;
+				curr_signed_field = 0;
 				curr_value = 0;
+				scurr_value = 0;
 				decoding_i_frame = false;
 				decoding_p_frame = false;
 				//Add logic here to do something with completed frame
@@ -214,12 +224,16 @@ void BlackboxParser::decodeUVB(uint8_t &byte, Stream &bb_stream)
 	//to fully represent data
 	if((byte & (1<<8)) == 0)
 	{
+		scurr_value = byte;
 		curr_value = byte;
 		return;
 	}
 	while(byte & (1<<8) && !bb_stream.streamIsEmpty())
 	{
-		curr_value += (byte & 0x7F) << (num_bytes_used * 8);
+		if(field_signs[curr_field] == 0)
+			curr_value += (byte & 0x7F) << (num_bytes_used * 8);
+		else
+			scurr_value += (byte * 0x7F) << (num_bytes_used * 8);
 		num_bytes_used++;
 		byte = bb_stream.popFromStream();
 	}
@@ -227,7 +241,10 @@ void BlackboxParser::decodeUVB(uint8_t &byte, Stream &bb_stream)
 	//If this is last byte of data, set curr value and return
 	if((byte & (1<<8)) == 0)
 	{
-		curr_value += (byte & 0x7F) << (num_bytes_used * 8);
+		if(field_signs[curr_field] == 0)
+			curr_value += (byte & 0x7F) << (num_bytes_used * 8);
+		else
+			scurr_value += (byte * 0x7F) << (num_bytes_used * 8);
 		final_value = true;
 		return;
 	}
@@ -236,16 +253,16 @@ void BlackboxParser::decodeUVB(uint8_t &byte, Stream &bb_stream)
 
 void BlackboxParser::decodeSVB(uint8_t byte, uint8_t num_bytes)
 {
-	//This logic may change if it ends up being used with 32 bit numbers
+	//This function works on signed values
 
 	//Start by taking byte and left shifting lsb by num_bytes * 8 - 1
-	curr_value = byte << (num_bytes * 8 - 1);
+	scurr_value = byte << (num_bytes * 8 - 1);
 
 	//Right shift byte by 1
 	byte = byte >> 1;
 
 	//Xor curr_value with byte
-	curr_value = curr_value ^ byte;
+	scurr_value = scurr_value ^ byte;
 
 }
 
@@ -261,8 +278,8 @@ void BlackboxParser::decodeTAG2_2S32(uint8_t byte)
 
 	if(tag32_bytes_decoded < tag32_bytes_required)
 	{
-		curr_value += byte;
-		curr_value << 8;
+		scurr_value += byte;
+		scurr_value << 8;
 		tag32_bytes_decoded++;
 	}
 	else
@@ -295,11 +312,11 @@ void BlackboxParser::decodeTAG8_4S16(uint8_t byte)
 
 	if(tag16_bytes_decoded < tag16_bytes_required)
 	{
-		curr_value += byte;
+		scurr_value += byte;
 		tag16_bytes_decoded++;
 		if(tag16_bytes_decoded < tag16_bytes_required)
 		{
-			curr_value << 8;
+			scurr_value << 8;
 		}
 		else
 		{
@@ -325,7 +342,7 @@ void BlackboxParser::decodeTAG8_8SVB(uint8_t byte)
 	}
 	else
 	{
-		curr_value = 0;
+		scurr_value = 0;
 		final_value = true;
 	}
 
@@ -343,37 +360,161 @@ void BlackboxParser::decodeNULL(uint8_t byte)
  * BEGIN PREDICTOR FUNCTIONS
  */
 
-void BlackboxParser::predictLastValue(uint8_t byte)
+/*
+ * predictLastValue subtracts the previous value of the field from
+ * the raw field value.
+ */
+void BlackboxParser::predictLastValue(bool sign)
 {
-	//Add code
+	if(sign == 0)
+		curr_value += prev_frame.unsigned_field_values[curr_unsigned_field];
+	else
+		scurr_value += prev_frame.signed_field_values[curr_signed_field];
 }
 
-void BlackboxParser::predictZero(uint8_t byte)
+/*
+ * predictZero does not modify the field value
+ */
+void BlackboxParser::predictZero(bool sign)
 {
-	//Add code
+	return;
 }
 
-void BlackboxParser::predictStraightLine(uint8_t byte)
+/*
+ * predictStraightLine assumes the slope between the current measurement (cur_frame)
+ * and the previous measurement(prev_frame) will be similar to the slope between the
+ * previous measurement and the measurement before that (prev_frame2)
+ */
+void BlackboxParser::predictStraightLine(bool sign)
 {
-	//Add code
+	//Signed Field values
+	int32_t sprev_val;
+	int32_t sprev_val2;
+
+	//Unsigned Field values
+	uint32_t uprev_val2;
+	uint32_t uprev_val;
+
+	if(prev_frame2.isFrameEmpty())
+	{
+		if(sign == 0)
+			uprev_val2 = 0;
+		else
+			sprev_val2 = 0;
+	}
+	else
+	{
+		if(sign == 0)
+			uprev_val2 = prev_frame2.unsigned_field_values[curr_unsigned_field];
+		else
+			sprev_val2 = prev_frame2.signed_field_values[curr_signed_field];
+	}
+
+	if(prev_frame.isFrameEmpty())
+	{
+		if(sign == 0)
+			uprev_val = 0;
+		else
+			sprev_val = 0;
+	}
+	else
+	{
+		if(sign == 0)
+			uprev_val = prev_frame.unsigned_field_values[curr_unsigned_field];
+		else
+			sprev_val = prev_frame.signed_field_values[curr_signed_field];
+	}
+
+	//Compute slope and add to curr_value -- check if we are working
+	//with signed or unsigned field
+	if(sign == 0)
+		curr_value += (uprev_val2 - (2 * uprev_val));
+	else
+		scurr_value += (sprev_val2 - (2 * sprev_val));
+
 }
 
-void BlackboxParser::predictAverage2(uint8_t byte)
+/*
+ * Uses the average of the two previously computed field vaues
+ * as the predictor
+ */
+void BlackboxParser::predictAverage2(bool sign)
 {
-	//Add code
+	//Unsigned field
+	uint32_t uprev_val2;
+	uint32_t uprev_val;
+
+	//Signed field
+	int32_t sprev_val2;
+	int32_t sprev_val;
+
+	if(prev_frame2.isFrameEmpty())
+	{
+		if(sign == 0)
+			uprev_val2 = 0;
+		else
+			sprev_val2 = 0;
+	}
+	else
+	{
+		if(sign = 0)
+			uprev_val2 = prev_frame2.unsigned_field_values[curr_unsigned_field];
+		else
+			sprev_val2 = prev_frame2.signed_field_values[curr_signed_field];
+	}
+
+	if(prev_frame.isFrameEmpty())
+	{
+		if(sign == 0)
+			uprev_val = 0;
+		else
+			sprev_val = 0;
+	}
+
+	else
+	{
+		if(sign == 0)
+			uprev_val = prev_frame.unsigned_field_values[curr_unsigned_field];
+		else
+			sprev_val = prev_frame.signed_field_values[curr_signed_field];
+	}
+
+	//Compute slope and add to curr_value
+	if(sign == 0)
+		curr_value += (uprev_val2 - (2 * uprev_val));
+	else
+		scurr_value += (sprev_val2 - (2 * sprev_val));
 }
 
-void BlackboxParser::predictMinThrottle(uint8_t byte)
+/*
+ * Uses min_throttle value from header as predictor. This value is 1150
+ */
+void BlackboxParser::predictMinThrottle(bool sign)
 {
-	//Add code
+	if(sign == 0)
+		curr_value += min_throttle;
+	else
+		scurr_value += min_throttle;
 }
 
-void BlackboxParser::predictMotor0(uint8_t byte)
+/*
+ * Uses motor0 value which was predicted earlier in decoding as the predictor.
+ */
+void BlackboxParser::predictMotor0(bool sign)
 {
-	//Add code
+	//This function should never be used with a signed value...
+	curr_value += curr_frame.unsigned_field_values[MOTOR0];
+	if(sign == 1)
+		configASSERT(0);
 }
 
-void BlackboxParser::predictIncrement(uint8_t byte)
+/*
+ * Assumes field will be incremented by one.
+ */
+void BlackboxParser::predictIncrement(bool sign)
 {
-	//Add code
+	if(sign == 0)
+		curr_value ++;
+	else
+		scurr_value++;
 }

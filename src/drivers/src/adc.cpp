@@ -9,6 +9,7 @@
 #include "FreeRTOS.h"
 #include "semphr.h"
 #include "chip.h"
+#include "board.hpp"
 
 Adc::Adc(LPC_ADC_T *adc_base) {
 	this->adc_base = adc_base;
@@ -21,7 +22,7 @@ void Adc::init_driver() {
 		xSemaphoreGive(this->command_running_semaphore);
 	}
 	// Write 1 to pinsel register bits 21:14
-	Chip_IOCON_PinMuxSet(LPC_IOCON, 0, 23, FUNC1);
+	Chip_IOCON_PinMuxSet(IOCON, MUX_PORT, MUX_PIN, FUNC1);
 }
 
 int Adc::read_value(ADC_CHANNEL_T channel, uint16_t *data) {

@@ -16,7 +16,7 @@
 #include "exampleled.hpp"
 #include "adc.hpp"
 #include "cd74hc4067.hpp"
-#include "board.h"
+#include <board.hpp>
 
 namespace hal {
 	void add_drivers(void);

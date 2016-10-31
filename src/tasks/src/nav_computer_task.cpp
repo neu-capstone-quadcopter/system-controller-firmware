@@ -79,7 +79,7 @@ void start() {
 }
 
 void initialize_timers() {
-	timer = xTimerCreate("NavTimer", 4, pdTRUE, NULL, timer_handler);
+	timer = xTimerCreate("NavTimer", 3, pdTRUE, NULL, timer_handler);
 	xTimerStart(timer, 0);
 }
 
@@ -178,39 +178,6 @@ static void timer_handler(TimerHandle_t xTimer) {
 	event.type = LoopTriggerEvent::SEND_FRAME;
 	add_event_to_queue(event);
 }
-
-/*
-void read_from_uart() {
-	uint8_t serialization_buffer[128];
-	// Read length of incoming message.
-	uint8_t len[2];
-	nav_uart->read(len, 2);
-	uint16_t message_len = *((uint16_t*)len);
-	// Read message.
-	nav_uart->read(buffer, message_len);
-	pb_istream_t stream = pb_istream_from_buffer(buffer, (uint8_t) message_len);
-	// Decode message.
-	monarcpb_NavCPUToSysCtrl message = monarcpb_NavCPUToSysCtrl_init_zero;
-	pb_decode(&stream, monarcpb_NavCPUToSysCtrl_fields, &message);
-}
-*/
-/*
-void send_data(sensor_task::adc_values_t data) {
-	static uint8_t buffer[MAX_BUFFER_SIZE];
-	memset(buffer, 0x00, MAX_BUFFER_SIZE);
-
-	monarcpb_SysCtrlToNavCPU message = monarcpb_SysCtrlToNavCPU_init_zero;
-	package_data(data, message);
-
-	pb_ostream_t stream = pb_ostream_from_buffer(buffer, sizeof(buffer));
-
-	pb_encode(&stream, monarcpb_SysCtrlToNavCPU_fields, &message);
-	uint16_t message_len = stream.bytes_written;
-
-	write_to_uart(buffer, message_len);
-	return;
-}
-*/
 
 
 } // End nav_computer_task namespace.

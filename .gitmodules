@@ -1,0 +1,3 @@
+[submodule "monarcpb"]
+	path = monarcpb
+	url = https://github.com/neu-capstone-quadcopter/monarcpb.git

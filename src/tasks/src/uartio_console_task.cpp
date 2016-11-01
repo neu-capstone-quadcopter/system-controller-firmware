@@ -42,7 +42,7 @@ namespace console_task {
 		size_t length;
 	};
 
-	static void uart_read_handler(std::shared_ptr<UartReadData> read_status);
+	static void uart_read_handler(UartError status, uint8_t *data, uint16_t len);
 	static void task_loop(void *p);
 	void interpret_command_call(char* input_string, char* output_string, uint8_t length);
 	CommandFunction command_lookup(char* command);
@@ -141,17 +141,16 @@ namespace console_task {
 		}
 	}
 
-	void uart_read_handler(std::shared_ptr<UartReadData> read_status)
+	void uart_read_handler(UartError status, uint8_t *data, uint16_t len)
 	{
-		std::unique_ptr<uint8_t[]> read_data = std::move(read_status->data);
-
 		Event e;
 		e.type = READ_EVENT;
 		e.length = 1;
 
-		e.data[0] = read_data[0];
+		e.data[0] = data[0];
 		xQueueSendToBackFromISR(event_queue, &e, 0);
 		uart->read_async(1, uart_read_del);
+		delete[] data;
 	}
 
 	void send_debug_message(uint8_t *data, size_t length)

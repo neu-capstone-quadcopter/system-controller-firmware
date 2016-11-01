@@ -11,12 +11,12 @@ void FlightCtrlMessage::serialize_protobuf(monarcpb_SysCtrlToNavCPU &protobuf) {
 	protobuf.control.has_roll = true;
 	protobuf.control.has_pitch = true;
 	protobuf.control.has_yaw = true;
-	protobuf.control.has_elevation = true;
+	protobuf.control.has_throttle = true;
 
 	protobuf.control.roll = roll;
 	protobuf.control.pitch = pitch;
 	protobuf.control.yaw = yaw;
-	protobuf.control.elevation = elevation;
+	protobuf.control.throttle = elevation;
 }
 
 

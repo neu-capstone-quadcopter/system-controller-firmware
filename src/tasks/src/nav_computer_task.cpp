@@ -153,7 +153,7 @@ FlightCtrlMessage create_flight_message(monarcpb_NavCPUToSysCtrl message) {
 	flight_message.roll = message.control.roll;
 	flight_message.pitch = message.control.pitch;
 	flight_message.yaw = message.control.yaw;
-	flight_message.elevation = message.control.elevation;
+	flight_message.elevation = message.control.throttle;
 	return flight_message;
 }
 

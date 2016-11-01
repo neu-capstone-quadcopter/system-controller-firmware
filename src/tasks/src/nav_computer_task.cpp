@@ -21,6 +21,7 @@
 #include "api.pb.h"
 #include <cr_section_macros.h>
 #include <flight_ctrl_message.hpp>
+
 #include <stdlib.h>
 
 #define EVENT_QUEUE_DEPTH 8

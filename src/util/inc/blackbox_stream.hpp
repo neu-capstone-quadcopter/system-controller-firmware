@@ -3,6 +3,11 @@
 
 #define STREAM_BUFFER_SIZE 200
 
+#include "FreeRTOS.h"
+#include "semphr.h"
+
+#define SEMAPHORE_WAIT_TIME 10
+
 class Stream {
 public:
 
@@ -10,6 +15,7 @@ public:
 	{
 		read_ptr = stream_buffer;
 		write_ptr = stream_buffer;
+		stream_read_semaphore = xSemaphoreCreateBinary();
 	}
 
 	bool streamIsEmpty()
@@ -38,14 +44,21 @@ public:
 			write_ptr = stream_buffer;
 			memcpy(write_ptr, data + amt_to_write, rollover);
 			write_ptr += rollover;
+
 		}
 
+		xSemaphoreGiveFromISR(stream_read_semaphore, NULL);
 
 	}
 
 	uint8_t popFromStream()
 	{
 		//Pop one byte at a time based on our read ptr
+		if(read_ptr == write_ptr)
+		{
+			xSemaphoreTake(stream_read_semaphore, SEMAPHORE_WAIT_TIME);
+		}
+
 		uint8_t val = *read_ptr;
 		if(read_ptr < (stream_buffer + STREAM_BUFFER_SIZE))
 			read_ptr ++;
@@ -55,10 +68,12 @@ public:
 		return val;
 	}
 
+
 private:
 	uint8_t stream_buffer[STREAM_BUFFER_SIZE]; //Use char* to leverage str functions
 	uint8_t *read_ptr;
 	uint8_t *write_ptr;
+	SemaphoreHandle_t stream_read_semaphore;
 };
 
 #endif //UTIL_BLACKBOX_STREAM_HPP

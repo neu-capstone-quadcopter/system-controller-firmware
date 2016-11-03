@@ -7,6 +7,7 @@
 #include "blackbox_stream.hpp"
 
 #define NUM_FIELDS 30
+#define NUM_P_FIELDS 20
 
 enum bb_unsigned_frame_fields{
 	LOOP_ITERAION,
@@ -60,6 +61,16 @@ struct blackbox_frame {
 		signed_field_values[curr_field] = scurr_value;
 	}
 
+    uint32_t getUnsignedField(uint8_t curr_field)
+    {
+        return unsigned_field_values[curr_field];
+    }
+
+    int32_t getSignedField(uint8_t curr_field)
+    {
+        return signed_field_values[curr_field];
+    }
+
 	bool isFrameEmpty()
 	{
 		return isEmpty;
@@ -70,28 +81,35 @@ struct blackbox_frame {
 class BlackboxParser{
 public:
 	//Constructor
-	BlackboxParser(){};
+    BlackboxParser(){};
 
 	//High Level Decodes
 	void decodeFrameType(Stream &bb_stream);
 	void decodeFrame(Stream &bb_stream, char frame_type);
 
 	//Field Decoders
-	void decodeUVB(uint8_t&, Stream &); //0
-	void decodeSVB(uint8_t, uint8_t); //1
-	void decodeTAG8_8SVB(uint8_t); //6
-	void decodeTAG2_2S32(uint8_t); //7
-	void decodeTAG8_4S16(uint8_t); //8
-	void decodeNULL(uint8_t); //9
+	void decodeUVB(Stream &, bool); //0
+	void decodeSVB(Stream&, bool); //1
+	void decodeTAG8_8SVB(Stream&, bool); //6
+	void decodeTAG2_3S32(Stream&, bool); //7
+	void decodeTAG8_4S16(Stream&, bool); //8
+	void decodeNULL(Stream&, bool); //9
 
 	//Field Predictors
-	void predictZero(bool); //0
-	void predictLastValue(bool); //1
-	void predictStraightLine(bool); //2
-	void predictAverage2(bool); //3
-	void predictMinThrottle(bool); //4
-	void predictMotor0(bool); //5
-	void predictIncrement(bool); //6
+	int32_t predictZero(bool,int32_t); //0
+	int32_t predictLastValue(bool,int32_t); //1
+	int32_t predictStraightLine(bool,int32_t); //2
+	int32_t predictAverage2(bool,int32_t); //3
+	int32_t predictMinThrottle(bool,int32_t); //4
+	int32_t predictMotor0(bool,int32_t); //5
+	int32_t predictIncrement(bool,int32_t); //6
+
+    //Tool functions
+    int32_t signExtend24Bit(uint32_t u);
+    int32_t signExtend14Bit(uint16_t word);
+    int32_t signExtend6Bit(uint8_t byte);
+    int32_t signExtend4Bit(uint8_t nibble);
+    int32_t signExtend2Bit(uint8_t byte);
 
 
 private:
@@ -100,6 +118,11 @@ private:
 	uint8_t curr_field = 0;
 	uint8_t curr_unsigned_field = 0;
 	uint8_t curr_signed_field = 0;
+    uint8_t fields_decoded = 0;
+
+    //Used in UVB Decoding
+    uint8_t uvb_num_bytes = 0;
+
 
 	//Used if a field requires more than one byte to represent
 	uint32_t curr_value = 0;
@@ -110,17 +133,28 @@ private:
 	uint32_t header_bytes;
 	bool header_read; //have we already read our header bits?
 	uint8_t tag8_fields_completed = 0;
-	uint8_t tag32_bytes_required = 0;
-	uint8_t tag32_bytes_decoded = 0;
-	uint8_t tag16_bytes_required = 0;
-	uint8_t tag16_bytes_decoded = 0;
 
+    //Used in Tag2_3s32
+    int32_t tag2_3s32_values[3];
+    uint8_t tag2_3s32_fields = 3;
+    bool decoding_tag2_3s32 = false;
+
+    //Used in tag8_4s16
+    int32_t tag8_4s16_values[4];
+    uint8_t tag8_4s16_fields = 4;
+    bool decoding_tag8_4s16 = false;
 
 	//Flags indicating decoding
+    bool frame_id_found = false;
 	bool decoding_i_frame = false;
 	bool decoding_p_frame = false;
+    bool i_frame_decoded = false; //Used as pre-req for P frame decoding to start
 	bool final_value = true;
 	bool frame_complete = false;
+
+    //Can we start applying predictor logic?
+    bool start_decompression = false;
+
 
 	//Min throttle value for prediction
 	uint32_t min_throttle = 1150;

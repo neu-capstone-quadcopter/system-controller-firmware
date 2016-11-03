@@ -22,7 +22,7 @@ void BlackboxParser::decodeFrameType(Stream &bb_stream){
             //Let's figure out what type of frame we're looking at. The below logic
             //assumes that we won't get a sequence of two newline characters in a row
             //before our frame specifier (e.g. "\n\nI"
-            while(!frame_id_found && !bb_stream.streamIsEmpty())
+            while(!frame_id_found)
             {
                 uint8_t curr_byte = bb_stream.popFromStream();
                 if(curr_byte == '\n')
@@ -58,6 +58,7 @@ void BlackboxParser::decodeFrame(Stream &bb_stream, char frame_type){
 	{
 		//We are now decoding I Frame
 		decoding_i_frame = true;
+		i_frame_decoded = false;
         frame_complete = false;
 	}
 	else if(frame_type == 'P')
@@ -146,6 +147,9 @@ void BlackboxParser::decodeFrame(Stream &bb_stream, char frame_type){
                 fields_decoded++;
             }
 
+            final_value = false;
+            decoding_tag2_3s32 = false;
+
         }
         else if(decoding_tag8_4s16 && final_value)
         {
@@ -166,6 +170,9 @@ void BlackboxParser::decodeFrame(Stream &bb_stream, char frame_type){
                 curr_field++;
                 fields_decoded++;
             }
+
+            final_value = false;
+            decoding_tag8_4s16 = false;
         }
         else if(!decoding_tag2_3s32 && !decoding_tag8_4s16 && final_value)
         {

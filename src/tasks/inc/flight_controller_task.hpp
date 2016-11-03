@@ -14,7 +14,6 @@
 
 namespace flight_controller_task {
 
-	static QueueHandle_t flight_cont_event_queue;
 	enum flight_cont_event_type {
 		BLACKBOX_READ = 0,
 		FLIGHT_COMMAND = 1

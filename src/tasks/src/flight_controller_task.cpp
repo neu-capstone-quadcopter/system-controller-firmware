@@ -108,12 +108,12 @@ GpdmaChannel *test_channel_tx;
 GpdmaChannel *test_channel_rx;
 
 Stream blackbox_stream;
+BlackboxParser blackbox_parser;
 
 void start() {
 	fc_blackbox_uart = hal::get_driver<UartIo>(hal::FC_BLACKBOX_UART);
 	fc_sbus_uart = hal::get_driver<UartIo>(hal::FC_SBUS_UART);
 	xTaskCreate(task_loop, "flight controller", 400, NULL, 2, &task_handle);
-	flight_cont_event_queue = xQueueCreate(EVENT_QUEUE_DEPTH, sizeof(flight_cont_event_t));
 }
 
 static void task_loop(void *p) {
@@ -142,19 +142,7 @@ static void task_loop(void *p) {
 	fc_blackbox_uart->read_async(100, fc_bb_read_del);
 	flight_cont_event_t current_event;
 	for(;;) {
-		xQueueReceive(flight_cont_event_queue, &current_event, portMAX_DELAY);
-		switch (current_event.type) {
-		case BLACKBOX_READ:
-			// Now that we have gotten read event, we know that we
-			// have new data in our stream and should call our parser
-
-			break;
-		case FLIGHT_COMMAND:
-			//Do operations to send command
-			//to flight controller
-		default:
-			break;
-		}
+		blackbox_parser.decodeFrameType(blackbox_stream);
 	}
 }
 
@@ -163,7 +151,7 @@ void set_frame_channel_cmd(uint8_t channel, uint16_t value) {
 }
 
 void add_event_to_queue(flight_cont_event_t event) {
-	xQueueSendToBack(flight_cont_event_queue, &event, 0);
+	//xQueueSendToBack(flight_cont_event_queue, &event, 0);
 }
 
 void setup_ritimer(void) {
@@ -226,7 +214,7 @@ void fc_bb_read_handler(std::shared_ptr<UartReadData> read_status)
 		e.data = read_data.get();
 
 		//Add to the queue
-		xQueueSendToBackFromISR(flight_cont_event_queue, &e, 0);
+		//xQueueSendToBackFromISR(flight_cont_event_queue, &e, 0);
 		fc_blackbox_uart->read_async(100, fc_bb_read_del);
 }
 

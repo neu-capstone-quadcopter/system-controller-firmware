@@ -44,6 +44,8 @@ public:
 	UartIo(LPC_USART_T *uart);
 	void init_driver(void);
 
+	void enable_interrupts();
+
 	/*
 	 * @brief Allocate the buffers needed for operations
 	 * @param tx_buffer_size : Size of the tx buffer in bytes
@@ -134,6 +136,7 @@ private:
 	bool is_reading = false;
 	bool is_write_async = false;
 	bool is_read_async = false;
+	bool is_allocated = false;
 
 	LPC_USART_T *uart;
 	uint32_t baud_rate;

@@ -69,7 +69,7 @@ public:
 	 * @param stop_bits : The number of stop bits to send
 	 * @return none
 	 */
-	void config_data_mode(uint32_t config);
+	void config_data_mode(uint32_t word_length, uint32_t parity, uint32_t stop_bits);
 
 	/*
 	 * @brief Set up the internal transfer mode of the driver

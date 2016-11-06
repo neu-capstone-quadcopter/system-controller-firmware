@@ -57,8 +57,6 @@ namespace hal {
 		GpdmaManager *gpdma_man = new GpdmaManager(LPC_GPDMA);
 		SspIo *telem_cc1120_ssp = new SspIo(LPC_SSP1);
 		UartIo *console_uart = new UartIo(LPC_UART3);
-		UartIo *fc_blackbox_uart = new UartIo(LPC_UART0);
-		UartIo *fc_sbus_uart = new UartIo(LPC_UART2);
 		ExampleLed *led_0 = new ExampleLed(2, 11);
 		ExampleLed *led_1 = new ExampleLed(2, 12);
 		Adc *adc = new Adc(LPC_ADC);
@@ -76,8 +74,6 @@ namespace hal {
 		drivers[NAV_COMPUTER] = nav_computer;
 		drivers[TELEM_CC1120] = telem_cc1120;
 		drivers[CONSOLE_UART] = console_uart;
-		drivers[FC_BLACKBOX_UART] = fc_blackbox_uart;
-		drivers[FC_SBUS_UART] = fc_sbus_uart;
 	}
 
 	template <class T>
@@ -102,14 +98,6 @@ extern "C" {
 
 	void SSP1_IRQHandler() {
 		static_cast<SspIo*>(drivers[TELEM_CC1120_SSP])->ssp_interrupt_handler();
-	}
-
-	void UART0_IRQHandler(void){
-		static_cast<UartIo*>(drivers[FC_BLACKBOX_UART])->uartInterruptHandler();
-	}
-
-	void UART2_IRQHandler(void){
-		static_cast<UartIo*>(drivers[FC_SBUS_UART])->uartInterruptHandler();
 	}
 
 	void UART3_IRQHandler(void){

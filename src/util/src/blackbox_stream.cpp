@@ -10,6 +10,9 @@
 		uint8_t p_frame_data1[21]= {'P',208,15,0,0,0,3,0,0,0,0,2,0,1,0,0,2,0,2,2,0};
 		memcpy(write_ptr, p_frame_data1, 21);
 		write_ptr += 21;
+		uint8_t p_frame_data2[20] = {'P',4,0,0,0,3,0,1,0,0,2,2,1,0,0,2,0,6,2,0};
+		memcpy(write_ptr, p_frame_data2, 20);
+		write_ptr += 20;
 	}
 
 	void Stream::allocate()

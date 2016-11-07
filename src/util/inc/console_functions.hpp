@@ -12,7 +12,6 @@
 #include <cstdlib>
 
 #include "hal.hpp"
-#include "flight_controller_task.hpp"
 
 namespace console_task {
 #define MAX_COMMAND_PARAMS 5
@@ -100,15 +99,6 @@ namespace console_task {
 		}
 	}
 
-	void set_fltctl_ch(char* output_string, uint8_t argc, char** argv) {
-		if(argc >= 3) {
-			flight_controller_task::set_frame_channel_cmd(atoi(argv[1]), atoi(argv[2]));
-		}
-		else {
-			strcpy(output_string, NOT_ENOUGH_ARGS_STR);
-		}
-	}
-
 	void get_mem_info(char* output_string, uint8_t argc, char** argv)
 	{
 		sprintf(output_string, "Free Memory: %d\r\n"
@@ -147,10 +137,9 @@ namespace console_task {
 			{"get_task_info", &get_task_info},
 			{"get_runtime_info", &get_runtime_info},
 			{"start_trace", &start_trace},
-			{"set_fltctl_ch", &set_fltctl_ch},
 	};
 
-	const uint8_t NUMBER_COMMANDS = sizeof(command_list) / sizeof(CommandDescriptor);
+#define NUMBER_COMMANDS (sizeof(command_list) / sizeof(CommandDescriptor))
 }
 
 

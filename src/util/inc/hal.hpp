@@ -17,8 +17,6 @@ namespace hal {
 		GPDMA_MAN = 0,
 		TELEM_CC1120_SSP,
 		CONSOLE_UART,
-		FC_BLACKBOX_UART,
-		FC_SBUS_UART,
 		LED_0,
 		LED_1,
 		SENSOR_ADC,

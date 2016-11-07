@@ -57,16 +57,12 @@ namespace board {
 	void uart_init(LPC_USART_T *uart) {
 		switch((uint32_t)uart) {
 		case LPC_UART0_BASE:
-			Chip_IOCON_PinMux(LPC_IOCON, 0, 2, IOCON_MODE_INACT, IOCON_FUNC1);
-			Chip_IOCON_PinMux(LPC_IOCON, 0, 3, IOCON_MODE_INACT, IOCON_FUNC1);
 			break;
 		case LPC_UART1_BASE:
 			Chip_IOCON_PinMux(LPC_IOCON, 0, 15, IOCON_MODE_INACT, IOCON_FUNC1);
 			Chip_IOCON_PinMux(LPC_IOCON, 0, 16, IOCON_MODE_INACT, IOCON_FUNC1);
 			break;
 		case LPC_UART2_BASE:
-			Chip_IOCON_PinMux(LPC_IOCON, 0, 10, IOCON_MODE_INACT, IOCON_FUNC1);
-			Chip_IOCON_PinMux(LPC_IOCON, 0, 11, IOCON_MODE_INACT, IOCON_FUNC1);
 			break;
 		case LPC_UART3_BASE:
 			Chip_IOCON_PinMux(LPC_IOCON, 0, 0, IOCON_MODE_INACT, IOCON_FUNC2);

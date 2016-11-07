@@ -28,6 +28,15 @@ UartReadData::UartReadData(uint8_t* data, uint16_t length, UartError status) {
 	this->status = status;
 }
 
+void UartIo::setFractionalBaud(uint16_t fdr, uint16_t dll, uint16_t dlm)
+{
+	Chip_UART_EnableDivisorAccess(uart);
+	uart->FDR = fdr;
+	uart->DLL = dll;
+	uart->DLM = dlm;
+	Chip_UART_DisableDivisorAccess(uart);
+}
+
 UartIo::UartIo(LPC_USART_T *uart) {
 	this->uart = uart;
 	this->transfer_mode = DEFAULT_TRANSFER_MODE;

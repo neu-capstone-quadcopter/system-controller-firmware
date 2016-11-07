@@ -6,47 +6,54 @@
  */
 void BlackboxParser::decodeFrameType(Stream &bb_stream){
 
-    while(!bb_stream.streamIsEmpty())
-    {
-        //Skip this logic if we're in the middle of decoding a frame
-        if(decoding_i_frame)
-        {
-            decodeFrame(bb_stream, 'I');
-        }
-        else if(decoding_p_frame)
-        {
-            decodeFrame(bb_stream, 'P');
-        }
-        else
-        {
-            //Let's figure out what type of frame we're looking at. The below logic
-            //assumes that we won't get a sequence of two newline characters in a row
-            //before our frame specifier (e.g. "\n\nI"
-            while(!frame_id_found)
-            {
-                uint8_t curr_byte = bb_stream.popFromStream();
-                if(curr_byte == '\n')
-                {
-                    uint8_t next_byte = bb_stream.popFromStream();
-                    if(next_byte == 'I')
-                    {
-                        frame_id_found = true;
-                        decodeFrame(bb_stream, 'I');
+	//Skip this logic if we're in the middle of decoding a frame
+	if(decoding_i_frame)
+	{
+		decodeFrame(bb_stream, 'I');
+	}
+	else if(decoding_p_frame)
+	{
+		decodeFrame(bb_stream, 'P');
+	}
+	else
+	{
+		//Let's figure out what type of frame we're looking at. The below logic
+		//assumes that we won't get a sequence of two newline characters in a row
+		//before our frame specifier (e.g. "\n\nI"
+		while(!frame_id_found)
+		{
+			uint8_t curr_byte = bb_stream.popFromStream();
+			if(blackbox_values_index < 300)
+			{
+				blackbox_values[blackbox_values_index] = curr_byte;
+				blackbox_values_index++;
 
-                    }
+			}
+			else
+			{
+				blackbox_values[blackbox_values_index-1] = 128;
+			}
 
-                }
-                else if(curr_byte == 'P' && i_frame_decoded)
-                {
-                    frame_id_found = true;
-                    decodeFrame(bb_stream, 'P');
 
-                }
-            }
+			//uint8_t next_byte = bb_stream.popFromStream();
+			if(curr_byte == 'I')
+			{
+				frame_id_found = true;
+				decodeFrame(bb_stream, 'I');
 
-            return;
-        }
-    }
+			}
+
+			else if(curr_byte == 'P' && i_frame_decoded)
+			{
+				frame_id_found = true;
+				decodeFrame(bb_stream, 'P');
+
+			}
+		}
+
+		return;
+	}
+
 
 }
 
@@ -78,7 +85,7 @@ void BlackboxParser::decodeFrame(Stream &bb_stream, char frame_type){
 	bool curr_sign;
 
 	//Loop through everything in stream
-	while(!frame_complete && !bb_stream.streamIsEmpty())
+	while(!frame_complete)
 	{
 		if(decoding_i_frame)
 		{
@@ -144,7 +151,6 @@ void BlackboxParser::decodeFrame(Stream &bb_stream, char frame_type){
                 }
 
                 curr_field++;
-                fields_decoded++;
             }
 
             final_value = false;
@@ -168,7 +174,6 @@ void BlackboxParser::decodeFrame(Stream &bb_stream, char frame_type){
                 }
 
                 curr_field++;
-                fields_decoded++;
             }
 
             final_value = false;
@@ -188,13 +193,12 @@ void BlackboxParser::decodeFrame(Stream &bb_stream, char frame_type){
 			}
 
 			//Increment decoding count
-			fields_decoded++;
 			curr_field++;
 			final_value = false;
         }
 
 		//Apply decompression once all fields are decoded
-		if(fields_decoded == (NUM_FIELDS - 1))
+		if(curr_field == (NUM_FIELDS - 1))
 		{
             curr_predictor = 0;
             curr_signed_field = 0;
@@ -334,12 +338,16 @@ void BlackboxParser::decodeUVB(Stream &bb_stream, bool sign)
 void BlackboxParser::decodeSVB(Stream &bb_stream, bool sign)
 {
 	//This function works on signed values
-	uint8_t byte = bb_stream.popFromStream();
-    scurr_value = (byte >> 1) ^ -(int8_t) (byte & 1);
+	//Decode UVB to start
+	decodeUVB(bb_stream, sign);
 
     if(sign == 0)
     {
-        curr_value = (uint32_t)scurr_value;
+        curr_value = (uint32_t)zigZagDecode(curr_value);
+    }
+    else
+    {
+    	scurr_value = zigZagDecode(scurr_value);
     }
 
     final_value = true;
@@ -573,35 +581,19 @@ int32_t BlackboxParser::predictStraightLine(bool sign, int32_t value)
 	uint32_t uprev_val2;
 	uint32_t uprev_val;
 
-	if(prev_frame2.isFrameEmpty())
-	{
-		if(sign == 0)
-			uprev_val2 = 0;
-		else
-			sprev_val2 = 0;
-	}
-	else
-	{
-		if(sign == 0)
-			uprev_val2 = prev_frame2.unsigned_field_values[curr_unsigned_field];
-		else
-			sprev_val2 = prev_frame2.signed_field_values[curr_signed_field];
-	}
 
-	if(prev_frame.isFrameEmpty())
-	{
-		if(sign == 0)
-			uprev_val = 0;
-		else
-			sprev_val = 0;
-	}
+	if(sign == 0)
+		uprev_val2 = prev_frame2.unsigned_field_values[curr_unsigned_field];
 	else
-	{
-		if(sign == 0)
-			uprev_val = prev_frame.unsigned_field_values[curr_unsigned_field];
-		else
-			sprev_val = prev_frame.signed_field_values[curr_signed_field];
-	}
+		sprev_val2 = prev_frame2.signed_field_values[curr_signed_field];
+
+
+
+	if(sign == 0)
+		uprev_val = prev_frame.unsigned_field_values[curr_unsigned_field];
+	else
+		sprev_val = prev_frame.signed_field_values[curr_signed_field];
+
 
 	//Compute slope and add to curr_value -- check if we are working
 	//with signed or unsigned field
@@ -628,42 +620,23 @@ int32_t BlackboxParser::predictAverage2(bool sign, int32_t value)
 	int32_t sprev_val2;
 	int32_t sprev_val;
 
-	if(prev_frame2.isFrameEmpty())
-	{
-		if(sign == 0)
-			uprev_val2 = 0;
-		else
-			sprev_val2 = 0;
-	}
+	if(sign == 0)
+		uprev_val2 = prev_frame2.unsigned_field_values[curr_unsigned_field];
 	else
-	{
-		if(sign == 0)
-			uprev_val2 = prev_frame2.unsigned_field_values[curr_unsigned_field];
-		else
-			sprev_val2 = prev_frame2.signed_field_values[curr_signed_field];
-	}
+		sprev_val2 = prev_frame2.signed_field_values[curr_signed_field];
 
-	if(prev_frame.isFrameEmpty())
-	{
-		if(sign == 0)
-			uprev_val = 0;
-		else
-			sprev_val = 0;
-	}
 
+
+	if(sign == 0)
+		uprev_val = prev_frame.unsigned_field_values[curr_unsigned_field];
 	else
-	{
-		if(sign == 0)
-			uprev_val = prev_frame.unsigned_field_values[curr_unsigned_field];
-		else
-			sprev_val = prev_frame.signed_field_values[curr_signed_field];
-	}
+		sprev_val = prev_frame.signed_field_values[curr_signed_field];
 
 	//Compute slope and add to curr_value
 	if(sign == 0)
-		value += (uprev_val2 - (2 * uprev_val));
+		value += (uprev_val + uprev_val2)/2;
 	else
-		value += (sprev_val2 - (2 * sprev_val));
+		value += (sprev_val + sprev_val2)/2;
 
     return value;
 }
@@ -729,4 +702,9 @@ signExtend2Bit(uint8_t byte)
 {
     //If sign bit is set, fill the top bits with 1s to sign-extend
     return (byte & 0x02) ? (int32_t) (int8_t) (byte | 0xFC) : byte;
+}
+
+int32_t BlackboxParser::zigZagDecode(uint32_t value)
+{
+	return (value >> 1) ^ -(int32_t) (value & 1);
 }

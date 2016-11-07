@@ -40,6 +40,7 @@ int main(void) {
 	console_task::start();
 	flight_controller_task::start();
 	//dma_test_task::start();
+	uiTraceStart();
 
 	vTaskStartScheduler();
 

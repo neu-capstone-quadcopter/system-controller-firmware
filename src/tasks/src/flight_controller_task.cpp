@@ -14,6 +14,7 @@
 
 #include <stdlib.h>
 #include <cstring>
+#include <cr_section_macros.h>
 
 #include "gpdma.hpp"
 
@@ -107,13 +108,19 @@ GpdmaManager *dma_man;
 GpdmaChannel *test_channel_tx;
 GpdmaChannel *test_channel_rx;
 
+__BSS(RAM2)
 Stream blackbox_stream;
+
+bool added_to_stream = false;
+
 BlackboxParser blackbox_parser;
 
 void start() {
 	fc_blackbox_uart = hal::get_driver<UartIo>(hal::FC_BLACKBOX_UART);
 	fc_sbus_uart = hal::get_driver<UartIo>(hal::FC_SBUS_UART);
 	xTaskCreate(task_loop, "flight controller", 400, NULL, 2, &task_handle);
+	fc_blackbox_uart->setFractionalBaud(0xA3, 0xA, 0x0);
+	blackbox_stream.allocate();
 }
 
 static void task_loop(void *p) {
@@ -200,13 +207,20 @@ void read_from_uart() {
 }
 
 void fc_bb_read_handler(std::shared_ptr<UartReadData> read_status)
-	{
+{
 		std::unique_ptr<uint8_t[]> read_data = std::move(read_status->data);
-		uint16_t len = 16;
-		uint8_t *data;
+		//uint16_t len = 16;
+		uint8_t *data = new uint8_t[read_status->length];
+
+		memcpy(data, read_data.get(), read_status->length);
 
 		//Add data to stream
-		blackbox_stream.addToStream(data, len);
+		//if(!added_to_stream)
+		//{
+		blackbox_stream.addToStream(data,read_status->length);
+			//added_to_stream = true;
+		//}
+		//blackbox_stream.addToStream(data, len);
 
 		//Create read event
 		flight_cont_event_t e;

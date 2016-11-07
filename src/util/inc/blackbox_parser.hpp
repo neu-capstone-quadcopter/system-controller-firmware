@@ -110,9 +110,14 @@ public:
     int32_t signExtend6Bit(uint8_t byte);
     int32_t signExtend4Bit(uint8_t nibble);
     int32_t signExtend2Bit(uint8_t byte);
+    int32_t zigZagDecode(uint32_t value);
 
 
 private:
+
+    //TEST
+    uint8_t blackbox_values[300];
+    uint8_t blackbox_values_index = 0;
 
 	//Flag value used to keep track of which field we are decoding
 	uint8_t curr_field = 0;

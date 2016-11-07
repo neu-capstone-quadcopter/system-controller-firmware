@@ -51,6 +51,8 @@ public:
 	UartIo(LPC_USART_T *uart);
 	void init_driver(void);
 
+	void setFractionalBaud(uint16_t fdr, uint16_t dll, uint16_t dlm);
+
 	/*
 	 * @brief Allocate the buffers needed for operations
 	 * @param tx_buffer_size : Size of the tx buffer in bytes

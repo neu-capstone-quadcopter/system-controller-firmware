@@ -20,7 +20,7 @@
 
 namespace dma_test_task {
 	static void task_loop(void *p);
-	static void read_handler(std::shared_ptr<UartReadData> data);
+	static void read_handler(UartError status, uint8_t *data, uint16_t len);
 	static void write_handler(UartError status);
 
 	TaskHandle_t task_handle;
@@ -35,6 +35,7 @@ namespace dma_test_task {
 	void start(void) {
 		uart = hal::get_driver<UartIo>(hal::CONSOLE_UART);
 		uart->allocate_buffers(32, 32);
+		uart->enable_interrupts();
 
 		dma_man = hal::get_driver<GpdmaManager>(hal::GPDMA_MAN);
 		test_channel_tx = dma_man->allocate_channel(0);
@@ -67,11 +68,9 @@ namespace dma_test_task {
 		}
 	}
 
-	static void read_handler(std::shared_ptr<UartReadData> read_status) {
-		std::unique_ptr<uint8_t[]> read_data = std::move(read_status->data);
-		uint8_t *data_ptr = read_data.get();
-
-		uart->write_async(data_ptr, read_status->length, write_del);
+	static void read_handler(UartError status, uint8_t *data, uint16_t len) {
+		uart->write_async(data, len, write_del);
+		delete[] data;
 	}
 
 	static void write_handler(UartError status) {

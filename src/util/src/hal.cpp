@@ -15,6 +15,7 @@
 #include "driver.hpp"
 #include "exampleled.hpp"
 #include "adc.hpp"
+//#include "nav_computer.hpp"
 #include "cd74hc4067.hpp"
 
 namespace hal {
@@ -56,12 +57,13 @@ namespace hal {
 		GpdmaManager *gpdma_man = new GpdmaManager(LPC_GPDMA);
 		SspIo *telem_cc1120_ssp = new SspIo(LPC_SSP1);
 		UartIo *console_uart = new UartIo(LPC_UART3);
-		UartIo *fc_blackbox_uart = new UartIo(LPC_UART0);
-		UartIo *fc_sbus_uart = new UartIo(LPC_UART2);
 		ExampleLed *led_0 = new ExampleLed(2, 11);
 		ExampleLed *led_1 = new ExampleLed(2, 12);
 		Adc *adc = new Adc(LPC_ADC);
 		Cd74hc4067 *adc_mux = new Cd74hc4067(gpio_map);
+		UartIo *nav_computer = new UartIo(LPC_UART1);
+		UartIo *fc_blackbox_uart = new UartIo(LPC_UART0);
+		UartIo *fc_sbus_uart = new UartIo(LPC_UART2);
 		Cc1120 *telem_cc1120 = new Cc1120(telem_cc1120_ssp);
 
 		// Add drivers to driver array
@@ -71,10 +73,11 @@ namespace hal {
 		drivers[LED_1] = led_1;
 		drivers[SENSOR_ADC] = adc;
 		drivers[CD74HC4067] = adc_mux;
-		drivers[TELEM_CC1120] = telem_cc1120;
-		drivers[CONSOLE_UART] = console_uart;
+		drivers[NAV_COMPUTER] = nav_computer;
 		drivers[FC_BLACKBOX_UART] = fc_blackbox_uart;
 		drivers[FC_SBUS_UART] = fc_sbus_uart;
+		drivers[TELEM_CC1120] = telem_cc1120;
+		drivers[CONSOLE_UART] = console_uart;
 	}
 
 	template <class T>
@@ -101,15 +104,11 @@ extern "C" {
 		static_cast<SspIo*>(drivers[TELEM_CC1120_SSP])->ssp_interrupt_handler();
 	}
 
-	void UART0_IRQHandler(void){
-		static_cast<UartIo*>(drivers[FC_BLACKBOX_UART])->uartInterruptHandler();
-	}
-
-	void UART2_IRQHandler(void){
-		static_cast<UartIo*>(drivers[FC_SBUS_UART])->uartInterruptHandler();
-	}
-
 	void UART3_IRQHandler(void){
 		static_cast<UartIo*>(drivers[CONSOLE_UART])->uartInterruptHandler();
+	}
+
+	void UART1_IRQHandler(void){
+		static_cast<UartIo*>(drivers[NAV_COMPUTER])->uartInterruptHandler();
 	}
 }

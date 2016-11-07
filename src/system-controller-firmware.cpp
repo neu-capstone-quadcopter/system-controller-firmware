@@ -22,6 +22,7 @@
 #include "analog_sensor_collection_task.hpp"
 #include "uart_console_task.hpp"
 #include "dma_test_task.hpp"
+#include "nav_computer_task.hpp"
 #include "flight_controller_task.hpp"
 
 inline void* operator new (size_t size) { return pvPortMalloc(size); }
@@ -36,11 +37,12 @@ int main(void) {
 
 	led_task::start();
 	//telemetry_radio_task::start();
-	//sensor_task::start();
+	sensor_task::start();
 	console_task::start();
-	flight_controller_task::start();
 	//dma_test_task::start();
 	uiTraceStart();
+	//nav_computer_task::start();
+	flight_controller_task::start();
 
 	vTaskStartScheduler();
 

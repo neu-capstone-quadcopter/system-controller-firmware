@@ -36,14 +36,7 @@ enum UartError {
 	UART_ERROR_BUFFER_OVERFLOW
 };
 
-struct UartReadData {
-	UartReadData(uint8_t* data, uint16_t length, UartError status);
-	std::unique_ptr<uint8_t[]> data;
-	uint16_t length;
-	UartError status;
-};
-
-typedef dlgt::delegate<void(*)(std::shared_ptr<UartReadData>)> UartReadDelegate;
+typedef dlgt::delegate<void(*)(UartError, uint8_t*, uint16_t)> UartReadDelegate;
 typedef dlgt::delegate<void(*)(UartError)> UartWriteDelegate;
 
 class UartIo : public Driver {
@@ -52,6 +45,7 @@ public:
 	void init_driver(void);
 
 	void setFractionalBaud(uint16_t fdr, uint16_t dll, uint16_t dlm);
+	void enable_interrupts();
 
 	/*
 	 * @brief Allocate the buffers needed for operations
@@ -78,7 +72,7 @@ public:
 	 * @param stop_bits : The number of stop bits to send
 	 * @return none
 	 */
-	void config_data_mode(uint32_t config);
+	void config_data_mode(uint32_t word_length, uint32_t parity, uint32_t stop_bits);
 
 	/*
 	 * @brief Set up the internal transfer mode of the driver
@@ -143,6 +137,7 @@ private:
 	bool is_reading = false;
 	bool is_write_async = false;
 	bool is_read_async = false;
+	bool is_allocated = false;
 
 	LPC_USART_T *uart;
 	uint32_t baud_rate;

@@ -93,7 +93,7 @@ void setup_ritimer(void);
 void send_data(uint8_t *data);
 void write_to_sbus(uint8_t *data, uint8_t len);
 void read_from_uart();
-void fc_bb_read_handler(std::shared_ptr<UartReadData> read_status);
+void fc_bb_read_handler(UartError status, uint8_t *data, uint16_t len);
 static void sbus_frame_written_handler(UartError status);
 
 static UartIo* fc_blackbox_uart;
@@ -129,8 +129,7 @@ static void task_loop(void *p) {
 
 	fc_sbus_uart->allocate_buffers(30, 0);
 	fc_sbus_uart->set_baud(100000);
-	fc_sbus_uart->config_data_mode(UART_LCR_WLEN8 | UART_LCR_SBS_2BIT |
-			UART_LCR_PARITY_EN | UART_LCR_PARITY_EVEN);
+	fc_sbus_uart->config_data_mode(UART_LCR_WLEN8, UART_LCR_PARITY_EVEN, UART_LCR_SBS_2BIT);
 	dma_man = hal::get_driver<GpdmaManager>(hal::GPDMA_MAN);
 	test_channel_tx = dma_man->allocate_channel(0);
 	test_channel_rx = dma_man->allocate_channel(1);
@@ -149,7 +148,7 @@ static void task_loop(void *p) {
 	fc_blackbox_uart->read_async(100, fc_bb_read_del);
 	flight_cont_event_t current_event;
 	for(;;) {
-		blackbox_parser.decodeFrameType(blackbox_stream);
+		//blackbox_parser.decodeFrameType(blackbox_stream);
 	}
 }
 
@@ -206,18 +205,13 @@ void read_from_uart() {
 
 }
 
-void fc_bb_read_handler(std::shared_ptr<UartReadData> read_status)
+void fc_bb_read_handler(UartError status, uint8_t *data, uint16_t len)
 {
-		std::unique_ptr<uint8_t[]> read_data = std::move(read_status->data);
-		//uint16_t len = 16;
-		uint8_t *data = new uint8_t[read_status->length];
-
-		memcpy(data, read_data.get(), read_status->length);
 
 		//Add data to stream
 		//if(!added_to_stream)
 		//{
-		blackbox_stream.addToStream(data,read_status->length);
+		blackbox_stream.addToStream(data,len);
 			//added_to_stream = true;
 		//}
 		//blackbox_stream.addToStream(data, len);
@@ -225,7 +219,7 @@ void fc_bb_read_handler(std::shared_ptr<UartReadData> read_status)
 		//Create read event
 		flight_cont_event_t e;
 		e.type = BLACKBOX_READ;
-		e.data = read_data.get();
+		e.data = data;
 
 		//Add to the queue
 		//xQueueSendToBackFromISR(flight_cont_event_queue, &e, 0);

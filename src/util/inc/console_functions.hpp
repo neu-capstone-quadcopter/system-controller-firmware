@@ -160,7 +160,7 @@ namespace console_task {
 			{"arm_fltctl", &arm_fltctl},
 	};
 
-	const uint8_t NUMBER_COMMANDS = sizeof(command_list) / sizeof(CommandDescriptor);
+#define NUMBER_COMMANDS (sizeof(command_list) / sizeof(CommandDescriptor))
 }
 
 

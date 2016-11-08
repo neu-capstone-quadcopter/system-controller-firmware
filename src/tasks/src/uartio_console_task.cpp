@@ -63,6 +63,7 @@ namespace console_task {
 		// Retrieve driver instances from HAL
 		uart = hal::get_driver<UartIo>(hal::CONSOLE_UART);
 		uart->allocate_buffers(128, 32);
+		uart->enable_interrupts();
 
 		//Instantiate Queue
 		event_queue = xQueueCreate(EVENT_QUEUE_DEPTH, sizeof(Event));

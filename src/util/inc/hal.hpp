@@ -22,6 +22,8 @@ namespace hal {
 		SENSOR_ADC,
 		CD74HC4067,
 		NAV_COMPUTER,
+		FC_BLACKBOX_UART,
+		FC_SBUS_UART,
 		TELEM_CC1120,
 		NUM_IDENTIFIERS = TELEM_CC1120 + 1 // Add all entries before this and update
 	} driver_identifier;

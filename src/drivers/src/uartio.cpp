@@ -21,6 +21,17 @@
 #define DEFAULT_STOP_BIT UART_LCR_SBS_1BIT
 #define DEFAULT_TRANSFER_MODE UART_XFER_MODE_INTERRUPT
 
+
+
+void UartIo::setFractionalBaud(uint16_t fdr, uint16_t dll, uint16_t dlm)
+{
+	Chip_UART_EnableDivisorAccess(uart);
+	uart->FDR = fdr;
+	uart->DLL = dll;
+	uart->DLM = dlm;
+	Chip_UART_DisableDivisorAccess(uart);
+}
+
 UartIo::UartIo(LPC_USART_T *uart) {
 	this->uart = uart;
 	this->transfer_mode = DEFAULT_TRANSFER_MODE;
@@ -40,8 +51,12 @@ void UartIo::init_driver(void)
 	Chip_UART_SetupFIFOS(this->uart, (UART_FCR_FIFO_EN | UART_FCR_TRG_LEV2 |
 	                       UART_FCR_RX_RS | UART_FCR_TX_RS));
 
-	Chip_UART_IntEnable(this->uart, (UART_IER_RBRINT | UART_IER_RLSINT));
+	//Chip_UART_IntEnable(this->uart, (UART_IER_RBRINT | UART_IER_RLSINT));
 	NVIC_EnableIRQ(get_nvic_irq());
+}
+
+void UartIo::enable_interrupts() {
+	Chip_UART_IntEnable(this->uart, (UART_IER_RBRINT | UART_IER_RLSINT));
 }
 
 UartError UartIo::allocate_buffers(uint16_t tx_buffer_size, uint16_t rx_buffer_size) {
@@ -62,6 +77,8 @@ UartError UartIo::allocate_buffers(uint16_t tx_buffer_size, uint16_t rx_buffer_s
 	this->tx_buffer_len = tx_buffer_size;
 	this->rx_buffer_len = rx_buffer_size;
 
+
+	this->is_allocated = true;
 	return UART_ERROR_NONE;
 }
 
@@ -321,35 +338,37 @@ uint32_t UartIo::get_rx_dmareq(void) {
 }
 
 void UartIo::uartInterruptHandler(void){
-	Chip_UART_IRQRBHandler(this->uart, &this->rx_ring, &this->tx_ring);
+	if(this->is_allocated) {
+		Chip_UART_IRQRBHandler(this->uart, &this->rx_ring, &this->tx_ring);
 
-	if(RingBuffer_GetCount(&this->rx_ring) >= this->rx_op_len && this->is_reading) {
-		this->is_reading = false;
+		if(RingBuffer_GetCount(&this->rx_ring) >= this->rx_op_len && this->is_reading) {
+			this->is_reading = false;
 
-		if(this->is_read_async) {
-			this->is_read_async = false;
+			if(this->is_read_async) {
+				this->is_read_async = false;
 
-			Chip_UART_ReadRB(this->uart, &this->rx_ring, const_cast<uint8_t*>(this->rx_buffer), this->rx_op_len);
-			uint8_t *data_cpy = new uint8_t[this->rx_op_len];
-			memcpy(data_cpy, const_cast<uint8_t*>(this->rx_buffer), this->rx_op_len);
-			(*this->rx_delegate)(UART_ERROR_NONE, data_cpy, this->rx_op_len);
+				Chip_UART_ReadRB(this->uart, &this->rx_ring, const_cast<uint8_t*>(this->rx_buffer), this->rx_op_len);
+				uint8_t *data_cpy = new uint8_t[this->rx_op_len];
+				memcpy(data_cpy, const_cast<uint8_t*>(this->rx_buffer), this->rx_op_len);
+				(*this->rx_delegate)(UART_ERROR_NONE, data_cpy, this->rx_op_len);
+			}
+			else {
+				xSemaphoreGiveFromISR(this->rx_transfer_semaphore, NULL);
+			}
 		}
-		else {
-			xSemaphoreGiveFromISR(this->rx_transfer_semaphore, NULL);
-		}
-	}
 
-	if(RingBuffer_IsEmpty(&this->tx_ring) && this->is_writing)
-	{
-		this->is_writing = false;
+		if(RingBuffer_IsEmpty(&this->tx_ring) && this->is_writing)
+		{
+			this->is_writing = false;
 
-		if(this->is_write_async) {
-			this->is_write_async = false;
+			if(this->is_write_async) {
+				this->is_write_async = false;
 
-			(*this->tx_delegate)(UART_ERROR_NONE);
-		}
-		else {
-			xSemaphoreGiveFromISR(this->tx_transfer_semaphore, NULL);
+				(*this->tx_delegate)(UART_ERROR_NONE);
+			}
+			else {
+				xSemaphoreGiveFromISR(this->tx_transfer_semaphore, NULL);
+			}
 		}
 	}
 }

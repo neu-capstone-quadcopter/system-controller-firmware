@@ -141,7 +141,6 @@ private:
 	bool is_read_async = false;
 	bool is_allocated = false;
 
-
 	uint32_t baud_rate;
 	RINGBUFF_T tx_ring;
 	RINGBUFF_T rx_ring;

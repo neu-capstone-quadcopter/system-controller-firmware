@@ -134,6 +134,8 @@ static void task_loop(void *p) {
 	test_channel_tx = dma_man->allocate_channel(0);
 	test_channel_rx = dma_man->allocate_channel(1);
 
+	fc_sbus_uart->enable_interrupts();
+
 	// Enabled DMA (Optional)
 	fc_sbus_uart->bind_dma_channels(test_channel_tx, test_channel_rx);
 	fc_sbus_uart->set_transfer_mode(UART_XFER_MODE_DMA);
@@ -148,7 +150,7 @@ static void task_loop(void *p) {
 	fc_blackbox_uart->read_async(100, fc_bb_read_del);
 	flight_cont_event_t current_event;
 	for(;;) {
-		//blackbox_parser.decodeFrameType(blackbox_stream);
+		blackbox_parser.decodeFrameType(blackbox_stream);
 	}
 }
 

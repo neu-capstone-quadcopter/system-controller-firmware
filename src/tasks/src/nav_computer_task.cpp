@@ -151,10 +151,16 @@ void distribute_data(uint8_t* data, uint16_t length) {
 }
 
 void send_flight_controls(monarcpb_NavCPUToSysCtrl message) {
-	flight_controller_task::set_frame_channel_cmd(0, message.control.roll);
-	flight_controller_task::set_frame_channel_cmd(1, message.control.pitch);
-	flight_controller_task::set_frame_channel_cmd(2, message.control.yaw);
-	flight_controller_task::set_frame_channel_cmd(3, message.control.throttle);
+	if(message.has_control) {
+		if (message.control.has_roll)
+			flight_controller_task::set_frame_channel_cmd(0, message.control.roll);
+		if (message.control.has_pitch)
+			flight_controller_task::set_frame_channel_cmd(1, message.control.pitch);
+		if (message.control.has_yaw)
+			flight_controller_task::set_frame_channel_cmd(2, message.control.yaw);
+		if (message.control.has_throttle)
+			flight_controller_task::set_frame_channel_cmd(3, message.control.throttle);
+	}
 }
 
 static void read_len_handler(UartError status, uint8_t *data, uint16_t len) {

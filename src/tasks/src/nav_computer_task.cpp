@@ -20,7 +20,7 @@
 #include "pb_decode.h"
 #include "api.pb.h"
 #include <cr_section_macros.h>
-#include <flight_ctrl_message.hpp>
+#include <flight_controller_task.hpp>
 
 #include <stdlib.h>
 
@@ -41,7 +41,7 @@ static void read_data_handler(UartError status, uint8_t *data, uint16_t len);
 void serialize_and_send_frame(monarcpb_SysCtrlToNavCPU frame);
 // TODO: Crate a function that serializes the frame
 //void send_data(sensor_task::adc_values_t data); TODO: Make this just send data
-FlightCtrlMessage create_flight_message(monarcpb_NavCPUToSysCtrl message);
+void send_flight_controls(monarcpb_NavCPUToSysCtrl message);
 
 UartIo* nav_uart;
 static TaskHandle_t task_handle;
@@ -147,16 +147,14 @@ void distribute_data(uint8_t* data, uint16_t length) {
 	monarcpb_NavCPUToSysCtrl message = monarcpb_NavCPUToSysCtrl_init_zero;
 	pb_decode(&stream, monarcpb_NavCPUToSysCtrl_fields, &message);
 	// TODO: Distribute data to sysctrl nodes as needed.
-	FlightCtrlMessage flight_message = create_flight_message(message);
+	send_flight_controls(message);
 }
 
-FlightCtrlMessage create_flight_message(monarcpb_NavCPUToSysCtrl message) {
-	FlightCtrlMessage flight_message;
-	flight_message.roll = message.control.roll;
-	flight_message.pitch = message.control.pitch;
-	flight_message.yaw = message.control.yaw;
-	flight_message.elevation = message.control.throttle;
-	return flight_message;
+void send_flight_controls(monarcpb_NavCPUToSysCtrl message) {
+	flight_controller_task::set_frame_channel_cmd(0, message.control.roll);
+	flight_controller_task::set_frame_channel_cmd(1, message.control.pitch);
+	flight_controller_task::set_frame_channel_cmd(2, message.control.yaw);
+	flight_controller_task::set_frame_channel_cmd(3, message.control.throttle);
 }
 
 static void read_len_handler(UartError status, uint8_t *data, uint16_t len) {

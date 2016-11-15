@@ -19,11 +19,13 @@
 #include "pb_encode.h"
 #include "pb_decode.h"
 #include "api.pb.h"
+#include <cr_section_macros.h>
+#include <flight_controller_task.hpp>
 
 #include <stdlib.h>
 
 #define EVENT_QUEUE_DEPTH 8
-#define MAX_BUFFER_SIZE 1150
+#define MAX_BUFFER_SIZE 575
 
 namespace nav_computer_task {
 
@@ -36,8 +38,10 @@ static void timer_handler(TimerHandle_t xTimer);
 void distribute_data(uint8_t *data, uint16_t length);
 static void read_len_handler(UartError status, uint8_t *data, uint16_t len);
 static void read_data_handler(UartError status, uint8_t *data, uint16_t len);
+void serialize_and_send_frame(monarcpb_SysCtrlToNavCPU frame);
 // TODO: Crate a function that serializes the frame
 //void send_data(sensor_task::adc_values_t data); TODO: Make this just send data
+void send_flight_controls(monarcpb_NavCPUToSysCtrl message);
 
 UartIo* nav_uart;
 static TaskHandle_t task_handle;
@@ -47,6 +51,9 @@ GpdmaChannel *dma_channel_tx;
 GpdmaChannel *dma_channel_rx;
 
 static monarcpb_SysCtrlToNavCPU current_frame;
+
+__BSS(RAM2)
+static uint8_t serialization_buffer[MAX_BUFFER_SIZE];
 
 auto read_len = dlgt::make_delegate(&read_len_handler);
 auto read_data = dlgt::make_delegate(&read_data_handler);
@@ -62,24 +69,31 @@ void start() {
 	// Enabled DMA (Optional)
 	nav_uart->bind_dma_channels(dma_channel_tx, dma_channel_rx);
 	//nav_uart->set_transfer_mode(UART_XFER_MODE_DMA);
-	xTaskCreate(task_loop, "nav computer", 400, NULL, 2, &task_handle);
+	xTaskCreate(task_loop, "nav computer", 1200, NULL, 2, &task_handle);
 	nav_event_queue = xQueueCreate(EVENT_QUEUE_DEPTH, sizeof(nav_event_t));
+
+	//nav_uart->set_baud(230400);
+	Chip_UART_EnableDivisorAccess(nav_uart->uart);
+	nav_uart->uart->FDR = 0xA3;
+	nav_uart->uart->DLL = 0x5;
+	nav_uart->uart->DLM = 0x0;
+	Chip_UART_DisableDivisorAccess(nav_uart->uart);
+
 }
 
 void initialize_timers() {
-	timer = xTimerCreate("NavTimer", 10, pdTRUE, NULL, timer_handler);
+	timer = xTimerCreate("NavTimer", 3, pdTRUE, NULL, timer_handler);
 	xTimerStart(timer, 0);
 }
 
 static void task_loop(void *p) {
 	initialize_timers();
-	nav_event_t current_event;
 	nav_uart->read_async(4, read_len);
-	//nav_uart->read_async(4, read_len);
 	current_frame = monarcpb_SysCtrlToNavCPU_init_zero;
 	nav_event_t event;
 	for(;;) {
 		xQueueReceive(nav_event_queue, &event, portMAX_DELAY);
+		char buffer[20] = "AAAAAAAAAA";
 		switch (event.type) {
 		case LoopTriggerEvent::SEND_FRAME:
 			// TODO: Serialize data
@@ -88,14 +102,28 @@ static void task_loop(void *p) {
 			// Package and send data frame
 			//send_data(current_event.data);
 			//read_from_uart();
+			serialize_and_send_frame(current_frame);
+			current_frame = monarcpb_SysCtrlToNavCPU_init_zero;
+			//write_to_uart((uint8_t*)serialization_buffer, 20);
 			break;
 		case LoopTriggerEvent::PROCESS_READ:
-			distribute_data(current_event.buffer, current_event.length);
+			distribute_data(event.buffer, event.length);
 			break;
 		default:
 			break;
 		}
 	}
+}
+
+void serialize_and_send_frame(monarcpb_SysCtrlToNavCPU frame) {
+	frame.has_telemetry = true;
+	frame.telemetry.has_atmospheric_pressure = true;
+	frame.telemetry.atmospheric_pressure = 103;
+	pb_ostream_t stream = pb_ostream_from_buffer(serialization_buffer, MAX_BUFFER_SIZE);//sizeof(serialization_buffer));
+	pb_encode(&stream, monarcpb_SysCtrlToNavCPU_fields, &frame);
+
+	write_to_uart(serialization_buffer, stream.bytes_written);
+	return;
 }
 
 void add_event_to_queue(nav_event_t event) {
@@ -107,6 +135,8 @@ void add_message_to_outgoing_frame(OutgoingNavComputerMessage &msg) {
 }
 
 void write_to_uart(uint8_t *data, uint16_t len) {
+	uint16_t sync_bytes = 0x91D3;
+	nav_uart->write((uint8_t*) &sync_bytes, 2);
 	nav_uart->write((uint8_t*) &len, 2);
 	nav_uart->write(data, (uint8_t) len);
 }
@@ -116,6 +146,21 @@ void distribute_data(uint8_t* data, uint16_t length) {
 	pb_istream_t stream = pb_istream_from_buffer(data, (uint8_t) length);
 	monarcpb_NavCPUToSysCtrl message = monarcpb_NavCPUToSysCtrl_init_zero;
 	pb_decode(&stream, monarcpb_NavCPUToSysCtrl_fields, &message);
+	// TODO: Distribute data to sysctrl nodes as needed.
+	send_flight_controls(message);
+}
+
+void send_flight_controls(monarcpb_NavCPUToSysCtrl message) {
+	if(message.has_control) {
+		if (message.control.has_roll)
+			flight_controller_task::set_frame_channel_cmd(0, message.control.roll);
+		if (message.control.has_pitch)
+			flight_controller_task::set_frame_channel_cmd(1, message.control.pitch);
+		if (message.control.has_yaw)
+			flight_controller_task::set_frame_channel_cmd(2, message.control.yaw);
+		if (message.control.has_throttle)
+			flight_controller_task::set_frame_channel_cmd(3, message.control.throttle);
+	}
 }
 
 static void read_len_handler(UartError status, uint8_t *data, uint16_t len) {
@@ -150,39 +195,6 @@ static void timer_handler(TimerHandle_t xTimer) {
 	event.type = LoopTriggerEvent::SEND_FRAME;
 	add_event_to_queue(event);
 }
-
-/*
-void read_from_uart() {
-	uint8_t buffer[128];
-	// Read length of incoming message.
-	uint8_t len[2];
-	nav_uart->read(len, 2);
-	uint16_t message_len = *((uint16_t*)len);
-	// Read message.
-	nav_uart->read(buffer, message_len);
-	pb_istream_t stream = pb_istream_from_buffer(buffer, (uint8_t) message_len);
-	// Decode message.
-	monarcpb_NavCPUToSysCtrl message = monarcpb_NavCPUToSysCtrl_init_zero;
-	pb_decode(&stream, monarcpb_NavCPUToSysCtrl_fields, &message);
-}
-*/
-/*
-void send_data(sensor_task::adc_values_t data) {
-	static uint8_t buffer[MAX_BUFFER_SIZE];
-	memset(buffer, 0x00, MAX_BUFFER_SIZE);
-
-	monarcpb_SysCtrlToNavCPU message = monarcpb_SysCtrlToNavCPU_init_zero;
-	package_data(data, message);
-
-	pb_ostream_t stream = pb_ostream_from_buffer(buffer, sizeof(buffer));
-
-	pb_encode(&stream, monarcpb_SysCtrlToNavCPU_fields, &message);
-	uint16_t message_len = stream.bytes_written;
-
-	write_to_uart(buffer, message_len);
-	return;
-}
-*/
 
 
 } // End nav_computer_task namespace.

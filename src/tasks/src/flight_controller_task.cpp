@@ -128,7 +128,9 @@ static void task_loop(void *p) {
 
 
 	fc_sbus_uart->allocate_buffers(30, 0);
-	fc_sbus_uart->set_baud(100000);
+	//fc_sbus_uart->set_baud(100000);
+	fc_sbus_uart->setFractionalBaud(0x41, 0xC, 0x0);
+	fc_sbus_uart->enable_interrupts();
 	fc_sbus_uart->config_data_mode(UART_LCR_WLEN8, UART_LCR_PARITY_EVEN, UART_LCR_SBS_2BIT);
 	dma_man = hal::get_driver<GpdmaManager>(hal::GPDMA_MAN);
 	test_channel_tx = dma_man->allocate_channel(0);

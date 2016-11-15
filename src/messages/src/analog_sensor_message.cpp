@@ -16,7 +16,7 @@ void AnalogSensorMessage::serialize_protobuf(monarcpb_SysCtrlToNavCPU &protobuf)
 			protobuf.analog_sensors.sys_3v3_isense = this->adc_values[i];
 			break;
 		case 1:
-			protobuf.analog_sensors.has_sys_3v3_isense = true;
+			protobuf.analog_sensors.has_sys_5v_isense = true;
 			protobuf.analog_sensors.sys_5v_isense = this->adc_values[i];
 			break;
 		case 2:

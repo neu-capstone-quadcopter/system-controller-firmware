@@ -88,7 +88,7 @@
 #define configUSE_TIMERS			1
 #define configTIMER_TASK_PRIORITY   3
 #define configTIMER_QUEUE_LENGTH    5
-#define configTIMER_TASK_STACK_DEPTH	128
+#define configTIMER_TASK_STACK_DEPTH	256
 
 #define configMAX_CO_ROUTINE_PRIORITIES ( 2 )
 

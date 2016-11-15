@@ -77,8 +77,8 @@ UartError UartIo::allocate_buffers(uint16_t tx_buffer_size, uint16_t rx_buffer_s
 	this->tx_buffer_len = tx_buffer_size;
 	this->rx_buffer_len = rx_buffer_size;
 
-
 	this->is_allocated = true;
+
 	return UART_ERROR_NONE;
 }
 
@@ -88,12 +88,13 @@ void UartIo::set_baud(uint32_t baud) {
 }
 
 void UartIo::config_data_mode(uint32_t word_length, uint32_t parity, uint32_t stop_bits){
-	if(parity == UART_LCR_PARITY_EVEN)
-	{
+
+	if(parity != UART_LCR_PARITY_DIS) {
 		Chip_UART_ConfigData(this->uart, (word_length | stop_bits | parity | UART_LCR_PARITY_EN));
 	}
-	else
-		Chip_UART_ConfigData(this->uart, (word_length | stop_bits | parity));
+	else {
+		Chip_UART_ConfigData(this->uart, (word_length | stop_bits));
+	}
 
 }
 
@@ -376,5 +377,11 @@ void UartIo::uartInterruptHandler(void){
 				xSemaphoreGiveFromISR(this->tx_transfer_semaphore, NULL);
 			}
 		}
+	}
+	else {
+		int y = this->uart->IIR;
+		int x = this->uart->RBR;
+		Chip_UART_ReadLineStatus(this->uart);
+		//disable_interrupts();
 	}
 }

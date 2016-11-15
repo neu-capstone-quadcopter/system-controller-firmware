@@ -9,7 +9,7 @@
 #define UTIL_INC_CONFIG_HPP_
 
 
-//#define USE_1759
+//#define IS_FLIGHT_PCB
 
 
 #endif /* UTIL_INC_CONFIG_HPP_ */

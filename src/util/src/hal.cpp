@@ -25,11 +25,11 @@ namespace hal {
 
 	void init(void) {
 		SystemCoreClockUpdate();
-		Chip_IOCON_Init(IOCON);
-		Chip_GPIO_Init(GPIO);
-		Chip_IOCON_Init(IOCON);
+		Chip_IOCON_Init(LPC_IOCON);
+		Chip_GPIO_Init(LPC_GPIO);
+		Chip_IOCON_Init(LPC_IOCON);
 
-		Chip_GPIO_WriteDirBit(GPIO, DEBUG_LED_PORT, DEBUG_LED_PIN, true); // Random Debug LED...
+		Chip_GPIO_WriteDirBit(LPC_GPIO, DEBUG_LED_PORT, DEBUG_LED_PIN, true); // Random Debug LED...
 
 		add_drivers();
 

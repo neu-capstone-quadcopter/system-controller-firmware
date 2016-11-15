@@ -16,10 +16,10 @@ ExampleLed::ExampleLed(uint8_t port, uint8_t pin) {
 }
 
 void ExampleLed::init_driver(void) {
-	Chip_GPIO_WriteDirBit(GPIO, this->port, this->pin, true);
+	Chip_GPIO_WriteDirBit(LPC_GPIO, this->port, this->pin, true);
 }
 
 void ExampleLed::set_led(bool state) {
-	Chip_GPIO_WritePortBit(GPIO, this->port, this->pin, state);
+	Chip_GPIO_WritePortBit(LPC_GPIO, this->port, this->pin, state);
 }
 

@@ -13,6 +13,33 @@
 
 // Hardware Abstraction
 
+#if defined(USE_1759)
+
+#define NAV_UART 			LPC_UART1
+#define CONSOLE_TASK_UART 	LPC_UART3
+#define SSP 				LPC_SSP1
+#define ADC 				LPC_ADC
+#define GPDMA 				LPC_GPDMA
+#define GPIO				LPC_GPIO
+#define IOCON				LPC_IOCON
+#define ADC_MUX_PORT			1
+#define ADC_MUX_PIN				30
+
+static Cd74hc4067_gpio_map MUX_GPIO_MAP = {
+				.s0_port = 0,
+				.s0_pin = 29,
+				.s1_port = 0,
+				.s1_pin = 30,
+				.s2_port = 1,
+				.s2_pin = 20,
+				.s3_port = 1,
+				.s3_pin = 22,
+				.en_port = 1,
+				.en_pin = 23
+};
+
+#else
+
 #define NAV_UART 			LPC_UART1
 #define CONSOLE_TASK_UART 	LPC_UART3
 #define SSP 				LPC_SSP1
@@ -26,8 +53,8 @@
 #define GPDMA 				LPC_GPDMA
 #define GPIO				LPC_GPIO
 #define IOCON				LPC_IOCON
-#define MUX_PORT			0
-#define MUX_PIN				23
+#define ADC_MUX_PORT			0
+#define ADC_MUX_PIN				23
 
 static Cd74hc4067_gpio_map MUX_GPIO_MAP = {
 				.s0_port = 0,
@@ -41,6 +68,8 @@ static Cd74hc4067_gpio_map MUX_GPIO_MAP = {
 				.en_port = 0,
 				.en_pin = 27
 };
+
+#endif
 
 namespace board {
 	void setup_clocking(void);

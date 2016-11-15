@@ -22,7 +22,7 @@ void Adc::init_driver() {
 		xSemaphoreGive(this->command_running_semaphore);
 	}
 	// Write 1 to pinsel register bits 21:14
-	Chip_IOCON_PinMuxSet(IOCON, MUX_PORT, MUX_PIN, FUNC1);
+	Chip_IOCON_PinMuxSet(IOCON, ADC_MUX_PORT, ADC_MUX_PIN, FUNC1);
 }
 
 int Adc::read_value(ADC_CHANNEL_T channel, uint16_t *data) {

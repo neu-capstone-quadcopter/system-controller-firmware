@@ -111,4 +111,12 @@ extern "C" {
 	void UART1_IRQHandler(void){
 		static_cast<UartIo*>(drivers[NAV_COMPUTER])->uartInterruptHandler();
 	}
+
+	void UART2_IRQHandler(void){
+		static_cast<UartIo*>(drivers[FC_SBUS_UART])->uartInterruptHandler();
+	}
+
+	void UART0_IRQHandler(void){
+		static_cast<UartIo*>(drivers[FC_BLACKBOX_UART])->uartInterruptHandler();
+	}
 }

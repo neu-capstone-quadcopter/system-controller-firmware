@@ -88,7 +88,13 @@ void UartIo::set_baud(uint32_t baud) {
 }
 
 void UartIo::config_data_mode(uint32_t word_length, uint32_t parity, uint32_t stop_bits){
-	Chip_UART_ConfigData(this->uart, (word_length | stop_bits));
+	if(parity != UART_LCR_PARITY_DIS) {
+		Chip_UART_ConfigData(this->uart, (word_length | stop_bits | parity | UART_LCR_PARITY_EN));
+	}
+	else {
+		Chip_UART_ConfigData(this->uart, (word_length | stop_bits));
+	}
+
 }
 
 UartError UartIo::set_transfer_mode(UartTransferMode mode) {

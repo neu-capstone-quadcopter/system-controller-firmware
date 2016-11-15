@@ -90,6 +90,7 @@ public:
 	//Field Decoders
 	void decodeUVB(Stream &, bool); //0
 	void decodeSVB(Stream&, bool); //1
+	int32_t decodeSVB_tag8(Stream&, bool); //N/A
 	void decodeTAG8_8SVB(Stream&, bool); //6
 	void decodeTAG2_3S32(Stream&, bool); //7
 	void decodeTAG8_4S16(Stream&, bool); //8
@@ -148,6 +149,11 @@ private:
     int32_t tag8_4s16_values[4];
     uint8_t tag8_4s16_fields = 4;
     bool decoding_tag8_4s16 = false;
+
+    //Used in tag8_8svb
+    int32_t tag8_8svb_values[6];
+    uint8_t tag8_8svb_fields = 6;
+    bool decoding_tag8_8svb = false;
 
 	//Flags indicating decoding
     bool frame_id_found = false;

@@ -29,6 +29,8 @@ namespace flight_controller_task {
 	void add_event_to_queue(flight_cont_event_t event);
 	void set_frame_channel_cmd(uint8_t channel, uint16_t value);
 
+
+
 } // End flight_controller_task namespace.
 
 

@@ -56,8 +56,8 @@ void start() {
 	nav_uart->allocate_buffers(128, 128);
 	nav_uart->enable_interrupts();
 	dma_man = hal::get_driver<GpdmaManager>(hal::GPDMA_MAN);
-	dma_channel_tx = dma_man->allocate_channel(0);
-	dma_channel_rx = dma_man->allocate_channel(1);
+	dma_channel_tx = dma_man->allocate_channel(2);
+	dma_channel_rx = dma_man->allocate_channel(3);
 
 	// Enabled DMA (Optional)
 	nav_uart->bind_dma_channels(dma_channel_tx, dma_channel_rx);

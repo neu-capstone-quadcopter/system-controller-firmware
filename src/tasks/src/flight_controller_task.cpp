@@ -92,7 +92,6 @@ static void task_loop(void *p);
 void setup_ritimer(void);
 void send_data(uint8_t *data);
 void write_to_sbus(uint8_t *data, uint8_t len);
-void read_from_uart();
 void fc_bb_read_handler(UartError status, uint8_t *data, uint16_t len);
 static void sbus_frame_written_handler(UartError status);
 
@@ -114,6 +113,7 @@ Stream blackbox_stream;
 bool added_to_stream = false;
 
 BlackboxParser blackbox_parser;
+int blackbox_read_count = 0; //Will use to allow parser to skip header
 
 void start() {
 	fc_blackbox_uart = hal::get_driver<UartIo>(hal::FC_BLACKBOX_UART);
@@ -150,7 +150,8 @@ static void task_loop(void *p) {
 	fc_blackbox_uart->read_async(100, fc_bb_read_del);
 	flight_cont_event_t current_event;
 	for(;;) {
-		blackbox_parser.decodeFrameType(blackbox_stream);
+		//if(blackbox_read_count > 10)
+			blackbox_parser.decodeFrameType(blackbox_stream);
 	}
 }
 
@@ -184,39 +185,12 @@ void write_to_sbus(uint8_t *data, uint8_t len) {
 
 }
 
-uint8_t* serializeSbusFrame(SBusFrame s)
-{
-
-}
-
-//Modify this function to read in blackbox data from
-//the serial interface
-void read_from_uart() {
-	//Our initial buffer
-	uint8_t buffer[128];
-	memset(buffer, 0x00, 128);
-
-	//Figure out length of our incoming message
-	uint8_t length = 128;
-
-	//Read incoming message into buffer
-	fc_blackbox_uart->read(buffer, length);
-
-	//Do something with this message
-	buffer[127] = 0x00;
-
-}
-
 void fc_bb_read_handler(UartError status, uint8_t *data, uint16_t len)
 {
 
 		//Add data to stream
-		//if(!added_to_stream)
-		//{
-		blackbox_stream.addToStream(data,len);
-			//added_to_stream = true;
-		//}
-		//blackbox_stream.addToStream(data, len);
+		//blackbox_stream.addToStream(data,len);
+		blackbox_read_count++; //After 10 reads we will start parsing
 
 		//Create read event
 		flight_cont_event_t e;

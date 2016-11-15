@@ -148,6 +148,7 @@ void distribute_data(uint8_t* data, uint16_t length) {
 	pb_decode(&stream, monarcpb_NavCPUToSysCtrl_fields, &message);
 	// TODO: Distribute data to sysctrl nodes as needed.
 	send_flight_controls(message);
+	delete[] data;
 }
 
 void send_flight_controls(monarcpb_NavCPUToSysCtrl message) {
@@ -187,7 +188,7 @@ static void read_data_handler(UartError status, uint8_t *data, uint16_t len) {
 	add_event_to_queue(event);
 
 	nav_uart->read_async(4, read_len);
-	delete[] data;
+	//delete[] data;
 }
 
 static void timer_handler(TimerHandle_t xTimer) {

@@ -8,6 +8,7 @@
 #include "chip.h"
 
 #include "exampleled.hpp"
+#include "board.hpp"
 
 ExampleLed::ExampleLed(uint8_t port, uint8_t pin) {
 	this->port = port;

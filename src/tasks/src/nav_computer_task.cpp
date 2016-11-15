@@ -1,9 +1,5 @@
 /*
-<<<<<<< HEAD
  * nav_computer_task.cpp
-=======
- * nav_computer_task.cp
->>>>>>> origin/nl-message-types
  *
  *  Created on: Sep 27, 2016
  *      Author: bsoper

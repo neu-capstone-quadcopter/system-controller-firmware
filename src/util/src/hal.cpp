@@ -15,26 +15,13 @@
 #include "driver.hpp"
 #include "exampleled.hpp"
 #include "adc.hpp"
-//#include "nav_computer.hpp"
 #include "cd74hc4067.hpp"
+#include <board.hpp>
 
 namespace hal {
 	void add_drivers(void);
 
 	static Driver *drivers[NUM_IDENTIFIERS];
-
-	Cd74hc4067_gpio_map gpio_map = {
-			.s0_port = 0,
-			.s0_pin = 2,
-			.s1_port = 0,
-			.s1_pin = 3,
-			.s2_port = 0,
-			.s2_pin = 21,
-			.s3_port = 0,
-			.s3_pin = 22,
-			.en_port = 0,
-			.en_pin = 27
-	};
 
 	void init(void) {
 		SystemCoreClockUpdate();
@@ -42,7 +29,7 @@ namespace hal {
 		Chip_GPIO_Init(LPC_GPIO);
 		Chip_IOCON_Init(LPC_IOCON);
 
-		Chip_GPIO_WriteDirBit(LPC_GPIO, 2, 10, true); // Random Debug LED...
+		Chip_GPIO_WriteDirBit(LPC_GPIO, DEBUG_LED_PORT, DEBUG_LED_PIN, true); // Random Debug LED...
 
 		add_drivers();
 
@@ -54,14 +41,14 @@ namespace hal {
 
 	void add_drivers(void) {
 		// Instantiate drivers
-		GpdmaManager *gpdma_man = new GpdmaManager(LPC_GPDMA);
-		SspIo *telem_cc1120_ssp = new SspIo(LPC_SSP1);
-		UartIo *console_uart = new UartIo(LPC_UART3);
-		ExampleLed *led_0 = new ExampleLed(2, 11);
-		ExampleLed *led_1 = new ExampleLed(2, 12);
-		Adc *adc = new Adc(LPC_ADC);
-		Cd74hc4067 *adc_mux = new Cd74hc4067(gpio_map);
-		UartIo *nav_computer = new UartIo(LPC_UART1);
+		GpdmaManager *gpdma_man = new GpdmaManager(GPDMA);
+		SspIo *telem_cc1120_ssp = new SspIo(SSP);
+		UartIo *console_uart = new UartIo(CONSOLE_TASK_UART);
+		ExampleLed *led_0 = new ExampleLed(LED0_PORT, LED0_PIN);
+		ExampleLed *led_1 = new ExampleLed(LED1_PORT, LED1_PIN);
+		Adc *adc = new Adc(ADC);
+		Cd74hc4067 *adc_mux = new Cd74hc4067(MUX_GPIO_MAP);
+		UartIo *nav_computer = new UartIo(NAV_UART);
 		Cc1120 *telem_cc1120 = new Cc1120(telem_cc1120_ssp);
 
 		// Add drivers to driver array

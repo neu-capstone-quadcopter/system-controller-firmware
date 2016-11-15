@@ -10,6 +10,7 @@
 
 #include "chip.h"
 #include "cd74hc4067.hpp"
+#include "config.hpp"
 
 // Hardware Abstraction
 

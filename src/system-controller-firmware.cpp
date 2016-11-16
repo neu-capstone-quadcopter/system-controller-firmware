@@ -34,7 +34,9 @@ int main(void) {
 	vTraceInitTraceData();
 	hal::init();
 
+#ifndef IS_FLIGHT_PCB
 	led_task::start();
+#endif
 	//telemetry_radio_task::start();
 	sensor_task::start();
 	console_task::start();

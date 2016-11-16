@@ -14,7 +14,7 @@
 
 // Hardware Abstraction
 
-#if defined(IS_FLIGHT_PCB)
+#ifdef IS_FLIGHT_PCB
 
 #define NAV_UART 			LPC_UART1
 #define CONSOLE_TASK_UART 	LPC_UART3

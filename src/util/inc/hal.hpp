@@ -17,8 +17,10 @@ namespace hal {
 		GPDMA_MAN = 0,
 		TELEM_CC1120_SSP,
 		CONSOLE_UART,
+#ifndef IS_FLIGHT_PCB
 		LED_0,
 		LED_1,
+#endif
 		SENSOR_ADC,
 		CD74HC4067,
 		NAV_COMPUTER,

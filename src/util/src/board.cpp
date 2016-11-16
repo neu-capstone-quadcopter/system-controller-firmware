@@ -1,6 +1,7 @@
 #include <cstdint>
 #include "chip.h"
 #include "FreeRTOS.h"
+#include "board.hpp"
 
 extern const uint32_t OscRateIn = 12000000;
 extern const uint32_t RTCOscRateIn = 32768;
@@ -59,14 +60,14 @@ namespace board {
 		case LPC_UART0_BASE:
 			break;
 		case LPC_UART1_BASE:
-			Chip_IOCON_PinMux(LPC_IOCON, 0, 15, IOCON_MODE_INACT, IOCON_FUNC1);
-			Chip_IOCON_PinMux(LPC_IOCON, 0, 16, IOCON_MODE_INACT, IOCON_FUNC1);
+			Chip_IOCON_PinMux(LPC_IOCON, UART1_TX_PORT, UART1_TX_PIN, IOCON_MODE_INACT, IOCON_FUNC1);
+			Chip_IOCON_PinMux(LPC_IOCON, UART1_RX_PORT, UART1_RX_PIN, IOCON_MODE_INACT, IOCON_FUNC1);
 			break;
 		case LPC_UART2_BASE:
 			break;
 		case LPC_UART3_BASE:
-			Chip_IOCON_PinMux(LPC_IOCON, 0, 0, IOCON_MODE_INACT, IOCON_FUNC2);
-			Chip_IOCON_PinMux(LPC_IOCON, 0, 1, IOCON_MODE_INACT, IOCON_FUNC2);
+			Chip_IOCON_PinMux(LPC_IOCON, UART3_TX_PORT, UART3_TX_PIN, IOCON_MODE_INACT, IOCON_FUNC2);
+			Chip_IOCON_PinMux(LPC_IOCON, UART3_RX_PORT, UART3_RX_PIN, IOCON_MODE_INACT, IOCON_FUNC2);
 			break;
 		default:
 			configASSERT(0);

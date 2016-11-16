@@ -16,13 +16,35 @@
 
 #ifdef IS_FLIGHT_PCB
 
+#define BLACKBOX_UART		LPC_UART0
 #define NAV_UART 			LPC_UART1
+#define SBUS_UART			LPC_UART2
 #define CONSOLE_TASK_UART 	LPC_UART3
 #define SSP 				LPC_SSP1
 #define ADC 				LPC_ADC
 #define GPDMA 				LPC_GPDMA
 #define ADC_MUX_PORT		1
 #define ADC_MUX_PIN			30
+
+#define UART0_TX_PORT		0
+#define UART0_TX_PIN		0
+#define UART0_RX_PORT		0
+#define UART0_RX_PIN		1
+
+#define UART1_TX_PORT		2
+#define UART1_TX_PIN		1
+#define UART1_RX_PORT		2
+#define UART1_RX_PIN		0
+
+#define UART2_TX_PORT		0
+#define UART2_TX_PIN		2
+#define UART2_RX_PORT		0
+#define UART2_RX_PIN		3
+
+#define UART3_TX_PORT		2
+#define UART3_TX_PIN		8
+#define UART3_RX_PORT		2
+#define UART3_RX_PIN		9
 
 static Cd74hc4067_gpio_map MUX_GPIO_MAP = {
 				.s0_port = 0,
@@ -52,6 +74,22 @@ static Cd74hc4067_gpio_map MUX_GPIO_MAP = {
 #define GPDMA 				LPC_GPDMA
 #define ADC_MUX_PORT		0
 #define ADC_MUX_PIN			23
+//#define UART0_TX_PORT		0
+//#define UART0_TX_PIN		0
+//#define UART0_RX_PORT		0
+//#define UART0_RX_PIN		0
+#define UART1_TX_PORT		0
+#define UART1_TX_PIN		15
+#define UART1_RX_PORT		0
+#define UART1_RX_PIN		16
+//#define UART2_TX_PORT		0
+//#define UART2_TX_PIN		0
+//#define UART2_RX_PORT		0
+//#define UART2_RX_PIN		0
+#define UART3_TX_PORT		0
+#define UART3_TX_PIN		0
+#define UART3_RX_PORT		0
+#define UART3_RX_PIN		1
 
 static Cd74hc4067_gpio_map MUX_GPIO_MAP = {
 				.s0_port = 0,

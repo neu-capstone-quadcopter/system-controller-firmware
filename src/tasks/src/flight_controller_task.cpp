@@ -104,8 +104,10 @@ auto fc_bb_read_del = dlgt::make_delegate(&fc_bb_read_handler);
 auto sbus_written_del = dlgt::make_delegate(&sbus_frame_written_handler);
 
 GpdmaManager *dma_man;
-GpdmaChannel *test_channel_tx;
-GpdmaChannel *test_channel_rx;
+GpdmaChannel *sbus_dma_channel_tx;
+GpdmaChannel *sbus_dma_channel_rx;
+GpdmaChannel *blackbox_dma_channel_tx;
+GpdmaChannel *blackbox_dma_channel_rx;
 
 __BSS(RAM2)
 Stream blackbox_stream;
@@ -125,7 +127,8 @@ void start() {
 
 static void task_loop(void *p) {
 	fc_blackbox_uart->allocate_buffers(0,150);
-
+	fc_blackbox_uart->config_data_mode(UART_LCR_WLEN8, UART_LCR_PARITY_DIS, UART_LCR_SBS_1BIT);
+	fc_blackbox_uart->enable_interrupts();
 
 	fc_sbus_uart->allocate_buffers(30, 0);
 	//fc_sbus_uart->set_baud(100000);
@@ -133,14 +136,16 @@ static void task_loop(void *p) {
 	fc_sbus_uart->enable_interrupts();
 	fc_sbus_uart->config_data_mode(UART_LCR_WLEN8, UART_LCR_PARITY_EVEN, UART_LCR_SBS_2BIT);
 	dma_man = hal::get_driver<GpdmaManager>(hal::GPDMA_MAN);
-	test_channel_tx = dma_man->allocate_channel(0);
-	test_channel_rx = dma_man->allocate_channel(1);
-
-	fc_sbus_uart->enable_interrupts();
+	sbus_dma_channel_tx = dma_man->allocate_channel(0); // TODO: Prioritize DMAs per usage requirements
+	sbus_dma_channel_rx = dma_man->allocate_channel(1);
+	blackbox_dma_channel_tx = dma_man->allocate_channel(4);
+	blackbox_dma_channel_rx = dma_man->allocate_channel(5);
 
 	// Enabled DMA (Optional)
-	fc_sbus_uart->bind_dma_channels(test_channel_tx, test_channel_rx);
+	fc_sbus_uart->bind_dma_channels(sbus_dma_channel_tx, sbus_dma_channel_rx);
+	fc_blackbox_uart->bind_dma_channels(blackbox_dma_channel_tx, blackbox_dma_channel_rx);
 	fc_sbus_uart->set_transfer_mode(UART_XFER_MODE_DMA);
+	fc_blackbox_uart->set_transfer_mode(UART_XFER_MODE_DMA);
 
 	//memset(sbus_frame.channels, 0, 18);
 	for(uint8_t i = 0; i< 18; i++) {
@@ -191,7 +196,7 @@ void fc_bb_read_handler(UartError status, uint8_t *data, uint16_t len)
 {
 
 		//Add data to stream
-		//blackbox_stream.addToStream(data,len);
+		blackbox_stream.addToStream(data,len);
 		blackbox_read_count++; //After 10 reads we will start parsing
 
 		//Create read event

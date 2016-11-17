@@ -19,7 +19,7 @@ public:
 
 
 private:
-	uint8_t stream_buffer[STREAM_BUFFER_SIZE]; //Use char* to leverage str functions
+	uint8_t stream_buffer[STREAM_BUFFER_SIZE];
 	uint8_t *read_ptr;
 	uint8_t *write_ptr;
 	SemaphoreHandle_t stream_read_semaphore;

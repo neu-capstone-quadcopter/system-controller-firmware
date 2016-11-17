@@ -3,7 +3,11 @@
 #include "FreeRTOS.h"
 #include "board.hpp"
 
-extern const uint32_t OscRateIn = 12000000;
+#ifdef IS_FLIGHT_PCB
+	extern const uint32_t OscRateIn = 24000000;
+#else
+	extern const uint32_t OscRateIn = 12000000;
+#endif
 extern const uint32_t RTCOscRateIn = 32768;
 
 namespace board {
@@ -28,8 +32,13 @@ namespace board {
 		Chip_Clock_SetCPUClockDiv(0);
 		Chip_Clock_SetMainPLLSource(SYSCTL_PLLCLKSRC_MAINOSC);
 
+#ifdef IS_FLIGHT_PCB
+		/* FCCO = ((7+1) * 2 * 24MHz) / (0+1) = 384MHz */
+		Chip_Clock_SetupPLL(SYSCTL_MAIN_PLL, 7, 0);
+#else
 		/* FCCO = ((15+1) * 2 * 12MHz) / (0+1) = 384MHz */
 		Chip_Clock_SetupPLL(SYSCTL_MAIN_PLL, 15, 0);
+#endif
 
 		Chip_Clock_EnablePLL(SYSCTL_MAIN_PLL, SYSCTL_PLL_ENABLE);
 

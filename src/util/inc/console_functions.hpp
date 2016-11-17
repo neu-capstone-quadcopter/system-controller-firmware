@@ -121,8 +121,7 @@ namespace console_task {
 	{
 		uiTraceStart();
 	}
-
-#ifdef IS_FLIGHT_PCB
+/*
 	void set_load_switch(char* output_string, uint8_t argc, char** argv)
 	{
 		if(argc == 3) {
@@ -181,8 +180,7 @@ namespace console_task {
 			strcpy(output_string, NOT_ENOUGH_ARGS_STR);
 		}
 	}
-#endif
-
+*/
 	typedef void (*CommandFunction)(char*,uint8_t,char**);
 
 	struct CommandDescriptor {
@@ -199,9 +197,7 @@ namespace console_task {
 			{"get_task_info", &get_task_info},
 			{"get_runtime_info", &get_runtime_info},
 			{"start_trace", &start_trace},
-#ifdef IS_FLIGHT_PCB
-			{"set_load_switch", &start_load_switch},
-#endif
+//			{"set_load_switch", &start_load_switch},
 	};
 
 #define NUMBER_COMMANDS (sizeof(command_list) / sizeof(CommandDescriptor))

@@ -23,6 +23,7 @@
 #include "uart_console_task.hpp"
 #include "dma_test_task.hpp"
 #include "nav_computer_task.hpp"
+#include "config.hpp"
 
 inline void* operator new (size_t size) { return pvPortMalloc(size); }
 inline void* operator new[] (size_t size) { return pvPortMalloc(size); }
@@ -34,7 +35,7 @@ int main(void) {
 	vTraceInitTraceData();
 	hal::init();
 
-#ifndef IS_FLIGHT_PCB
+#ifdef IS_DEBUG_PCB
 	led_task::start();
 #endif
 	//telemetry_radio_task::start();

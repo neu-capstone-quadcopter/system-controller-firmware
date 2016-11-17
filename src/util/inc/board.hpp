@@ -55,17 +55,26 @@
 #define UART3_RX_PORT		2
 #define UART3_RX_PIN		9
 
+#define NAVCMP_EN_PORT		1
+#define NAVCMP_EN_PIN		18
+#define FLTCTL_EN_PORT		1
+#define FLTCTL_EN_PIN		19
+#define GPS_EN_PORT			1
+#define GPS_EN_PIN			28
+#define RADIO_EN_PORT		2
+#define RADIO_EN_PIN		2
+
 static Cd74hc4067_gpio_map MUX_GPIO_MAP = {
-				.s0_port = 0,
-				.s0_pin = 29,
-				.s1_port = 0,
-				.s1_pin = 30,
-				.s2_port = 1,
-				.s2_pin = 20,
-				.s3_port = 1,
-				.s3_pin = 22,
-				.en_port = 1,
-				.en_pin = 23
+	.s0_port = 0,
+	.s0_pin = 29,
+	.s1_port = 0,
+	.s1_pin = 30,
+	.s2_port = 1,
+	.s2_pin = 20,
+	.s3_port = 1,
+	.s3_pin = 22,
+	.en_port = 1,
+	.en_pin = 23
 };
 
 #else
@@ -114,16 +123,16 @@ static Cd74hc4067_gpio_map MUX_GPIO_MAP = {
 #define UART3_RX_PIN		1
 
 static Cd74hc4067_gpio_map MUX_GPIO_MAP = {
-				.s0_port = 0,
-				.s0_pin = 2,
-				.s1_port = 0,
-				.s1_pin = 3,
-				.s2_port = 0,
-				.s2_pin = 21,
-				.s3_port = 0,
-				.s3_pin = 22,
-				.en_port = 0,
-				.en_pin = 27
+	.s0_port = 0,
+	.s0_pin = 2,
+	.s1_port = 0,
+	.s1_pin = 3,
+	.s2_port = 0,
+	.s2_pin = 21,
+	.s3_port = 0,
+	.s3_pin = 22,
+	.en_port = 0,
+	.en_pin = 27
 };
 
 #endif

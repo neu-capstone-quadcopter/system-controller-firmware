@@ -11,6 +11,7 @@
 #include <cstdio>
 #include <cstdlib>
 
+#include "board.hpp"
 #include "hal.hpp"
 
 namespace console_task {
@@ -121,6 +122,67 @@ namespace console_task {
 		uiTraceStart();
 	}
 
+#ifdef IS_FLIGHT_PCB
+	void set_load_switch(char* output_string, uint8_t argc, char** argv)
+	{
+		if(argc == 3) {
+			uint8_t port;
+			uint8_t pin;
+			bool state;
+			if(!strcmp(argv[1],"navcmp"))
+			{
+				strcpy(output_string,"Setting Navigation Computer:");
+				port = NAVCMP_EN_PORT;
+				pin = NAVCMP_EN_PIN;
+			}
+			else if(!strcmp(argv[1],"fltctl"))
+			{
+				strcpy(output_string,"Setting Flight Controller:");
+				port = FLTCTL_EN_PORT;
+				pin = FLTCTL_EN_PIN;
+			}
+			else if(!strcmp(argv[1],"gps"))
+			{
+				strcpy(output_string,"Setting GPS:");
+				port = GPS_EN_PORT;
+				pin = GPS_EN_PIN;
+			}
+			else if(!strcmp(argv[1],"radio"))
+			{
+				strcpy(output_string,"Setting Radio:");
+				port = RADIO_EN_PORT;
+				pin = RADIO_EN_PIN;
+			}
+			else
+			{
+				strcpy(output_string, "Invalid Parameter -- options: \'navcmp\' or \'fltctl\' or \'gps\' or \'radio\'...\r\n");
+				return;
+			}
+
+			if(!strcmp(argv[2],"enable"))
+			{
+				strcpy(output_string,"enabled...\r\n");
+				state = true;
+			}
+			else if(!strcmp(argv[2],"disable"))
+			{
+				strcpy(output_string,"disabled...\r\n");
+				state = false;
+			}
+			else
+			{
+				strcpy(output_string, "Invalid Parameter -- options: \'enable\' or \'disable\'...\r\n");
+				return;
+			}
+
+			Chip_GPIO_WritePortBit(LPC_GPIO, port, pin, state);
+		}
+		else {
+			strcpy(output_string, NOT_ENOUGH_ARGS_STR);
+		}
+	}
+#endif
+
 	typedef void (*CommandFunction)(char*,uint8_t,char**);
 
 	struct CommandDescriptor {
@@ -137,6 +199,9 @@ namespace console_task {
 			{"get_task_info", &get_task_info},
 			{"get_runtime_info", &get_runtime_info},
 			{"start_trace", &start_trace},
+#ifdef IS_FLIGHT_PCB
+			{"set_load_switch", &start_load_switch},
+#endif
 	};
 
 #define NUMBER_COMMANDS (sizeof(command_list) / sizeof(CommandDescriptor))

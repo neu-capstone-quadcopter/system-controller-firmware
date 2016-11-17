@@ -26,6 +26,15 @@
 #define ADC_MUX_PORT		1
 #define ADC_MUX_PIN			30
 
+#define SSP1_CS_PORT		0
+#define SSP1_CS_PIN			6
+#define SSP1_SCK_PORT		0
+#define SSP1_SCK_PIN		7
+#define SSP1_MISO_PORT		0
+#define SSP1_MISO_PIN		8
+#define SSP1_MOSI_PORT		0
+#define SSP1_MOSI_PIN		9
+
 #define UART0_TX_PORT		0
 #define UART0_TX_PIN		0
 #define UART0_RX_PORT		0
@@ -74,18 +83,31 @@ static Cd74hc4067_gpio_map MUX_GPIO_MAP = {
 #define GPDMA 				LPC_GPDMA
 #define ADC_MUX_PORT		0
 #define ADC_MUX_PIN			23
+
+#define SSP1_CS_PORT		0
+#define SSP1_CS_PIN			6
+#define SSP1_SCK_PORT		0
+#define SSP1_SCK_PIN		7
+#define SSP1_MISO_PORT		0
+#define SSP1_MISO_PIN		8
+#define SSP1_MOSI_PORT		0
+#define SSP1_MOSI_PIN		9
+
 //#define UART0_TX_PORT		0
 //#define UART0_TX_PIN		0
 //#define UART0_RX_PORT		0
 //#define UART0_RX_PIN		0
+
 #define UART1_TX_PORT		0
 #define UART1_TX_PIN		15
 #define UART1_RX_PORT		0
 #define UART1_RX_PIN		16
+
 //#define UART2_TX_PORT		0
 //#define UART2_TX_PIN		0
 //#define UART2_RX_PORT		0
 //#define UART2_RX_PIN		0
+
 #define UART3_TX_PORT		0
 #define UART3_TX_PIN		0
 #define UART3_RX_PORT		0

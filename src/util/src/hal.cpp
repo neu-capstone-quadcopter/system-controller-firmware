@@ -50,13 +50,14 @@ namespace hal {
 #ifdef IS_DEBUG_BOARD
 		ExampleLed *led_0 = new ExampleLed(LED0_PORT, LED0_PIN);
 		ExampleLed *led_1 = new ExampleLed(LED1_PORT, LED1_PIN);
+#else
+		LoadSwitch *load_switch = new LoadSwitch();
 #endif
 		Adc *adc = new Adc(ADC);
 		Cd74hc4067 *adc_mux = new Cd74hc4067(MUX_GPIO_MAP);
 		UartIo *nav_computer = new UartIo(NAV_UART);
 		UartIo *fc_blackbox_uart = new UartIo(BLACKBOX_UART);
 		UartIo *fc_sbus_uart = new UartIo(SBUS_UART);
-		LoadSwitch *load_switch = new LoadSwitch();
 		Cc1120 *telem_cc1120 = new Cc1120(telem_cc1120_ssp);
 
 		// Add drivers to driver array
@@ -65,13 +66,14 @@ namespace hal {
 #ifdef IS_DEBUG_BOARD
 		drivers[LED_0] = led_0;
 		drivers[LED_1] = led_1;
+#else
+		drivers[LOAD_SWITCH] = load_switch;
 #endif
 		drivers[SENSOR_ADC] = adc;
 		drivers[CD74HC4067] = adc_mux;
 		drivers[NAV_COMPUTER] = nav_computer;
 		drivers[FC_BLACKBOX_UART] = fc_blackbox_uart;
 		drivers[FC_SBUS_UART] = fc_sbus_uart;
-		drivers[LOAD_SWITCH] = load_switch;
 		drivers[TELEM_CC1120] = telem_cc1120;
 		drivers[CONSOLE_UART] = console_uart;
 	}

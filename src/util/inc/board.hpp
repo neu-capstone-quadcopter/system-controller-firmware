@@ -104,20 +104,20 @@ static Cd74hc4067_gpio_map MUX_GPIO_MAP = {
 #define SSP1_MOSI_PORT		0
 #define SSP1_MOSI_PIN		9
 
-//#define UART0_TX_PORT		0
-//#define UART0_TX_PIN		0
-//#define UART0_RX_PORT		0
-//#define UART0_RX_PIN		0
+#define UART0_TX_PORT		0
+#define UART0_TX_PIN		2
+#define UART0_RX_PORT		0
+#define UART0_RX_PIN		3
 
 #define UART1_TX_PORT		0
 #define UART1_TX_PIN		15
 #define UART1_RX_PORT		0
 #define UART1_RX_PIN		16
 
-//#define UART2_TX_PORT		0
-//#define UART2_TX_PIN		0
-//#define UART2_RX_PORT		0
-//#define UART2_RX_PIN		0
+#define UART2_TX_PORT		0
+#define UART2_TX_PIN		10
+#define UART2_RX_PORT		0
+#define UART2_RX_PIN		11
 
 #define UART3_TX_PORT		0
 #define UART3_TX_PIN		0

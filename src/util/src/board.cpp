@@ -1,8 +1,14 @@
 #include <cstdint>
 #include "chip.h"
 #include "FreeRTOS.h"
+#include "board.hpp"
+#include "config.hpp"
 
-extern const uint32_t OscRateIn = 12000000;
+#ifdef IS_DEBUG_PCB
+	extern const uint32_t OscRateIn = 12000000;
+#else
+	extern const uint32_t OscRateIn = 24000000;
+#endif
 extern const uint32_t RTCOscRateIn = 32768;
 
 namespace board {
@@ -27,8 +33,13 @@ namespace board {
 		Chip_Clock_SetCPUClockDiv(0);
 		Chip_Clock_SetMainPLLSource(SYSCTL_PLLCLKSRC_MAINOSC);
 
+#ifdef IS_DEBUG_PCB
 		/* FCCO = ((15+1) * 2 * 12MHz) / (0+1) = 384MHz */
 		Chip_Clock_SetupPLL(SYSCTL_MAIN_PLL, 15, 0);
+#else
+		/* FCCO = ((7+1) * 2 * 24MHz) / (0+1) = 384MHz */
+		Chip_Clock_SetupPLL(SYSCTL_MAIN_PLL, 7, 0);
+#endif
 
 		Chip_Clock_EnablePLL(SYSCTL_MAIN_PLL, SYSCTL_PLL_ENABLE);
 
@@ -44,10 +55,10 @@ namespace board {
 		case LPC_SSP0_BASE:
 			break;
 		case LPC_SSP1_BASE:
-			Chip_IOCON_PinMux(LPC_IOCON, 0, 6, IOCON_MODE_INACT, IOCON_FUNC2);
-			Chip_IOCON_PinMux(LPC_IOCON, 0, 7, IOCON_MODE_INACT, IOCON_FUNC2);
-			Chip_IOCON_PinMux(LPC_IOCON, 0, 8, IOCON_MODE_INACT, IOCON_FUNC2);
-			Chip_IOCON_PinMux(LPC_IOCON, 0, 9, IOCON_MODE_INACT, IOCON_FUNC2);
+			Chip_IOCON_PinMux(LPC_IOCON, SSP1_CS_PORT, SSP1_CS_PIN, IOCON_MODE_INACT, IOCON_FUNC2);
+			Chip_IOCON_PinMux(LPC_IOCON, SSP1_SCK_PORT, SSP1_SCK_PIN, IOCON_MODE_INACT, IOCON_FUNC2);
+			Chip_IOCON_PinMux(LPC_IOCON, SSP1_MISO_PORT, SSP1_MISO_PIN, IOCON_MODE_INACT, IOCON_FUNC2);
+			Chip_IOCON_PinMux(LPC_IOCON, SSP1_MOSI_PORT, SSP1_MOSI_PIN, IOCON_MODE_INACT, IOCON_FUNC2);
 			break;
 		default:
 			configASSERT(0);
@@ -61,16 +72,16 @@ namespace board {
 			Chip_IOCON_PinMux(LPC_IOCON, 0, 3, IOCON_MODE_INACT, IOCON_FUNC1);
 			break;
 		case LPC_UART1_BASE:
-			Chip_IOCON_PinMux(LPC_IOCON, 0, 15, IOCON_MODE_INACT, IOCON_FUNC1);
-			Chip_IOCON_PinMux(LPC_IOCON, 0, 16, IOCON_MODE_INACT, IOCON_FUNC1);
+			Chip_IOCON_PinMux(LPC_IOCON, UART1_TX_PORT, UART1_TX_PIN, IOCON_MODE_INACT, IOCON_FUNC1);
+			Chip_IOCON_PinMux(LPC_IOCON, UART1_RX_PORT, UART1_RX_PIN, IOCON_MODE_INACT, IOCON_FUNC1);
 			break;
 		case LPC_UART2_BASE:
 			Chip_IOCON_PinMux(LPC_IOCON, 0, 10, IOCON_MODE_INACT, IOCON_FUNC1);
 			Chip_IOCON_PinMux(LPC_IOCON, 0, 11, IOCON_MODE_INACT, IOCON_FUNC1);
 			break;
 		case LPC_UART3_BASE:
-			Chip_IOCON_PinMux(LPC_IOCON, 0, 0, IOCON_MODE_INACT, IOCON_FUNC2);
-			Chip_IOCON_PinMux(LPC_IOCON, 0, 1, IOCON_MODE_INACT, IOCON_FUNC2);
+			Chip_IOCON_PinMux(LPC_IOCON, UART3_TX_PORT, UART3_TX_PIN, IOCON_MODE_INACT, IOCON_FUNC2);
+			Chip_IOCON_PinMux(LPC_IOCON, UART3_RX_PORT, UART3_RX_PIN, IOCON_MODE_INACT, IOCON_FUNC2);
 			break;
 		default:
 			configASSERT(0);

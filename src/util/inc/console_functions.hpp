@@ -146,15 +146,16 @@ namespace console_task {
 	{
 		if(argc == 2) {
 			bool state;
-			if(!strcmp(argv[2],"enable"))
+			if(!strcmp(argv[1],"enable"))
 				state = true;
-			else if(!strcmp(argv[2],"disable"))
+			else if(!strcmp(argv[1],"disable"))
 				state = false;
 			else {
 				strcpy(output_string, "Invalid Parameter -- options: \'enable\' or \'disable\'...\r\n");
 				return;
 			}
-			LoadSwitch::set_load_switch_navcmp(state);
+			LoadSwitch *load_switch = hal::get_driver<LoadSwitch>(hal::LOAD_SWITCH);
+			load_switch->set_load_switch_navcmp(state);
 		}
 		else
 			strcpy(output_string, NOT_ENOUGH_ARGS_STR);
@@ -164,15 +165,16 @@ namespace console_task {
 	{
 		if(argc == 2) {
 			bool state;
-			if(!strcmp(argv[2],"enable"))
+			if(!strcmp(argv[1],"enable"))
 				state = true;
-			else if(!strcmp(argv[2],"disable"))
+			else if(!strcmp(argv[1],"disable"))
 				state = false;
 			else {
 				strcpy(output_string, "Invalid Parameter -- options: \'enable\' or \'disable\'...\r\n");
 				return;
 			}
-			LoadSwitch::set_load_switch_fltctl(state);
+			LoadSwitch *load_switch = hal::get_driver<LoadSwitch>(hal::LOAD_SWITCH);
+			load_switch->set_load_switch_fltctl(state);
 		}
 		else
 			strcpy(output_string, NOT_ENOUGH_ARGS_STR);
@@ -182,15 +184,16 @@ namespace console_task {
 	{
 		if(argc == 2) {
 			bool state;
-			if(!strcmp(argv[2],"enable"))
+			if(!strcmp(argv[1],"enable"))
 				state = true;
-			else if(!strcmp(argv[2],"disable"))
+			else if(!strcmp(argv[1],"disable"))
 				state = false;
 			else {
 				strcpy(output_string, "Invalid Parameter -- options: \'enable\' or \'disable\'...\r\n");
 				return;
 			}
-			LoadSwitch::set_load_switch_gps(state);
+			LoadSwitch *load_switch = hal::get_driver<LoadSwitch>(hal::LOAD_SWITCH);
+			load_switch->set_load_switch_gps(state);
 		}
 		else
 			strcpy(output_string, NOT_ENOUGH_ARGS_STR);
@@ -200,15 +203,16 @@ namespace console_task {
 	{
 		if(argc == 2) {
 			bool state;
-			if(!strcmp(argv[2],"enable"))
+			if(!strcmp(argv[1],"enable"))
 				state = true;
-			else if(!strcmp(argv[2],"disable"))
+			else if(!strcmp(argv[1],"disable"))
 				state = false;
 			else {
 				strcpy(output_string, "Invalid Parameter -- options: \'enable\' or \'disable\'...\r\n");
 				return;
 			}
-			LoadSwitch::set_load_switch_radio(state);
+			LoadSwitch *load_switch = hal::get_driver<LoadSwitch>(hal::LOAD_SWITCH);
+			load_switch->set_load_switch_radio(state);
 		}
 		else
 			strcpy(output_string, NOT_ENOUGH_ARGS_STR);

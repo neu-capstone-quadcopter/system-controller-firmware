@@ -18,6 +18,7 @@
 #include "cd74hc4067.hpp"
 #include <board.hpp>
 #include "config.hpp"
+#include "load_switch_rail.hpp"
 
 namespace hal {
 	void add_drivers(void);
@@ -55,6 +56,7 @@ namespace hal {
 		UartIo *nav_computer = new UartIo(NAV_UART);
 		UartIo *fc_blackbox_uart = new UartIo(BLACKBOX_UART);
 		UartIo *fc_sbus_uart = new UartIo(SBUS_UART);
+		LoadSwitch *load_switch = new LoadSwitch();
 		Cc1120 *telem_cc1120 = new Cc1120(telem_cc1120_ssp);
 
 		// Add drivers to driver array
@@ -69,6 +71,7 @@ namespace hal {
 		drivers[NAV_COMPUTER] = nav_computer;
 		drivers[FC_BLACKBOX_UART] = fc_blackbox_uart;
 		drivers[FC_SBUS_UART] = fc_sbus_uart;
+		drivers[LOAD_SWITCH] = load_switch;
 		drivers[TELEM_CC1120] = telem_cc1120;
 		drivers[CONSOLE_UART] = console_uart;
 	}
@@ -85,6 +88,7 @@ namespace hal {
 	template class Cd74hc4067 *get_driver(driver_identifier);
 	template class Cc1120 *get_driver(driver_identifier);
 	template class ExampleLed *get_driver(driver_identifier);
+	template class LoadSwitch *get_driver(driver_identifier);
 }
 
 extern "C" {
@@ -92,7 +96,7 @@ extern "C" {
 	void DMA_IRQHandler() {
 		static_cast<GpdmaManager*>(drivers[GPDMA_MAN])->interrupt_handler();
 	}
-
+#ifdef IS_DEBUG_BOARD
 	void SSP1_IRQHandler() {
 		static_cast<SspIo*>(drivers[TELEM_CC1120_SSP])->ssp_interrupt_handler();
 	}
@@ -112,4 +116,25 @@ extern "C" {
 	void UART0_IRQHandler(void){
 		static_cast<UartIo*>(drivers[FC_BLACKBOX_UART])->uartInterruptHandler();
 	}
+#else
+	void SSP1_IRQHandler() {
+		static_cast<SspIo*>(drivers[TELEM_CC1120_SSP])->ssp_interrupt_handler();
+	}
+
+	void UART2_IRQHandler(void){
+		static_cast<UartIo*>(drivers[CONSOLE_UART])->uartInterruptHandler();
+	}
+
+	void UART1_IRQHandler(void){
+		static_cast<UartIo*>(drivers[NAV_COMPUTER])->uartInterruptHandler();
+	}
+
+	void UART0_IRQHandler(void){
+		static_cast<UartIo*>(drivers[FC_SBUS_UART])->uartInterruptHandler();
+	}
+
+	void UART3_IRQHandler(void){
+		static_cast<UartIo*>(drivers[FC_BLACKBOX_UART])->uartInterruptHandler();
+	}
+#endif
 }

@@ -27,6 +27,7 @@ namespace hal {
 		NAV_COMPUTER,
 		FC_BLACKBOX_UART,
 		FC_SBUS_UART,
+		LOAD_SWITCH,
 		TELEM_CC1120,
 		NUM_IDENTIFIERS = TELEM_CC1120 + 1 // Add all entries before this and update
 	} driver_identifier;

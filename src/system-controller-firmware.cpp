@@ -43,9 +43,9 @@ int main(void) {
 	//sensor_task::start();
 	console_task::start();
 	//dma_test_task::start();
-	nav_computer_task::start();
+	//nav_computer_task::start();
 	uiTraceStart();
-	flight_controller_task::start();
+	//flight_controller_task::start();
 
 	vTaskStartScheduler();
 

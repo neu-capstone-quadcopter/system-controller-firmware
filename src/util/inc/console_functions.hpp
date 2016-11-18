@@ -141,7 +141,7 @@ namespace console_task {
 	{
 		uiTraceStart();
 	}
-#ifndef IS_DEBUG_PCB
+#ifndef IS_DEBUG_BOARD
 	void set_navcmp_load_switch(char* output_string, uint8_t argc, char** argv)
 	{
 		if(argc == 2) {
@@ -233,7 +233,7 @@ namespace console_task {
 			{"start_trace", &start_trace},
 			{"set_fltctl_ch", &set_fltctl_ch},
 			{"arm_fltctl", &arm_fltctl},
-#ifndef IS_DEBUG_PCB
+#ifndef IS_DEBUG_BOARD
 			{"set_navcmp_load_switch", &set_navcmp_load_switch},
 			{"set_fltctl_load_switch", &set_fltctl_load_switch},
 			{"set_gps_load_switch", &set_gps_load_switch},

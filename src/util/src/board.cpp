@@ -4,7 +4,7 @@
 #include "board.hpp"
 #include "config.hpp"
 
-#ifdef IS_DEBUG_PCB
+#ifdef IS_DEBUG_BOARD
 	extern const uint32_t OscRateIn = 12000000;
 #else
 	extern const uint32_t OscRateIn = 24000000;
@@ -33,7 +33,7 @@ namespace board {
 		Chip_Clock_SetCPUClockDiv(0);
 		Chip_Clock_SetMainPLLSource(SYSCTL_PLLCLKSRC_MAINOSC);
 
-#ifdef IS_DEBUG_PCB
+#ifdef IS_DEBUG_BOARD
 		/* FCCO = ((15+1) * 2 * 12MHz) / (0+1) = 384MHz */
 		Chip_Clock_SetupPLL(SYSCTL_MAIN_PLL, 15, 0);
 #else

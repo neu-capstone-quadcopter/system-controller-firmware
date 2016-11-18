@@ -14,7 +14,7 @@
 
 // Hardware Abstraction
 
-#ifndef IS_DEBUG_PCB
+#ifndef IS_DEBUG_BOARD
 
 #define BLACKBOX_UART		LPC_UART0
 #define NAV_UART 			LPC_UART1

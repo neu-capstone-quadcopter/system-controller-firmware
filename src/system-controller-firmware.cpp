@@ -36,7 +36,7 @@ int main(void) {
 	vTraceInitTraceData();
 	hal::init();
 
-#ifdef IS_DEBUG_PCB
+#ifdef IS_DEBUG_BOARD
 	led_task::start();
 #endif
 	//telemetry_radio_task::start();

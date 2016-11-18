@@ -8,7 +8,7 @@
 #include "board.hpp"
 #include "load_switch_rail.hpp"
 
-#ifndef IS_DEBUG_PCB
+#ifndef IS_DEBUG_BOARD
 void LoadSwitch::set_load_switch_navcmp(bool state) {
 	Chip_GPIO_WritePortBit(LPC_GPIO, NAVCMP_EN_PORT, NAVCMP_EN_PIN, state);
 }

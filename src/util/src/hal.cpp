@@ -29,8 +29,9 @@ namespace hal {
 		Chip_IOCON_Init(LPC_IOCON);
 		Chip_GPIO_Init(LPC_GPIO);
 		Chip_IOCON_Init(LPC_IOCON);
-
+#ifdef IS_DEBUG_BOARD
 		Chip_GPIO_WriteDirBit(LPC_GPIO, DEBUG_LED_PORT, DEBUG_LED_PIN, true); // Random Debug LED...
+#endif
 
 		add_drivers();
 
@@ -45,8 +46,10 @@ namespace hal {
 		GpdmaManager *gpdma_man = new GpdmaManager(GPDMA);
 		SspIo *telem_cc1120_ssp = new SspIo(SSP);
 		UartIo *console_uart = new UartIo(CONSOLE_TASK_UART);
+#ifdef IS_DEBUG_BOARD
 		ExampleLed *led_0 = new ExampleLed(LED0_PORT, LED0_PIN);
 		ExampleLed *led_1 = new ExampleLed(LED1_PORT, LED1_PIN);
+#endif
 		Adc *adc = new Adc(ADC);
 		Cd74hc4067 *adc_mux = new Cd74hc4067(MUX_GPIO_MAP);
 		UartIo *nav_computer = new UartIo(NAV_UART);

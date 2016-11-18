@@ -14,6 +14,7 @@
 #include "exampleled.hpp"
 #include "uart_console_task.hpp"
 
+#ifdef IS_DEBUG_BOARD
 namespace led_task {
 	static void task_loop(void *p);
 
@@ -42,4 +43,5 @@ namespace led_task {
 		}
 	}
 }
+#endif
 

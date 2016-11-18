@@ -121,7 +121,7 @@ void start() {
 	fc_blackbox_uart = hal::get_driver<UartIo>(hal::FC_BLACKBOX_UART);
 	fc_sbus_uart = hal::get_driver<UartIo>(hal::FC_SBUS_UART);
 	xTaskCreate(task_loop, "flight controller", 400, NULL, 2, &task_handle);
-	fc_blackbox_uart->setFractionalBaud(0xA3, 0xA, 0x0);
+	fc_blackbox_uart->setFractionalBaud(0x51, 0x5, 0x0);
 	blackbox_stream.allocate();
 }
 
@@ -157,8 +157,7 @@ static void task_loop(void *p) {
 	fc_blackbox_uart->read_async(100, fc_bb_read_del);
 	flight_cont_event_t current_event;
 	for(;;) {
-		//if(blackbox_read_count > 10)
-			blackbox_parser.decodeFrameType(blackbox_stream);
+		//blackbox_parser.decodeFrameType(blackbox_stream);
 	}
 }
 
@@ -197,7 +196,6 @@ void fc_bb_read_handler(UartError status, uint8_t *data, uint16_t len)
 
 		//Add data to stream
 		blackbox_stream.addToStream(data,len);
-		blackbox_read_count++; //After 10 reads we will start parsing
 
 		//Create read event
 		flight_cont_event_t e;

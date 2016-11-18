@@ -109,6 +109,9 @@ void BlackboxParser::decodeFrame(Stream &bb_stream, char frame_type){
 		case 1:
 			decodeSVB(bb_stream,curr_sign);
 			break;
+		case 3:
+			decodeNeg14(bb_stream, curr_sign);
+			break;
 		case 6:
 			if(!header_read) //Set header if not already done so
 			{
@@ -309,7 +312,57 @@ void BlackboxParser::decodeFrame(Stream &bb_stream, char frame_type){
             //Set this frame to previous frame for next run
             prev_frame2 = prev_frame;
             prev_frame = curr_frame;
-            //Add logic here to do something with completed frame
+
+            //Let's take this completed frame and send it off to the Nav Computer
+            BBTelemValue msg_val;
+            for(int i = 0; i < NUM_MSG_FIELDS; i++)
+            {
+            	switch(i)
+            	{
+            	case 0:
+            		msg_val = curr_frame.getSignedField(GYRO_ADC0);
+            		msg_to_send.bb_telem_values[i] = msg_val;
+            		break;
+            	case 1:
+            		msg_val = curr_frame.getSignedField(GYRO_ADC1);
+            		msg_to_send.bb_telem_values[i] = msg_val;
+            		break;
+            	case 2:
+            		msg_val = curr_frame.getSignedField(GYRO_ADC2);
+            		msg_to_send.bb_telem_values[i] = msg_val;
+            		break;
+            	case 3:
+            		msg_val = curr_frame.getSignedField(MAG_ADC0);
+            		msg_to_send.bb_telem_values[i] = msg_val;
+            		break;
+            	case 4:
+					msg_val = curr_frame.getSignedField(MAG_ADC1);
+					msg_to_send.bb_telem_values[i] = msg_val;
+					break;
+            	case 5:
+					msg_val = curr_frame.getSignedField(MAG_ADC2);
+					msg_to_send.bb_telem_values[i] = msg_val;
+					break;
+            	case 6:
+					msg_val = curr_frame.getSignedField(ACC_SMOOTH0);
+					msg_to_send.bb_telem_values[i] = msg_val;
+					break;
+            	case 7:
+					msg_val = curr_frame.getSignedField(ACC_SMOOTH1);
+					msg_to_send.bb_telem_values[i] = msg_val;
+					break;
+            	case 8:
+					msg_val = curr_frame.getSignedField(ACC_SMOOTH2);
+					msg_to_send.bb_telem_values[i] = msg_val;
+					break;
+
+            	}
+
+            }
+
+            //After we populate fields, let's ship off this message
+            nav_computer_task::add_message_to_outgoing_frame(msg_to_send);
+
 
         }
 	}
@@ -391,6 +444,39 @@ int32_t BlackboxParser::decodeSVB_tag8(Stream &bb_stream, bool sign)
 	    	return scurr_value;
 	    }
 
+}
+
+//Essentially UVB but final value is 14 bits
+void BlackboxParser::decodeNeg14(Stream &bb_stream, bool sign)
+{
+	int i, c, shift = 0;
+		uint32_t result;
+
+		for(i=0; i<5; i++)
+		{
+			c = bb_stream.popFromStream();
+			result = result |((c & ~0x80) << shift);
+
+			//Final Byte?
+			if(c<128){
+				if(sign == 0)
+					curr_value = (uint32_t) -signExtend14Bit(result);
+				else
+					scurr_value = -signExtend14Bit(result);
+				final_value = true;
+				return;
+			}
+
+			shift += 7;
+		}
+
+		//If more than 4 bytes, we will set value equal to 0
+		if(sign == 0)
+			curr_value = 0;
+		else
+			scurr_value = 0;
+
+		final_value = true;
 }
 
 void BlackboxParser::decodeTAG2_3S32(Stream &bb_stream, bool sign)

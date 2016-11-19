@@ -313,52 +313,7 @@ void BlackboxParser::decodeFrame(Stream &bb_stream, char frame_type){
             prev_frame2 = prev_frame;
             prev_frame = curr_frame;
 
-            //Let's take this completed frame and send it off to the Nav Computer
-            BBTelemValue msg_val;
-            for(int i = 0; i < NUM_MSG_FIELDS; i++)
-            {
-            	switch(i)
-            	{
-            	case 0:
-            		msg_val = curr_frame.getSignedField(GYRO_ADC0);
-            		msg_to_send.bb_telem_values[i] = msg_val;
-            		break;
-            	case 1:
-            		msg_val = curr_frame.getSignedField(GYRO_ADC1);
-            		msg_to_send.bb_telem_values[i] = msg_val;
-            		break;
-            	case 2:
-            		msg_val = curr_frame.getSignedField(GYRO_ADC2);
-            		msg_to_send.bb_telem_values[i] = msg_val;
-            		break;
-            	case 3:
-            		msg_val = curr_frame.getSignedField(MAG_ADC0);
-            		msg_to_send.bb_telem_values[i] = msg_val;
-            		break;
-            	case 4:
-					msg_val = curr_frame.getSignedField(MAG_ADC1);
-					msg_to_send.bb_telem_values[i] = msg_val;
-					break;
-            	case 5:
-					msg_val = curr_frame.getSignedField(MAG_ADC2);
-					msg_to_send.bb_telem_values[i] = msg_val;
-					break;
-            	case 6:
-					msg_val = curr_frame.getSignedField(ACC_SMOOTH0);
-					msg_to_send.bb_telem_values[i] = msg_val;
-					break;
-            	case 7:
-					msg_val = curr_frame.getSignedField(ACC_SMOOTH1);
-					msg_to_send.bb_telem_values[i] = msg_val;
-					break;
-            	case 8:
-					msg_val = curr_frame.getSignedField(ACC_SMOOTH2);
-					msg_to_send.bb_telem_values[i] = msg_val;
-					break;
 
-            	}
-
-            }
 
             //After we populate fields, let's ship off this message
             nav_computer_task::add_message_to_outgoing_frame(msg_to_send);

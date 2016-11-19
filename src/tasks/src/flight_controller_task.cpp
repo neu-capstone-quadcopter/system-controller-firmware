@@ -11,6 +11,7 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "blackbox_parser.hpp"
+#include "telemetry_parser.hpp"
 
 #include <stdlib.h>
 #include <cstring>
@@ -115,13 +116,15 @@ Stream blackbox_stream;
 bool added_to_stream = false;
 
 BlackboxParser blackbox_parser;
+TelemetryParser telem_parser;
 int blackbox_read_count = 0; //Will use to allow parser to skip header
 
 void start() {
 	fc_blackbox_uart = hal::get_driver<UartIo>(hal::FC_BLACKBOX_UART);
 	fc_sbus_uart = hal::get_driver<UartIo>(hal::FC_SBUS_UART);
 	xTaskCreate(task_loop, "flight controller", 400, NULL, 2, &task_handle);
-	fc_blackbox_uart->setFractionalBaud(0x51, 0x5, 0x0);
+	//fc_blackbox_uart->setFractionalBaud(0xA3, 0x78, 0x0); //9600 Baud for Telemetry
+	fc_blackbox_uart->set_baud(9600);
 	blackbox_stream.allocate();
 }
 
@@ -157,6 +160,7 @@ static void task_loop(void *p) {
 	fc_blackbox_uart->read_async(100, fc_bb_read_del);
 	flight_cont_event_t current_event;
 	for(;;) {
+		telem_parser.parseForData(blackbox_stream);
 		//blackbox_parser.decodeFrameType(blackbox_stream);
 	}
 }

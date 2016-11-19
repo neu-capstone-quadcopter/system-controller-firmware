@@ -1,11 +1,11 @@
 #ifndef UTIL_BLACKBOX_PARSER_HPP
 #define UTIL_BLACKBOX_PARSER_HPP
 
+#include <telemetry_message.hpp>
 #include <cstdint>
 #include <cstring>
 #include "FreeRTOS.h"
 #include "blackbox_stream.hpp"
-#include "blackbox_telemetry_message.hpp"
 #include "nav_computer_task.hpp"
 
 #define NUM_FIELDS 29
@@ -184,7 +184,7 @@ private:
 	blackbox_frame curr_frame;
 
 	//The message we will send to the Nav Computer
-	BlackboxTelemetryMessage msg_to_send;
+	TelemetryMessage msg_to_send;
 };
 
 #endif //UTIL_BLACKBOX_PARSER_HPP

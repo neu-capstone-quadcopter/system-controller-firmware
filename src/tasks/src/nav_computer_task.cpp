@@ -112,9 +112,6 @@ static void task_loop(void *p) {
 }
 
 void serialize_and_send_frame(monarcpb_SysCtrlToNavCPU frame) {
-	frame.has_telemetry = true;
-	frame.telemetry.has_atmospheric_pressure = true;
-	frame.telemetry.atmospheric_pressure = 103;
 	pb_ostream_t stream = pb_ostream_from_buffer(serialization_buffer, MAX_BUFFER_SIZE);//sizeof(serialization_buffer));
 	pb_encode(&stream, monarcpb_SysCtrlToNavCPU_fields, &frame);
 

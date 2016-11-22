@@ -74,6 +74,8 @@ namespace console_task {
 	static void task_loop(void *p) {
 		Event current_event;
 
+		const char *header = "Hello bitches ;)\r\n";
+		uart->write((uint8_t*)(header), strlen(header));
 		uart->read_async(1, uart_read_del);
 		for(;;) {
 			xQueueReceive(event_queue, &current_event, portMAX_DELAY);

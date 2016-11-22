@@ -97,7 +97,7 @@
  * FREERTOS_VERSION_8_X (= 3)				If using FreeRTOS v8.X.X
  * FREERTOS_VERSION_9_X (= 4)				If using FreeRTOS v9.X.X
  *****************************************************************************/
-#define FREERTOS_VERSION	FREERTOS_VERSION_8_X
+#define FREERTOS_VERSION	FREERTOS_VERSION_9_X
 
 /******************************************************************************
  * TRACE_RECORDER_STORE_MODE

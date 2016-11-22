@@ -8,6 +8,7 @@
 #include "cd74hc4067.hpp"
 #include "chip.h"
 #include "FreeRTOS.h"
+#include "board.hpp"
 
 Cd74hc4067::Cd74hc4067(Cd74hc4067_gpio_map gpio_map){
 	this->gpio_map = gpio_map;

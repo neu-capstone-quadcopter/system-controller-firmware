@@ -10,6 +10,7 @@
 
 #include "driver.hpp"
 #include "cd74hc4067.hpp"
+#include "config.hpp"
 
 namespace hal {
 	// Add device drivers in order of dependence
@@ -17,8 +18,12 @@ namespace hal {
 		GPDMA_MAN = 0,
 		TELEM_CC1120_SSP,
 		CONSOLE_UART,
+#ifdef IS_DEBUG_BOARD
 		LED_0,
 		LED_1,
+#else
+		LOAD_SWITCH,
+#endif
 		SENSOR_ADC,
 		CD74HC4067,
 		NAV_COMPUTER,

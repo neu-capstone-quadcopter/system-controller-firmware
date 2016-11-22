@@ -15,34 +15,24 @@
 #include "driver.hpp"
 #include "exampleled.hpp"
 #include "adc.hpp"
-//#include "nav_computer.hpp"
 #include "cd74hc4067.hpp"
+#include <board.hpp>
+#include "config.hpp"
+#include "load_switch_rail.hpp"
 
 namespace hal {
 	void add_drivers(void);
 
 	static Driver *drivers[NUM_IDENTIFIERS];
 
-	Cd74hc4067_gpio_map gpio_map = {
-			.s0_port = 0,
-			.s0_pin = 2,
-			.s1_port = 0,
-			.s1_pin = 3,
-			.s2_port = 0,
-			.s2_pin = 21,
-			.s3_port = 0,
-			.s3_pin = 22,
-			.en_port = 0,
-			.en_pin = 27
-	};
-
 	void init(void) {
 		SystemCoreClockUpdate();
 		Chip_IOCON_Init(LPC_IOCON);
 		Chip_GPIO_Init(LPC_GPIO);
 		Chip_IOCON_Init(LPC_IOCON);
-
-		Chip_GPIO_WriteDirBit(LPC_GPIO, 2, 10, true); // Random Debug LED...
+#ifdef IS_DEBUG_BOARD
+		Chip_GPIO_WriteDirBit(LPC_GPIO, DEBUG_LED_PORT, DEBUG_LED_PIN, true); // Random Debug LED...
+#endif
 
 		add_drivers();
 
@@ -54,23 +44,31 @@ namespace hal {
 
 	void add_drivers(void) {
 		// Instantiate drivers
-		GpdmaManager *gpdma_man = new GpdmaManager(LPC_GPDMA);
-		SspIo *telem_cc1120_ssp = new SspIo(LPC_SSP1);
-		UartIo *console_uart = new UartIo(LPC_UART3);
-		ExampleLed *led_0 = new ExampleLed(2, 11);
-		ExampleLed *led_1 = new ExampleLed(2, 12);
-		Adc *adc = new Adc(LPC_ADC);
-		Cd74hc4067 *adc_mux = new Cd74hc4067(gpio_map);
-		UartIo *nav_computer = new UartIo(LPC_UART1);
-		UartIo *fc_blackbox_uart = new UartIo(LPC_UART0);
-		UartIo *fc_sbus_uart = new UartIo(LPC_UART2);
+		GpdmaManager *gpdma_man = new GpdmaManager(GPDMA);
+		SspIo *telem_cc1120_ssp = new SspIo(SSP);
+		UartIo *console_uart = new UartIo(CONSOLE_TASK_UART);
+#ifdef IS_DEBUG_BOARD
+		ExampleLed *led_0 = new ExampleLed(LED0_PORT, LED0_PIN);
+		ExampleLed *led_1 = new ExampleLed(LED1_PORT, LED1_PIN);
+#else
+		LoadSwitch *load_switch = new LoadSwitch();
+#endif
+		Adc *adc = new Adc(ADC);
+		Cd74hc4067 *adc_mux = new Cd74hc4067(MUX_GPIO_MAP);
+		UartIo *nav_computer = new UartIo(NAV_UART);
+		UartIo *fc_blackbox_uart = new UartIo(BLACKBOX_UART);
+		UartIo *fc_sbus_uart = new UartIo(SBUS_UART);
 		Cc1120 *telem_cc1120 = new Cc1120(telem_cc1120_ssp);
 
 		// Add drivers to driver array
 		drivers[GPDMA_MAN] = gpdma_man;
 		drivers[TELEM_CC1120_SSP] = telem_cc1120_ssp;
+#ifdef IS_DEBUG_BOARD
 		drivers[LED_0] = led_0;
 		drivers[LED_1] = led_1;
+#else
+		drivers[LOAD_SWITCH] = load_switch;
+#endif
 		drivers[SENSOR_ADC] = adc;
 		drivers[CD74HC4067] = adc_mux;
 		drivers[NAV_COMPUTER] = nav_computer;
@@ -92,6 +90,7 @@ namespace hal {
 	template class Cd74hc4067 *get_driver(driver_identifier);
 	template class Cc1120 *get_driver(driver_identifier);
 	template class ExampleLed *get_driver(driver_identifier);
+	template class LoadSwitch *get_driver(driver_identifier);
 }
 
 extern "C" {
@@ -99,7 +98,7 @@ extern "C" {
 	void DMA_IRQHandler() {
 		static_cast<GpdmaManager*>(drivers[GPDMA_MAN])->interrupt_handler();
 	}
-
+#ifdef IS_DEBUG_BOARD
 	void SSP1_IRQHandler() {
 		static_cast<SspIo*>(drivers[TELEM_CC1120_SSP])->ssp_interrupt_handler();
 	}
@@ -119,4 +118,25 @@ extern "C" {
 	void UART0_IRQHandler(void){
 		static_cast<UartIo*>(drivers[FC_BLACKBOX_UART])->uartInterruptHandler();
 	}
+#else
+	void SSP1_IRQHandler() {
+		static_cast<SspIo*>(drivers[TELEM_CC1120_SSP])->ssp_interrupt_handler();
+	}
+
+	void UART2_IRQHandler(void){
+		static_cast<UartIo*>(drivers[CONSOLE_UART])->uartInterruptHandler();
+	}
+
+	void UART1_IRQHandler(void){
+		static_cast<UartIo*>(drivers[NAV_COMPUTER])->uartInterruptHandler();
+	}
+
+	void UART0_IRQHandler(void){
+		static_cast<UartIo*>(drivers[FC_SBUS_UART])->uartInterruptHandler();
+	}
+
+	void UART3_IRQHandler(void){
+		static_cast<UartIo*>(drivers[FC_BLACKBOX_UART])->uartInterruptHandler();
+	}
+#endif
 }

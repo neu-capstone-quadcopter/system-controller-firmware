@@ -1,9 +1,5 @@
 /*
-<<<<<<< HEAD
  * nav_computer_task.cpp
-=======
- * nav_computer_task.cp
->>>>>>> origin/nl-message-types
  *
  *  Created on: Sep 27, 2016
  *      Author: bsoper
@@ -24,8 +20,12 @@
 
 #include <stdlib.h>
 
-#define EVENT_QUEUE_DEPTH 8
+#define EVENT_QUEUE_DEPTH 16
 #define MAX_BUFFER_SIZE 575
+
+#define USE_DMA false
+#define HEADER_LEN 4
+
 
 namespace nav_computer_task {
 
@@ -54,6 +54,7 @@ static monarcpb_SysCtrlToNavCPU current_frame;
 
 __BSS(RAM2)
 static uint8_t serialization_buffer[MAX_BUFFER_SIZE];
+static uint8_t nav_data_buffer[MAX_BUFFER_SIZE];
 
 auto read_len = dlgt::make_delegate(&read_len_handler);
 auto read_data = dlgt::make_delegate(&read_data_handler);
@@ -67,9 +68,11 @@ void start() {
 	dma_channel_rx = dma_man->allocate_channel(3);
 
 	// Enabled DMA (Optional)
-	nav_uart->bind_dma_channels(dma_channel_tx, dma_channel_rx);
-	//nav_uart->set_transfer_mode(UART_XFER_MODE_DMA);
-	xTaskCreate(task_loop, "nav computer", 1200, NULL, 2, &task_handle);
+	if (USE_DMA) {
+		nav_uart->bind_dma_channels(dma_channel_tx, dma_channel_rx);
+		nav_uart->set_transfer_mode(UART_XFER_MODE_DMA);
+	}
+	xTaskCreate(task_loop, "nav computer", 200, NULL, 5, &task_handle);
 	nav_event_queue = xQueueCreate(EVENT_QUEUE_DEPTH, sizeof(nav_event_t));
 
 	//nav_uart->set_baud(230400);
@@ -88,7 +91,7 @@ void initialize_timers() {
 
 static void task_loop(void *p) {
 	initialize_timers();
-	nav_uart->read_async(4, read_len);
+	nav_uart->read_async(HEADER_LEN, read_len);
 	current_frame = monarcpb_SysCtrlToNavCPU_init_zero;
 	nav_event_t event;
 	for(;;) {
@@ -107,7 +110,7 @@ static void task_loop(void *p) {
 			//write_to_uart((uint8_t*)serialization_buffer, 20);
 			break;
 		case LoopTriggerEvent::PROCESS_READ:
-			distribute_data(event.buffer, event.length);
+			distribute_data(nav_data_buffer/*event.buffer*/, event.length);
 			break;
 		default:
 			break;
@@ -145,6 +148,7 @@ void distribute_data(uint8_t* data, uint16_t length) {
 	pb_decode(&stream, monarcpb_NavCPUToSysCtrl_fields, &message);
 	// TODO: Distribute data to sysctrl nodes as needed.
 	send_flight_controls(message);
+	//delete[] data;
 }
 
 void send_flight_controls(monarcpb_NavCPUToSysCtrl message) {
@@ -161,17 +165,26 @@ void send_flight_controls(monarcpb_NavCPUToSysCtrl message) {
 }
 
 static void read_len_handler(UartError status, uint8_t *data, uint16_t len) {
-	uint16_t sync = data[1] << 8 | data[0];
+	uint16_t sync;
+	if (USE_DMA)
+		sync = data[2] << 8 | data[1];
+	else
+		sync = data[1] << 8 | data[0];
+
 	if (sync != 0x91D3) {
 		TimerHandle_t timer_sync = xTimerCreate("SyncTimer", 1, pdTRUE, NULL, [](TimerHandle_t xTimer) {
-			nav_uart->read_async(4, read_len);
+			nav_uart->read_async(HEADER_LEN, read_len);
 			xTimerDelete(xTimer, 10);
 		});
 		xTimerStart(timer_sync, 0);
 		delete[] data;
 		return;
 	}
-	uint16_t length = data[3] << 8 | data[2];
+	uint16_t length;
+	if (USE_DMA)
+		length = data[4] << 8 | data[3];
+	else
+		length = data[3] << 8 | data[2];
 	nav_uart->read_async(length, read_data);
 	delete[] data;
 }
@@ -179,11 +192,12 @@ static void read_len_handler(UartError status, uint8_t *data, uint16_t len) {
 static void read_data_handler(UartError status, uint8_t *data, uint16_t len) {
 	nav_event_t event;
 	event.type = LoopTriggerEvent::PROCESS_READ;
-	event.buffer = data;
+	memcpy(nav_data_buffer, data, len);
+	//event.buffer = data;
 	event.length = len;
 	add_event_to_queue(event);
 
-	nav_uart->read_async(4, read_len);
+	nav_uart->read_async(HEADER_LEN, read_len);
 	delete[] data;
 }
 

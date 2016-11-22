@@ -105,7 +105,7 @@ static void task_loop(void *p) {
 			// Package and send data frame
 			//send_data(current_event.data);
 			//read_from_uart();
-		//	serialize_and_send_frame(current_frame);
+			serialize_and_send_frame(current_frame);
 			current_frame = monarcpb_SysCtrlToNavCPU_init_zero;
 			//write_to_uart((uint8_t*)serialization_buffer, 20);
 			break;

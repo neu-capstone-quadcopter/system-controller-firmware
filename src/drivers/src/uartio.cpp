@@ -275,13 +275,13 @@ UartError UartIo::read_async(uint16_t length, UartReadDelegate& delegate) {
 		}
 
 		this->rx_dma_channel->register_callback([this](DmaError status) {
-			//uint8_t *data_cpy = new uint8_t[this->rx_op_len];
-			//memcpy(data_cpy, const_cast<uint8_t*>(this->rx_buffer), this->rx_op_len);
-			//(*this->rx_delegate)(UART_ERROR_NONE, data_cpy, this->rx_op_len);
-			(*this->rx_delegate)(UART_ERROR_NONE, const_cast<uint8_t*>(this->rx_buffer), this->rx_op_len);
+			uint8_t *data_cpy = new uint8_t[this->rx_op_len];
+			memcpy(data_cpy, const_cast<uint8_t*>(this->rx_buffer), this->rx_op_len);
+			(*this->rx_delegate)(UART_ERROR_NONE, data_cpy, this->rx_op_len);
+			//(*this->rx_delegate)(UART_ERROR_NONE, const_cast<uint8_t*>(this->rx_buffer), this->rx_op_len);
 		});
 
-		this->uart->FCR |= UART_FCR_RX_RS;
+		//this->uart->FCR |= UART_FCR_RX_RS;
 
 		this->rx_dma_channel->start_transfer(
 				get_rx_dmareq(),

@@ -20,11 +20,11 @@
 
 #include <stdlib.h>
 
-#define EVENT_QUEUE_DEPTH 8
+#define EVENT_QUEUE_DEPTH 16
 #define MAX_BUFFER_SIZE 575
 
-#define USE_DMA true
-#define HEADER_LEN 5
+#define USE_DMA false
+#define HEADER_LEN 4
 
 
 namespace nav_computer_task {
@@ -110,7 +110,7 @@ static void task_loop(void *p) {
 			//write_to_uart((uint8_t*)serialization_buffer, 20);
 			break;
 		case LoopTriggerEvent::PROCESS_READ:
-			distribute_data(nav_data_buffer, event.length);
+			distribute_data(nav_data_buffer/*event.buffer*/, event.length);
 			break;
 		default:
 			break;

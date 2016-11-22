@@ -10,6 +10,7 @@
 
 #include "driver.hpp"
 #include "cd74hc4067.hpp"
+#include "config.hpp"
 
 namespace hal {
 	// Add device drivers in order of dependence
@@ -17,12 +18,18 @@ namespace hal {
 		GPDMA_MAN = 0,
 		TELEM_CC1120_SSP,
 		CONSOLE_UART,
-		ULTRASONIC_ALTIMETER,
+#ifdef IS_DEBUG_BOARD
 		LED_0,
 		LED_1,
+#else
+		LOAD_SWITCH,
+		ULTRASONIC_ALTIMETER,
+#endif
 		SENSOR_ADC,
 		CD74HC4067,
 		NAV_COMPUTER,
+		FC_BLACKBOX_UART,
+		FC_SBUS_UART,
 		TELEM_CC1120,
 		NUM_IDENTIFIERS = TELEM_CC1120 + 1 // Add all entries before this and update
 	} driver_identifier;

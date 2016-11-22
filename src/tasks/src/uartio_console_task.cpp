@@ -22,7 +22,7 @@
 
 #define EVENT_QUEUE_DEPTH 10
 #define MAX_COMMAND_INPUT_SIZE 255
-#define MAX_COMMAND_OUTPUT_SIZE 255
+#define MAX_COMMAND_OUTPUT_SIZE 500
 #define MAX_COMMAND_PARAM_SIZE 255
 #define ASCII_DEL ( 0x7F )
 #define NEWLINE_STR "\r\n"
@@ -74,6 +74,8 @@ namespace console_task {
 	static void task_loop(void *p) {
 		Event current_event;
 
+		const char *header = "Hello bitches ;)\r\n";
+		uart->write((uint8_t*)(header), strlen(header));
 		uart->read_async(1, uart_read_del);
 		for(;;) {
 			xQueueReceive(event_queue, &current_event, portMAX_DELAY);

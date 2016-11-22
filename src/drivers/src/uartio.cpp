@@ -21,6 +21,17 @@
 #define DEFAULT_STOP_BIT UART_LCR_SBS_1BIT
 #define DEFAULT_TRANSFER_MODE UART_XFER_MODE_INTERRUPT
 
+
+
+void UartIo::setFractionalBaud(uint16_t fdr, uint16_t dll, uint16_t dlm)
+{
+	Chip_UART_EnableDivisorAccess(uart);
+	uart->FDR = fdr;
+	uart->DLL = dll;
+	uart->DLM = dlm;
+	Chip_UART_DisableDivisorAccess(uart);
+}
+
 UartIo::UartIo(LPC_USART_T *uart) {
 	this->uart = uart;
 	this->transfer_mode = DEFAULT_TRANSFER_MODE;
@@ -66,8 +77,8 @@ UartError UartIo::allocate_buffers(uint16_t tx_buffer_size, uint16_t rx_buffer_s
 	this->tx_buffer_len = tx_buffer_size;
 	this->rx_buffer_len = rx_buffer_size;
 
-
 	this->is_allocated = true;
+
 	return UART_ERROR_NONE;
 }
 
@@ -77,7 +88,13 @@ void UartIo::set_baud(uint32_t baud) {
 }
 
 void UartIo::config_data_mode(uint32_t word_length, uint32_t parity, uint32_t stop_bits){
-	Chip_UART_ConfigData(this->uart, (word_length | stop_bits));
+	if(parity != UART_LCR_PARITY_DIS) {
+		Chip_UART_ConfigData(this->uart, (word_length | stop_bits | parity | UART_LCR_PARITY_EN));
+	}
+	else {
+		Chip_UART_ConfigData(this->uart, (word_length | stop_bits));
+	}
+
 }
 
 UartError UartIo::set_transfer_mode(UartTransferMode mode) {
@@ -261,7 +278,11 @@ UartError UartIo::read_async(uint16_t length, UartReadDelegate& delegate) {
 			uint8_t *data_cpy = new uint8_t[this->rx_op_len];
 			memcpy(data_cpy, const_cast<uint8_t*>(this->rx_buffer), this->rx_op_len);
 			(*this->rx_delegate)(UART_ERROR_NONE, data_cpy, this->rx_op_len);
+			//(*this->rx_delegate)(UART_ERROR_NONE, const_cast<uint8_t*>(this->rx_buffer), this->rx_op_len);
 		});
+
+		//this->uart->FCR |= UART_FCR_RX_RS;
+
 		this->rx_dma_channel->start_transfer(
 				get_rx_dmareq(),
 				reinterpret_cast<uint32_t>(this->rx_buffer),
@@ -359,5 +380,11 @@ void UartIo::uartInterruptHandler(void){
 				xSemaphoreGiveFromISR(this->tx_transfer_semaphore, NULL);
 			}
 		}
+	}
+	else {
+		int y = this->uart->IIR;
+		int x = this->uart->RBR;
+		Chip_UART_ReadLineStatus(this->uart);
+		//disable_interrupts();
 	}
 }

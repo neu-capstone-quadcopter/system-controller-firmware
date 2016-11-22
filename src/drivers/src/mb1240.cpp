@@ -60,6 +60,7 @@ void Mb1240::timer_interrupt_handler() {
 
 		this->is_awaiting_rising_edge = true;
 	}
+	Chip_TIMER_ClearCapture(this->timer, this->timer_cap_ch);
 }
 
 void Mb1240::init_capture_timer() {

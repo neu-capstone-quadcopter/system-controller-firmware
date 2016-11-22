@@ -8,7 +8,16 @@
 #include "board.hpp"
 #include "load_switch_rail.hpp"
 
-#ifndef IS_DEBUG_PCB
+#ifndef IS_DEBUG_BOARD
+void LoadSwitch::init_driver(void) {
+	Chip_GPIO_WriteDirBit(LPC_GPIO, NAVCMP_EN_PORT, NAVCMP_EN_PIN, true);
+	Chip_GPIO_WriteDirBit(LPC_GPIO, FLTCTL_EN_PORT, FLTCTL_EN_PIN, true);
+	Chip_GPIO_WriteDirBit(LPC_GPIO, GPS_EN_PORT, GPS_EN_PIN, true);
+	Chip_GPIO_WriteDirBit(LPC_GPIO, RADIO_EN_PORT, RADIO_EN_PIN, true);
+	Chip_GPIO_WritePortBit(LPC_GPIO, NAVCMP_EN_PORT, NAVCMP_EN_PIN, true);
+	Chip_GPIO_WritePortBit(LPC_GPIO, FLTCTL_EN_PORT, FLTCTL_EN_PIN, true);
+}
+
 void LoadSwitch::set_load_switch_navcmp(bool state) {
 	Chip_GPIO_WritePortBit(LPC_GPIO, NAVCMP_EN_PORT, NAVCMP_EN_PIN, state);
 }

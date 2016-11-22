@@ -44,6 +44,7 @@ public:
 	UartIo(LPC_USART_T *uart);
 	void init_driver(void);
 
+	void setFractionalBaud(uint16_t fdr, uint16_t dll, uint16_t dlm);
 	void enable_interrupts();
 
 	/*
@@ -119,6 +120,8 @@ public:
 	UartError read_async(uint16_t length, UartReadDelegate& delegate);
 
 	void uartInterruptHandler(void);
+
+	LPC_USART_T *uart;
 private:
 	IRQn_Type get_nvic_irq(void);
 	uint32_t get_tx_dmareq(void);
@@ -138,7 +141,6 @@ private:
 	bool is_read_async = false;
 	bool is_allocated = false;
 
-	LPC_USART_T *uart;
 	uint32_t baud_rate;
 	RINGBUFF_T tx_ring;
 	RINGBUFF_T rx_ring;

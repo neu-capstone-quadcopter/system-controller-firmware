@@ -18,13 +18,17 @@ namespace hal {
 		GPDMA_MAN = 0,
 		TELEM_CC1120_SSP,
 		CONSOLE_UART,
-#ifdef IS_DEBUG_PCB
+#ifdef IS_DEBUG_BOARD
 		LED_0,
 		LED_1,
+#else
+		LOAD_SWITCH,
 #endif
 		SENSOR_ADC,
 		CD74HC4067,
 		NAV_COMPUTER,
+		FC_BLACKBOX_UART,
+		FC_SBUS_UART,
 		TELEM_CC1120,
 		NUM_IDENTIFIERS = TELEM_CC1120 + 1 // Add all entries before this and update
 	} driver_identifier;

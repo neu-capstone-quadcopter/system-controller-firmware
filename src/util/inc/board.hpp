@@ -14,12 +14,12 @@
 
 // Hardware Abstraction
 
-#ifndef IS_DEBUG_PCB
+#ifndef IS_DEBUG_BOARD
 
-#define BLACKBOX_UART		LPC_UART0
+#define BLACKBOX_UART		LPC_UART3
 #define NAV_UART 			LPC_UART1
-#define SBUS_UART			LPC_UART2
-#define CONSOLE_TASK_UART 	LPC_UART3
+#define SBUS_UART			LPC_UART0
+#define CONSOLE_TASK_UART 	LPC_UART2
 #define SSP 				LPC_SSP1
 #define ADC 				LPC_ADC
 #define GPDMA 				LPC_GPDMA
@@ -35,25 +35,25 @@
 #define SSP1_MOSI_PORT		0
 #define SSP1_MOSI_PIN		9
 
-#define UART0_TX_PORT		0
-#define UART0_TX_PIN		0
-#define UART0_RX_PORT		0
-#define UART0_RX_PIN		1
+#define UART3_TX_PORT		0
+#define UART3_TX_PIN		0
+#define UART3_RX_PORT		0
+#define UART3_RX_PIN		1
 
 #define UART1_TX_PORT		2
 #define UART1_TX_PIN		1
 #define UART1_RX_PORT		2
 #define UART1_RX_PIN		0
 
-#define UART2_TX_PORT		0
-#define UART2_TX_PIN		2
-#define UART2_RX_PORT		0
-#define UART2_RX_PIN		3
+#define UART0_TX_PORT		0
+#define UART0_TX_PIN		2
+#define UART0_RX_PORT		0
+#define UART0_RX_PIN		3
 
-#define UART3_TX_PORT		2
-#define UART3_TX_PIN		8
-#define UART3_RX_PORT		2
-#define UART3_RX_PIN		9
+#define UART2_TX_PORT		2
+#define UART2_TX_PIN		8
+#define UART2_RX_PORT		2
+#define UART2_RX_PIN		9
 
 #define NAVCMP_EN_PORT		1
 #define NAVCMP_EN_PIN		18
@@ -79,7 +79,9 @@ static Cd74hc4067_gpio_map MUX_GPIO_MAP = {
 
 #else
 
+#define BLACKBOX_UART		LPC_UART0
 #define NAV_UART 			LPC_UART1
+#define SBUS_UART			LPC_UART2
 #define CONSOLE_TASK_UART 	LPC_UART3
 #define SSP 				LPC_SSP1
 #define LED0_PORT 			2
@@ -102,20 +104,20 @@ static Cd74hc4067_gpio_map MUX_GPIO_MAP = {
 #define SSP1_MOSI_PORT		0
 #define SSP1_MOSI_PIN		9
 
-//#define UART0_TX_PORT		0
-//#define UART0_TX_PIN		0
-//#define UART0_RX_PORT		0
-//#define UART0_RX_PIN		0
+#define UART0_TX_PORT		0
+#define UART0_TX_PIN		2
+#define UART0_RX_PORT		0
+#define UART0_RX_PIN		3
 
 #define UART1_TX_PORT		0
 #define UART1_TX_PIN		15
 #define UART1_RX_PORT		0
 #define UART1_RX_PIN		16
 
-//#define UART2_TX_PORT		0
-//#define UART2_TX_PIN		0
-//#define UART2_RX_PORT		0
-//#define UART2_RX_PIN		0
+#define UART2_TX_PORT		0
+#define UART2_TX_PIN		10
+#define UART2_RX_PORT		0
+#define UART2_RX_PIN		11
 
 #define UART3_TX_PORT		0
 #define UART3_TX_PIN		0

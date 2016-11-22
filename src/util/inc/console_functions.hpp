@@ -13,6 +13,7 @@
 
 #include "board.hpp"
 #include "hal.hpp"
+#include "flight_controller_task.hpp"
 #include "load_switch_rail.hpp"
 
 namespace console_task {
@@ -101,6 +102,24 @@ namespace console_task {
 		}
 	}
 
+	void set_fltctl_ch(char* output_string, uint8_t argc, char** argv) {
+		if(argc >= 3) {
+			flight_controller_task::set_frame_channel_cmd(atoi(argv[1]), atoi(argv[2]));
+		}
+		else {
+			strcpy(output_string, NOT_ENOUGH_ARGS_STR);
+		}
+	}
+
+	void arm_fltctl(char* output_string, uint8_t argc, char** argv)
+	{
+		flight_controller_task::set_frame_channel_cmd(0,1000);
+		flight_controller_task::set_frame_channel_cmd(1,1000);
+		flight_controller_task::set_frame_channel_cmd(2, 100);
+		flight_controller_task::set_frame_channel_cmd(3, 1900);
+
+	}
+
 	void get_mem_info(char* output_string, uint8_t argc, char** argv)
 	{
 		sprintf(output_string, "Free Memory: %d\r\n"
@@ -122,20 +141,21 @@ namespace console_task {
 	{
 		uiTraceStart();
 	}
-#ifndef IS_DEBUG_PCB
+#ifndef IS_DEBUG_BOARD
 	void set_navcmp_load_switch(char* output_string, uint8_t argc, char** argv)
 	{
 		if(argc == 2) {
 			bool state;
-			if(!strcmp(argv[2],"enable"))
+			if(!strcmp(argv[1],"enable"))
 				state = true;
-			else if(!strcmp(argv[2],"disable"))
+			else if(!strcmp(argv[1],"disable"))
 				state = false;
 			else {
 				strcpy(output_string, "Invalid Parameter -- options: \'enable\' or \'disable\'...\r\n");
 				return;
 			}
-			LoadSwitch::set_load_switch_navcmp(state);
+			LoadSwitch *load_switch = hal::get_driver<LoadSwitch>(hal::LOAD_SWITCH);
+			load_switch->set_load_switch_navcmp(state);
 		}
 		else
 			strcpy(output_string, NOT_ENOUGH_ARGS_STR);
@@ -145,15 +165,16 @@ namespace console_task {
 	{
 		if(argc == 2) {
 			bool state;
-			if(!strcmp(argv[2],"enable"))
+			if(!strcmp(argv[1],"enable"))
 				state = true;
-			else if(!strcmp(argv[2],"disable"))
+			else if(!strcmp(argv[1],"disable"))
 				state = false;
 			else {
 				strcpy(output_string, "Invalid Parameter -- options: \'enable\' or \'disable\'...\r\n");
 				return;
 			}
-			LoadSwitch::set_load_switch_fltctl(state);
+			LoadSwitch *load_switch = hal::get_driver<LoadSwitch>(hal::LOAD_SWITCH);
+			load_switch->set_load_switch_fltctl(state);
 		}
 		else
 			strcpy(output_string, NOT_ENOUGH_ARGS_STR);
@@ -163,15 +184,16 @@ namespace console_task {
 	{
 		if(argc == 2) {
 			bool state;
-			if(!strcmp(argv[2],"enable"))
+			if(!strcmp(argv[1],"enable"))
 				state = true;
-			else if(!strcmp(argv[2],"disable"))
+			else if(!strcmp(argv[1],"disable"))
 				state = false;
 			else {
 				strcpy(output_string, "Invalid Parameter -- options: \'enable\' or \'disable\'...\r\n");
 				return;
 			}
-			LoadSwitch::set_load_switch_gps(state);
+			LoadSwitch *load_switch = hal::get_driver<LoadSwitch>(hal::LOAD_SWITCH);
+			load_switch->set_load_switch_gps(state);
 		}
 		else
 			strcpy(output_string, NOT_ENOUGH_ARGS_STR);
@@ -181,15 +203,16 @@ namespace console_task {
 	{
 		if(argc == 2) {
 			bool state;
-			if(!strcmp(argv[2],"enable"))
+			if(!strcmp(argv[1],"enable"))
 				state = true;
-			else if(!strcmp(argv[2],"disable"))
+			else if(!strcmp(argv[1],"disable"))
 				state = false;
 			else {
 				strcpy(output_string, "Invalid Parameter -- options: \'enable\' or \'disable\'...\r\n");
 				return;
 			}
-			LoadSwitch::set_load_switch_radio(state);
+			LoadSwitch *load_switch = hal::get_driver<LoadSwitch>(hal::LOAD_SWITCH);
+			load_switch->set_load_switch_radio(state);
 		}
 		else
 			strcpy(output_string, NOT_ENOUGH_ARGS_STR);
@@ -212,7 +235,9 @@ namespace console_task {
 			{"get_task_info", &get_task_info},
 			{"get_runtime_info", &get_runtime_info},
 			{"start_trace", &start_trace},
-#ifndef IS_DEBUG_PCB
+			{"set_fltctl_ch", &set_fltctl_ch},
+			{"arm_fltctl", &arm_fltctl},
+#ifndef IS_DEBUG_BOARD
 			{"set_navcmp_load_switch", &set_navcmp_load_switch},
 			{"set_fltctl_load_switch", &set_fltctl_load_switch},
 			{"set_gps_load_switch", &set_gps_load_switch},

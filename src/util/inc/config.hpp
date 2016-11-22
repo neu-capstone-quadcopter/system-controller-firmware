@@ -9,7 +9,7 @@
 #define UTIL_INC_CONFIG_HPP_
 
 
-#define IS_DEBUG_PCB
+//#define IS_DEBUG_BOARD
 
 
 #endif /* UTIL_INC_CONFIG_HPP_ */

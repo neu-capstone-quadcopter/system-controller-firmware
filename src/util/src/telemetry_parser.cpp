@@ -35,11 +35,12 @@ TelemetryParser::TelemetryParser()
 	//assume that it is always ready to send so we don't block other data
 	have_values[BARO] = true;
 
-	//JUST FOR TESTING -- For now we will always have the Motor Thrust values be true
+	/*//JUST FOR TESTING -- For now we will always have the Motor Thrust values be true
 	have_values[MOTOR0_THRUST] = true;
 	have_values[MOTOR1_THRUST] = true;
 	have_values[MOTOR2_THRUST] = true;
 	have_values[MOTOR3_THRUST] = true;
+*/
 
 }
 
@@ -206,7 +207,7 @@ void TelemetryParser::resetVariables()
 	{
 		//Always want Baro value to be ready to send
 		//TODO:During testing also want motor thrust values to always be ready to send
-		if(i < BARO)
+		if(i != BARO)
 		{
 			have_values[i] = false;
 			curr_frame.telem_fields[i] = 0;

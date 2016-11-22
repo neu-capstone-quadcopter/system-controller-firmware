@@ -22,6 +22,10 @@
 #define MAG_Y_ID 0x6B
 #define MAG_Z_ID 0x6C
 #define BARO_ID  0x10
+#define MOTOR0_THRUST_ID 0x60
+#define MOTOR1_THRUST_ID 0x61
+#define MOTOR2_THRUST_ID 0x62
+#define MOTOR3_THRUST_ID 0x63
 
 #define NUM_MSG_FIELDS 10
 
@@ -30,6 +34,13 @@ TelemetryParser::TelemetryParser()
 	//Baro is sent at a lower rate than rest of data so we will
 	//assume that it is always ready to send so we don't block other data
 	have_values[BARO] = true;
+
+	//JUST FOR TESTING -- For now we will always have the Motor Thrust values be true
+	have_values[MOTOR0_THRUST] = true;
+	have_values[MOTOR1_THRUST] = true;
+	have_values[MOTOR2_THRUST] = true;
+	have_values[MOTOR3_THRUST] = true;
+
 }
 
 void TelemetryParser::parseForData(Stream &stream)
@@ -102,6 +113,22 @@ void TelemetryParser::getData(Stream &stream, uint8_t curr_byte)
 			break;
 		case BARO_ID:
 			curr_field = BARO;
+			have_data_id = true;
+			break;
+		case MOTOR0_THRUST_ID:
+			curr_field = MOTOR0_THRUST;
+			have_data_id = true;
+			break;
+		case MOTOR1_THRUST_ID:
+			curr_field = MOTOR1_THRUST;
+			have_data_id = true;
+			break;
+		case MOTOR2_THRUST_ID:
+			curr_field = MOTOR2_THRUST;
+			have_data_id = true;
+			break;
+		case MOTOR3_THRUST_ID:
+			curr_field = MOTOR3_THRUST;
 			have_data_id = true;
 			break;
 		default:
@@ -178,7 +205,8 @@ void TelemetryParser::resetVariables()
 	for(int i = 0; i < FRAME_FIELDS; i++)
 	{
 		//Always want Baro value to be ready to send
-		if(i != BARO)
+		//TODO:During testing also want motor thrust values to always be ready to send
+		if(i < BARO)
 		{
 			have_values[i] = false;
 			curr_frame.telem_fields[i] = 0;

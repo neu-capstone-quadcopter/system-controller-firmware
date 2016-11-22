@@ -54,6 +54,22 @@ void TelemetryMessage::serialize_protobuf(monarcpb_SysCtrlToNavCPU &protobuf) {
 		case 9: //Baro
 			protobuf.telemetry.atmospheric_pressure = this->telem_values[i];
 			break;
+		case 10: //Motor0 Thrust
+			protobuf.telemetry.has_motor0_thrust = true;
+			protobuf.telemetry.motor0_thrust = this->telem_values[i];
+			break;
+		case 11: //Motor1 Thrust
+			protobuf.telemetry.has_motor1_thrust = true;
+			protobuf.telemetry.motor1_thrust = this->telem_values[i];
+			break;
+		case 12: //Motor2 Thrust
+			protobuf.telemetry.has_motor2_thrust = true;
+			protobuf.telemetry.motor2_thrust = this->telem_values[i];
+			break;
+		case 13: //Motor3 Thrust
+			protobuf.telemetry.has_motor3_thrust = true;
+			protobuf.telemetry.motor3_thrust = this->telem_values[i];
+			break;
 		}
 	}
 }

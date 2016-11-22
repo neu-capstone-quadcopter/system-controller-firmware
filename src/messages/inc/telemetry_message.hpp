@@ -15,7 +15,7 @@
 typedef int32_t TelemValue;
 
 struct TelemetryMessage : OutgoingNavComputerMessage {
-	TelemValue telem_values[10];
+	TelemValue telem_values[14];
 
 	void serialize_protobuf(monarcpb_SysCtrlToNavCPU &protobuf);
 };

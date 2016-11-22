@@ -11,7 +11,7 @@
 #include "board.hpp"
 #include "util.hpp"
 
-static const uint32_t SENSOR_CM_PER_US = 58;
+static const uint32_t SENSOR_US_PER_CM = 58;
 static const uint32_t TIMER_CNT_PER_US = 24; // 1e-6 / (4 / CCLK))
 
 Mb1240::Mb1240(LPC_TIMER_T *ultrasonic_timer, uint8_t timer_cap_ch) {
@@ -53,7 +53,8 @@ void Mb1240::timer_interrupt_handler() {
 
 		uint32_t pulse_time_us = pulse_cnt / TIMER_CNT_PER_US;
 
-		this->current_range_mm = pulse_time_us * SENSOR_CM_PER_US * 10;
+		this->current_range_mm = pulse_time_us / SENSOR_US_PER_CM * 10;
+
 
 		Chip_TIMER_CaptureFallingEdgeDisable(this->timer, this->timer_cap_ch);
 		Chip_TIMER_CaptureRisingEdgeEnable(this->timer, this->timer_cap_ch);

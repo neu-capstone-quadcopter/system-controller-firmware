@@ -15,6 +15,7 @@
 #include "hal.hpp"
 #include "flight_controller_task.hpp"
 #include "load_switch_rail.hpp"
+#include "mb1240.hpp"
 
 namespace console_task {
 #define MAX_COMMAND_PARAMS 5
@@ -217,6 +218,12 @@ namespace console_task {
 		else
 			strcpy(output_string, NOT_ENOUGH_ARGS_STR);
 	}
+
+	void get_ultrasonic_range(char* output_string, uint8_t argc, char** argv)
+	{
+		Mb1240 *ultrasonic_altimeter = hal::get_driver<Mb1240>(hal::ULTRASONIC_ALTIMETER);
+		sprintf(output_string, "%d\r\n", ultrasonic_altimeter->get_current_range_mm());
+	}
 #endif
 
 	typedef void (*CommandFunction)(char*,uint8_t,char**);
@@ -242,6 +249,7 @@ namespace console_task {
 			{"set_fltctl_load_switch", &set_fltctl_load_switch},
 			{"set_gps_load_switch", &set_gps_load_switch},
 			{"set_radio_load_switch", &set_radio_load_switch},
+			{"get_ultrasonic_range", &get_ultrasonic_range},
 #endif
 	};
 

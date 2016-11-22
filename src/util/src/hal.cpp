@@ -5,18 +5,19 @@
  *      Author: nigil
  */
 
-#include <uartio.hpp>
 #include "chip.h"
+#include "board.hpp"
 
 #include "hal.hpp"
 #include "gpdma.hpp"
+#include "uartio.hpp"
 #include "sspio.hpp"
 #include "cc1120.hpp"
 #include "driver.hpp"
 #include "exampleled.hpp"
 #include "adc.hpp"
 #include "cd74hc4067.hpp"
-#include <board.hpp>
+#include "mb1240.hpp"
 
 namespace hal {
 	void add_drivers(void);
@@ -44,6 +45,7 @@ namespace hal {
 		GpdmaManager *gpdma_man = new GpdmaManager(GPDMA);
 		SspIo *telem_cc1120_ssp = new SspIo(SSP);
 		UartIo *console_uart = new UartIo(CONSOLE_TASK_UART);
+		Mb1240 *ultrasonic_altimeter = new Mb1240();
 		ExampleLed *led_0 = new ExampleLed(LED0_PORT, LED0_PIN);
 		ExampleLed *led_1 = new ExampleLed(LED1_PORT, LED1_PIN);
 		Adc *adc = new Adc(ADC);
@@ -54,6 +56,7 @@ namespace hal {
 		// Add drivers to driver array
 		drivers[GPDMA_MAN] = gpdma_man;
 		drivers[TELEM_CC1120_SSP] = telem_cc1120_ssp;
+		drivers[ULTRASONIC_ALTIMETER] = ultrasonic_altimeter;
 		drivers[LED_0] = led_0;
 		drivers[LED_1] = led_1;
 		drivers[SENSOR_ADC] = adc;
@@ -75,6 +78,7 @@ namespace hal {
 	template class Cd74hc4067 *get_driver(driver_identifier);
 	template class Cc1120 *get_driver(driver_identifier);
 	template class ExampleLed *get_driver(driver_identifier);
+	template class Mb1240 *get_driver(driver_identifier);
 }
 
 extern "C" {

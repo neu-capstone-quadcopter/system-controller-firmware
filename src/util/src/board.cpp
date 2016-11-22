@@ -1,4 +1,5 @@
 #include <cstdint>
+#include "board.hpp"
 #include "chip.h"
 #include "FreeRTOS.h"
 
@@ -71,5 +72,9 @@ namespace board {
 		default:
 			configASSERT(0);
 		}
+	}
+
+	void mb1240_init() {
+		Chip_IOCON_PinMux(LPC_IOCON, ULTRASONIC_TIMER_CAP_PORT, ULTRASONIC_TIMER_CAP_PIN, IOCON_MODE_INACT, IOCON_FUNC3);
 	}
 }

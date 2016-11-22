@@ -25,6 +25,8 @@
 #define ADC_MUX_PIN			30
 #define ULTRASONIC_TIMER	LPC_TIMER0
 #define ULTRASONIC_TIMER_CAP_CH 0
+#define ULTRASONIC_TIMER_CAP_PORT 1
+#define ULTRASONIC_TIMER_CAP_PIN 26
 
 static Cd74hc4067_gpio_map MUX_GPIO_MAP = {
 				.s0_port = 0,
@@ -74,6 +76,7 @@ namespace board {
 	void setup_clocking(void);
 	void ssp_init(LPC_SSP_T *ssp);
 	void uart_init(LPC_USART_T *uart);
+	void mb1240_init();
 }
 
 

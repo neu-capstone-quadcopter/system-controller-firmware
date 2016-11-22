@@ -20,6 +20,7 @@ Mb1240::Mb1240(LPC_TIMER_T *ultrasonic_timer, uint8_t timer_cap_ch) {
 }
 
 void Mb1240::init_driver() {
+	board::mb1240_init();
 	this->init_capture_timer();
 }
 
@@ -71,8 +72,4 @@ void Mb1240::init_capture_timer() {
 	Chip_TIMER_Enable(this->timer);
 	NVIC_ClearPendingIRQ(get_timer_nvic_irq(this->timer));
 	NVIC_EnableIRQ(get_timer_nvic_irq(this->timer));
-}
-
-extern "C" {
-
 }

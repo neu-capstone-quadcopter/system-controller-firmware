@@ -17,6 +17,7 @@
 #include "adc.hpp"
 #include "cd74hc4067.hpp"
 #include <board.hpp>
+#include "config.hpp"
 
 namespace hal {
 	void add_drivers(void);
@@ -54,8 +55,10 @@ namespace hal {
 		// Add drivers to driver array
 		drivers[GPDMA_MAN] = gpdma_man;
 		drivers[TELEM_CC1120_SSP] = telem_cc1120_ssp;
+#ifdef IS_DEBUG_PCB
 		drivers[LED_0] = led_0;
 		drivers[LED_1] = led_1;
+#endif
 		drivers[SENSOR_ADC] = adc;
 		drivers[CD74HC4067] = adc_mux;
 		drivers[NAV_COMPUTER] = nav_computer;

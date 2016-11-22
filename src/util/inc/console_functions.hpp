@@ -11,7 +11,9 @@
 #include <cstdio>
 #include <cstdlib>
 
+#include "board.hpp"
 #include "hal.hpp"
+#include "load_switch_rail.hpp"
 
 namespace console_task {
 #define MAX_COMMAND_PARAMS 5
@@ -120,6 +122,79 @@ namespace console_task {
 	{
 		uiTraceStart();
 	}
+#ifndef IS_DEBUG_PCB
+	void set_navcmp_load_switch(char* output_string, uint8_t argc, char** argv)
+	{
+		if(argc == 2) {
+			bool state;
+			if(!strcmp(argv[2],"enable"))
+				state = true;
+			else if(!strcmp(argv[2],"disable"))
+				state = false;
+			else {
+				strcpy(output_string, "Invalid Parameter -- options: \'enable\' or \'disable\'...\r\n");
+				return;
+			}
+			LoadSwitch::set_load_switch_navcmp(state);
+		}
+		else
+			strcpy(output_string, NOT_ENOUGH_ARGS_STR);
+	}
+
+	void set_fltctl_load_switch(char* output_string, uint8_t argc, char** argv)
+	{
+		if(argc == 2) {
+			bool state;
+			if(!strcmp(argv[2],"enable"))
+				state = true;
+			else if(!strcmp(argv[2],"disable"))
+				state = false;
+			else {
+				strcpy(output_string, "Invalid Parameter -- options: \'enable\' or \'disable\'...\r\n");
+				return;
+			}
+			LoadSwitch::set_load_switch_fltctl(state);
+		}
+		else
+			strcpy(output_string, NOT_ENOUGH_ARGS_STR);
+	}
+
+	void set_gps_load_switch(char* output_string, uint8_t argc, char** argv)
+	{
+		if(argc == 2) {
+			bool state;
+			if(!strcmp(argv[2],"enable"))
+				state = true;
+			else if(!strcmp(argv[2],"disable"))
+				state = false;
+			else {
+				strcpy(output_string, "Invalid Parameter -- options: \'enable\' or \'disable\'...\r\n");
+				return;
+			}
+			LoadSwitch::set_load_switch_gps(state);
+		}
+		else
+			strcpy(output_string, NOT_ENOUGH_ARGS_STR);
+	}
+
+	void set_radio_load_switch(char* output_string, uint8_t argc, char** argv)
+	{
+		if(argc == 2) {
+			bool state;
+			if(!strcmp(argv[2],"enable"))
+				state = true;
+			else if(!strcmp(argv[2],"disable"))
+				state = false;
+			else {
+				strcpy(output_string, "Invalid Parameter -- options: \'enable\' or \'disable\'...\r\n");
+				return;
+			}
+			LoadSwitch::set_load_switch_radio(state);
+		}
+		else
+			strcpy(output_string, NOT_ENOUGH_ARGS_STR);
+	}
+#endif
 
 	typedef void (*CommandFunction)(char*,uint8_t,char**);
 
@@ -137,6 +212,12 @@ namespace console_task {
 			{"get_task_info", &get_task_info},
 			{"get_runtime_info", &get_runtime_info},
 			{"start_trace", &start_trace},
+#ifndef IS_DEBUG_PCB
+			{"set_navcmp_load_switch", &set_navcmp_load_switch},
+			{"set_fltctl_load_switch", &set_fltctl_load_switch},
+			{"set_gps_load_switch", &set_gps_load_switch},
+			{"set_radio_load_switch", &set_radio_load_switch},
+#endif
 	};
 
 #define NUMBER_COMMANDS (sizeof(command_list) / sizeof(CommandDescriptor))

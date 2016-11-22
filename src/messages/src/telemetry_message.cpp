@@ -12,7 +12,8 @@ void TelemetryMessage::serialize_protobuf(monarcpb_SysCtrlToNavCPU &protobuf) {
 	protobuf.telemetry.has_gyroscope = true;
 	protobuf.telemetry.has_magnetometer = true;
 	protobuf.telemetry.has_accelerometer = true;
-	for(uint8_t i = 0; i < 9; i++) {
+	protobuf.telemetry.has_atmospheric_pressure = true;
+	for(uint8_t i = 0; i < 10; i++) {
 		switch (i) {
 		case 0: //Acc x
 			protobuf.telemetry.accelerometer.has_x = true;
@@ -49,6 +50,9 @@ void TelemetryMessage::serialize_protobuf(monarcpb_SysCtrlToNavCPU &protobuf) {
 		case 8: //Gyr z
 			protobuf.telemetry.gyroscope.has_z = true;
 			protobuf.telemetry.gyroscope.z = this->telem_values[i];
+			break;
+		case 9: //Baro
+			protobuf.telemetry.atmospheric_pressure = this->telem_values[i];
 			break;
 		}
 	}

@@ -4,6 +4,7 @@
 #include "blackbox_stream.hpp"
 #include "FreeRTOS.h"
 #include "telemetry_message.hpp"
+#include "nav_computer_task.hpp"
 
 enum frame_fields
 {
@@ -58,12 +59,3 @@ private:
 };
 
 #endif //UTIL_TELEMETRY_PARSER_HPP_
-
-
-//Checklist:
-//[x] Outline Basic Class Structure
-//[x] Create a function that will parse a frame
-//[x] Create a Frame Structure to hold the data
-//[x] Create Nav Computer Message Type
-//[ ] Test Messages with Nav Computer
-//[ ] Add XOR logic for 0x5D bytes

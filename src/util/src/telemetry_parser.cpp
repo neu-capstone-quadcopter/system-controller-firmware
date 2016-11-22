@@ -23,7 +23,7 @@
 #define MAG_Z_ID 0x6C
 #define BARO_ID  0x10
 
-#define NUM_MSG_FIELDS 9
+#define NUM_MSG_FIELDS 10
 
 TelemetryParser::TelemetryParser()
 {
@@ -151,52 +151,17 @@ void TelemetryParser::sendFrame()
 
 	//If we make it through loop - frame is ready to send so
 
-	//TODO: LOGIC TO SEND FRAME
-	 //Let's take this completed frame and send it off to the Nav Computer
+	//Let's take this completed frame and send it off to the Nav Computer
 	TelemValue msg_val;
 	for(int i = 0; i < NUM_MSG_FIELDS; i++)
 	{
-		switch(i)
-		{
-		case 0: //Acc x
-			msg_val = curr_frame.telem_fields[i];
-			msg_to_send.telem_values[i] = msg_val;
-			break;
-		case 1: //Acc y
-			msg_val = curr_frame.telem_fields[i];
-			msg_to_send.telem_values[i] = msg_val;
-			break;
-		case 2: //Acc z
-			msg_val = curr_frame.telem_fields[i];
-			msg_to_send.telem_values[i] = msg_val;
-			break;
-		case 3: //Mag x
-			msg_val = curr_frame.telem_fields[i];
-			msg_to_send.telem_values[i] = msg_val;
-			break;
-		case 4: //Mag y
-			msg_val = curr_frame.telem_fields[i];
-			msg_to_send.telem_values[i] = msg_val;
-			break;
-		case 5: //Mag z
-			msg_val = curr_frame.telem_fields[i];
-			msg_to_send.telem_values[i] = msg_val;
-			break;
-		case 6: //Gyro x
-			msg_val = curr_frame.telem_fields[i];
-			msg_to_send.telem_values[i] = msg_val;
-			break;
-		case 7: //Gyro y
-			msg_val = curr_frame.telem_fields[i];
-			msg_to_send.telem_values[i] = msg_val;
-			break;
-		case 8: //Gyro z
-			msg_val = curr_frame.telem_fields[i];
-			msg_to_send.telem_values[i] = msg_val;
-			break;
-		}
+		msg_val = curr_frame.telem_fields[i];
+		msg_to_send.telem_values[i] = msg_val;
 
 	}
+
+	//Send the frame
+	nav_computer_task::add_message_to_outgoing_frame(msg_to_send);
 
 	//Reset member variables for new frame
 	resetVariables();

@@ -86,14 +86,14 @@ namespace sensor_task {
 	}
 
 	void initialize_timer() {
-		Chip_TIMER_Init(LPC_TIMER0);
-		Chip_TIMER_Reset(LPC_TIMER0);
-		Chip_TIMER_MatchEnableInt(LPC_TIMER0, 1);
-		Chip_TIMER_SetMatch(LPC_TIMER0, 1, 240000);//1200000
-		Chip_TIMER_ResetOnMatchEnable(LPC_TIMER0, 1);
-		Chip_TIMER_Enable(LPC_TIMER0);
-		NVIC_ClearPendingIRQ(TIMER0_IRQn);
-		NVIC_EnableIRQ(TIMER0_IRQn);
+		Chip_TIMER_Init(LPC_TIMER1);
+		Chip_TIMER_Reset(LPC_TIMER1);
+		Chip_TIMER_MatchEnableInt(LPC_TIMER1, 1);
+		Chip_TIMER_SetMatch(LPC_TIMER1, 1, 240000);//1200000
+		Chip_TIMER_ResetOnMatchEnable(LPC_TIMER1, 1);
+		Chip_TIMER_Enable(LPC_TIMER1);
+		NVIC_ClearPendingIRQ(TIMER1_IRQn);
+		NVIC_EnableIRQ(TIMER1_IRQn);
 	}
 
 	void task_loop(void *p) {
@@ -122,10 +122,10 @@ namespace sensor_task {
 	}
 
 	extern "C" {
-		void TIMER0_IRQHandler(void) {
-			if(Chip_TIMER_MatchPending(LPC_TIMER0, 1)) {
+		void TIMER1_IRQHandler(void) {
+			if(Chip_TIMER_MatchPending(LPC_TIMER1, 1)) {
 				AdcEvent event = AdcEvent::ADC_SCAN;
-				Chip_TIMER_ClearMatch(LPC_TIMER0, 1);
+				Chip_TIMER_ClearMatch(LPC_TIMER1, 1);
 				xQueueSendToBackFromISR(event_queue, &event, 0);
 			}
 		}

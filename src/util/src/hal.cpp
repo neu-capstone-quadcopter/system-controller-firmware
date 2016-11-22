@@ -30,8 +30,6 @@ namespace hal {
 		Chip_GPIO_Init(LPC_GPIO);
 		Chip_IOCON_Init(LPC_IOCON);
 
-		Chip_GPIO_WriteDirBit(LPC_GPIO, DEBUG_LED_PORT, DEBUG_LED_PIN, true); // Random Debug LED...
-
 		add_drivers();
 
 		// Initialize all drivers
@@ -45,9 +43,9 @@ namespace hal {
 		GpdmaManager *gpdma_man = new GpdmaManager(GPDMA);
 		SspIo *telem_cc1120_ssp = new SspIo(SSP);
 		UartIo *console_uart = new UartIo(CONSOLE_TASK_UART);
-		Mb1240 *ultrasonic_altimeter = new Mb1240();
-		ExampleLed *led_0 = new ExampleLed(LED0_PORT, LED0_PIN);
-		ExampleLed *led_1 = new ExampleLed(LED1_PORT, LED1_PIN);
+		Mb1240 *ultrasonic_altimeter = new Mb1240(ULTRASONIC_TIMER, ULTRASONIC_TIMER_CAP_CH);
+		// ExampleLed *led_0 = new ExampleLed(LED0_PORT, LED0_PIN);
+		// ExampleLed *led_1 = new ExampleLed(LED1_PORT, LED1_PIN);
 		Adc *adc = new Adc(ADC);
 		Cd74hc4067 *adc_mux = new Cd74hc4067(MUX_GPIO_MAP);
 		UartIo *nav_computer = new UartIo(NAV_UART);
@@ -57,8 +55,8 @@ namespace hal {
 		drivers[GPDMA_MAN] = gpdma_man;
 		drivers[TELEM_CC1120_SSP] = telem_cc1120_ssp;
 		drivers[ULTRASONIC_ALTIMETER] = ultrasonic_altimeter;
-		drivers[LED_0] = led_0;
-		drivers[LED_1] = led_1;
+		// drivers[LED_0] = led_0;
+		// drivers[LED_1] = led_1;
 		drivers[SENSOR_ADC] = adc;
 		drivers[CD74HC4067] = adc_mux;
 		drivers[NAV_COMPUTER] = nav_computer;
@@ -97,5 +95,8 @@ extern "C" {
 
 	void UART1_IRQHandler(void){
 		static_cast<UartIo*>(drivers[NAV_COMPUTER])->uartInterruptHandler();
+	}
+	void TIMER0_IRQHandler(void) {
+		static_cast<Mb1240*>(drivers[ULTRASONIC_ALTIMETER])->timer_interrupt_handler();
 	}
 }

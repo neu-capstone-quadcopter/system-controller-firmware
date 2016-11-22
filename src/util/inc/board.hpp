@@ -23,6 +23,8 @@
 #define GPDMA 				LPC_GPDMA
 #define ADC_MUX_PORT		1
 #define ADC_MUX_PIN			30
+#define ULTRASONIC_TIMER	LPC_TIMER0
+#define ULTRASONIC_TIMER_CAP_CH 0
 
 static Cd74hc4067_gpio_map MUX_GPIO_MAP = {
 				.s0_port = 0,

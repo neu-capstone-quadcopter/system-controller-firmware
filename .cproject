@@ -120,6 +120,18 @@
 							<tool id="com.crt.advproject.link.exe.debug.766865493" name="MCU Linker" superClass="com.crt.advproject.link.exe.debug"/>
 						</toolChain>
 					</folderInfo>
+					<fileInfo id="com.crt.advproject.config.exe.debug.1698178935.1591712983" name="telemetry_parser.cpp" rcbsApplicability="disable" resourcePath="src/util/src/telemetry_parser.cpp" toolsToInvoke="com.crt.advproject.cpp.exe.debug.437407545.2128739268">
+						<tool id="com.crt.advproject.cpp.exe.debug.437407545.2128739268" name="MCU C++ Compiler" superClass="com.crt.advproject.cpp.exe.debug.437407545">
+							<option id="com.crt.advproject.cpp.exe.debug.option.optimization.level.1869649811" superClass="com.crt.advproject.cpp.exe.debug.option.optimization.level" value="gnu.cpp.compiler.optimization.level.none" valueType="enumerated"/>
+							<inputType id="com.crt.advproject.compiler.cpp.input.1454946465" superClass="com.crt.advproject.compiler.cpp.input"/>
+						</tool>
+						<tool customBuildStep="true" id="org.eclipse.cdt.managedbuilder.ui.rcbs.1049129650" name="Resource Custom Build Step">
+							<inputType id="org.eclipse.cdt.managedbuilder.ui.rcbs.inputtype.1581289568" name="Resource Custom Build Step Input Type">
+								<additionalInput kind="additionalinputdependency" paths=""/>
+							</inputType>
+							<outputType id="org.eclipse.cdt.managedbuilder.ui.rcbs.outputtype.1051959090" name="Resource Custom Build Step Output Type"/>
+						</tool>
+					</fileInfo>
 					<sourceEntries>
 						<entry excluding="build/cpp|nanopb/examples|nanopb/tests" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="monarcpb"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="src"/>

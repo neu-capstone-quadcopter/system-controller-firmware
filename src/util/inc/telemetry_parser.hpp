@@ -15,12 +15,14 @@ enum frame_fields
 	MAG_Z,
 	GYR_X,
 	GYR_Y,
-	GYR_Z
+	GYR_Z,
+	BARO,
+	FRAME_FIELDS
 };
 
 struct telemetry_frame
 {
-	uint16_t telem_fields[GYR_Z+1] = {0};
+	int16_t telem_fields[FRAME_FIELDS] = {0};
 
 };
 
@@ -45,9 +47,10 @@ public:
 
 private:
 	bool have_data_id = false;
-	int curr_field = 0;
+	int curr_field = -1;
 	int data_byte = 0; //Which data byte are we looking at?
-	bool have_values[GYR_Z+1] = {false};
+	bool xor_next_byte = false;
+	bool have_values[FRAME_FIELDS] = {false};
 
 	telemetry_frame curr_frame;
 	TelemetryMessage msg_to_send;
@@ -58,8 +61,9 @@ private:
 
 
 //Checklist:
-//1. Outline Basic Class Structure
-//2. Create a function that will parse a frame
-//3. Create a Frame Structure to hold the data
-//4. Create Nav Computer Message Type
-//5. Test Messages with Nav Computer
+//[x] Outline Basic Class Structure
+//[x] Create a function that will parse a frame
+//[x] Create a Frame Structure to hold the data
+//[x] Create Nav Computer Message Type
+//[ ] Test Messages with Nav Computer
+//[ ] Add XOR logic for 0x5D bytes

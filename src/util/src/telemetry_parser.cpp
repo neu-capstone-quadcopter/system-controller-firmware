@@ -15,19 +15,21 @@
 #define ACC_X_ID 0x24
 #define ACC_Y_ID 0x25
 #define ACC_Z_ID 0x26
+#define GYR_X_ID 0x40
+#define GYR_Y_ID 0x41
+#define GYR_Z_ID 0x42
+#define MAG_X_ID 0x6A
+#define MAG_Y_ID 0x6B
+#define MAG_Z_ID 0x6C
+#define BARO_ID  0x10
 
 #define NUM_MSG_FIELDS 9
 
 TelemetryParser::TelemetryParser()
 {
-	//Just for testing, let's ensure that Mag/Gyro fields
-	//are populated
-	have_values[MAG_X] = true;
-	have_values[MAG_Y] = true;
-	have_values[MAG_Z] = true;
-	have_values[GYR_X] = true;
-	have_values[GYR_Y] = true;
-	have_values[GYR_Z] = true;
+	//Baro is sent at a lower rate than rest of data so we will
+	//assume that it is always ready to send so we don't block other data
+	have_values[BARO] = true;
 }
 
 void TelemetryParser::parseForData(Stream &stream)
@@ -39,6 +41,9 @@ void TelemetryParser::parseForData(Stream &stream)
 	//Compare this byte to our data IDs
 	getData(stream, curr_byte);
 
+	//Send of the Frame
+	sendFrame();
+
 }
 
 void TelemetryParser::getData(Stream &stream, uint8_t curr_byte)
@@ -49,6 +54,8 @@ void TelemetryParser::getData(Stream &stream, uint8_t curr_byte)
 	{
 		have_data_id = false;
 		data_byte = 0;
+		if(curr_field >= 0)
+			have_values[curr_field] = true;
 		return;
 	}
 	//Have we figured out which field to populate
@@ -69,8 +76,35 @@ void TelemetryParser::getData(Stream &stream, uint8_t curr_byte)
 			curr_field = ACC_Z;
 			have_data_id = true;
 			break;
+		case MAG_X_ID:
+			curr_field = MAG_X;
+			have_data_id = true;
+			break;
+		case MAG_Y_ID:
+			curr_field = MAG_Y;
+			have_data_id = true;
+			break;
+		case MAG_Z_ID:
+			curr_field = MAG_Z;
+			have_data_id = true;
+			break;
+		case GYR_X_ID:
+			curr_field = GYR_X;
+			have_data_id = true;
+			break;
+		case GYR_Y_ID:
+			curr_field = GYR_Y;
+			have_data_id = true;
+			break;
+		case GYR_Z_ID:
+			curr_field = GYR_Z;
+			have_data_id = true;
+			break;
+		case BARO_ID:
+			curr_field = BARO;
+			have_data_id = true;
+			break;
 		default:
-			//configASSERT(0);
 			break;
 		}
 
@@ -78,12 +112,28 @@ void TelemetryParser::getData(Stream &stream, uint8_t curr_byte)
 	}
 	else
 	{
-		//If we already know which field we are populating let's
-		//populate it
-		uint16_t curr_byte16 = (uint16_t) curr_byte;
-		curr_frame.telem_fields[curr_field] = curr_frame.telem_fields[curr_field] +
-				(curr_byte16 << (data_byte * 8));
-		data_byte++;
+		//If we receive 0x5D as byte, disregard and XOR next byte with
+		//0x60
+		if(curr_byte == 0x5D)
+		{
+			xor_next_byte = true;
+			return;
+		}
+		else{
+			//If we already know which field we are populating let's
+			//populate it
+			uint16_t curr_byte16 = (uint16_t) curr_byte;
+
+			//Should this byte be XOR'd with 0x60?
+			if(xor_next_byte)
+			{
+				curr_byte16 = curr_byte16 ^ 0x60;
+				xor_next_byte = false;
+			}
+
+			curr_frame.telem_fields[curr_field] |= (int16_t)(curr_byte16 << (data_byte * 8));
+			data_byte++;
+		}
 	}
 }
 
@@ -91,7 +141,7 @@ void TelemetryParser::sendFrame()
 {
 	//Iterate through our haveValues vector. If all are true, frame is populated
 	//and we can send off to Nav Computer. Else just return.
-	for(int i = 0; i < GYR_Z; i++)
+	for(int i = 0; i < FRAME_FIELDS; i++)
 	{
 		if(!have_values[i])
 		{
@@ -108,43 +158,42 @@ void TelemetryParser::sendFrame()
 	{
 		switch(i)
 		{
-		case 0:
+		case 0: //Acc x
 			msg_val = curr_frame.telem_fields[i];
 			msg_to_send.telem_values[i] = msg_val;
 			break;
-		case 1:
+		case 1: //Acc y
 			msg_val = curr_frame.telem_fields[i];
 			msg_to_send.telem_values[i] = msg_val;
 			break;
-		case 2:
+		case 2: //Acc z
 			msg_val = curr_frame.telem_fields[i];
 			msg_to_send.telem_values[i] = msg_val;
 			break;
-		case 3:
+		case 3: //Mag x
 			msg_val = curr_frame.telem_fields[i];
 			msg_to_send.telem_values[i] = msg_val;
 			break;
-		case 4:
+		case 4: //Mag y
 			msg_val = curr_frame.telem_fields[i];
 			msg_to_send.telem_values[i] = msg_val;
 			break;
-		case 5:
+		case 5: //Mag z
 			msg_val = curr_frame.telem_fields[i];
 			msg_to_send.telem_values[i] = msg_val;
 			break;
-		case 6:
+		case 6: //Gyro x
 			msg_val = curr_frame.telem_fields[i];
 			msg_to_send.telem_values[i] = msg_val;
 			break;
-		case 7:
+		case 7: //Gyro y
 			msg_val = curr_frame.telem_fields[i];
 			msg_to_send.telem_values[i] = msg_val;
 			break;
-		case 8:
+		case 8: //Gyro z
 			msg_val = curr_frame.telem_fields[i];
 			msg_to_send.telem_values[i] = msg_val;
 			break;
-
 		}
 
 	}
@@ -157,18 +206,19 @@ void TelemetryParser::sendFrame()
 void TelemetryParser::resetVariables()
 {
 	have_data_id = false;
-	curr_field = 0;
+	curr_field = -1;
 	data_byte = 0;
 
 	//Reset haveValues and frame data
-	for(int i = 0; i < GYR_Z; i++)
+	for(int i = 0; i < FRAME_FIELDS; i++)
 	{
-		//TODO: Remove condition after testing
-		if(i == ACC_X || i == ACC_Y || i == ACC_Z)
+		//Always want Baro value to be ready to send
+		if(i != BARO)
 		{
 			have_values[i] = false;
 			curr_frame.telem_fields[i] = 0;
 		}
+
 
 	}
 }

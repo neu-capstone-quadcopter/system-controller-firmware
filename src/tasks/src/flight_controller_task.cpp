@@ -150,6 +150,7 @@ static void task_loop(void *p) {
 	fc_blackbox_uart->read_async(100, fc_bb_read_del);
 	flight_cont_event_t current_event;
 	for(;;) {
+		vTaskDelay(500);
 		//blackbox_parser.decodeFrameType(blackbox_stream);
 	}
 }

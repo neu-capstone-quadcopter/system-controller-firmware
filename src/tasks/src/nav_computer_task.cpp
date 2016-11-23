@@ -72,7 +72,7 @@ void start() {
 		nav_uart->bind_dma_channels(dma_channel_tx, dma_channel_rx);
 		nav_uart->set_transfer_mode(UART_XFER_MODE_DMA);
 	}
-	xTaskCreate(task_loop, "nav computer", 200, NULL, 5, &task_handle);
+	xTaskCreate(task_loop, "nav computer", 800, NULL, 5, &task_handle);
 	nav_event_queue = xQueueCreate(EVENT_QUEUE_DEPTH, sizeof(nav_event_t));
 
 	//nav_uart->set_baud(230400);
@@ -128,6 +128,10 @@ void serialize_and_send_frame(monarcpb_SysCtrlToNavCPU frame) {
 
 void add_event_to_queue(nav_event_t event) {
 	xQueueSendToBack(nav_event_queue, &event, 0);
+}
+
+void add_event_to_queue_from_ISR(nav_event_t event) {
+	xQueueSendToBackFromISR(nav_event_queue, &event, 0);
 }
 
 void add_message_to_outgoing_frame(OutgoingNavComputerMessage &msg) {
@@ -195,7 +199,7 @@ static void read_data_handler(UartError status, uint8_t *data, uint16_t len) {
 	memcpy(nav_data_buffer, data, len);
 	//event.buffer = data;
 	event.length = len;
-	add_event_to_queue(event);
+	add_event_to_queue_from_ISR(event);
 
 	nav_uart->read_async(HEADER_LEN, read_len);
 	delete[] data;
@@ -204,7 +208,7 @@ static void read_data_handler(UartError status, uint8_t *data, uint16_t len) {
 static void timer_handler(TimerHandle_t xTimer) {
 	nav_event_t event;
 	event.type = LoopTriggerEvent::SEND_FRAME;
-	add_event_to_queue(event);
+	add_event_to_queue_from_ISR(event);
 }
 
 

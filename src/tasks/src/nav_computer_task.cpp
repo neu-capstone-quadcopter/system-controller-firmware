@@ -21,7 +21,7 @@
 #include <stdlib.h>
 
 #define EVENT_QUEUE_DEPTH 16
-#define MAX_BUFFER_SIZE 250
+#define MAX_BUFFER_SIZE 575
 
 #define USE_DMA false
 #define HEADER_LEN 4

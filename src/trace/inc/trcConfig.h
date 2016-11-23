@@ -117,7 +117,7 @@
  * recording is stopped when the buffer becomes full. This is useful for
  * recording events following a specific state, e.g., the startup sequence.
  *****************************************************************************/
-#define TRACE_RECORDER_STORE_MODE TRACE_STORE_MODE_STOP_WHEN_FULL
+#define TRACE_RECORDER_STORE_MODE TRACE_STORE_MODE_RING_BUFFER//TRACE_STORE_MODE_STOP_WHEN_FULL
 
 /*******************************************************************************
  * TRACE_SCHEDULING_ONLY

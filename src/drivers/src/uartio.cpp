@@ -53,6 +53,7 @@ void UartIo::init_driver(void)
 
 	//Chip_UART_IntEnable(this->uart, (UART_IER_RBRINT | UART_IER_RLSINT));
 	NVIC_EnableIRQ(get_nvic_irq());
+	NVIC_SetPriority(get_nvic_irq(), 7);
 }
 
 void UartIo::enable_interrupts() {

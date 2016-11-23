@@ -73,7 +73,7 @@
 #define configUSE_IDLE_HOOK			0
 #define configMAX_PRIORITIES		( ( unsigned portBASE_TYPE ) 8 )
 #define configUSE_TICK_HOOK			0
-#define configCPU_CLOCK_HZ			( ( unsigned long ) Chip_Clock_GetMainClockRate() )
+#define configCPU_CLOCK_HZ			( ( unsigned long ) Chip_Clock_GetSystemClockRate() )
 #define configTICK_RATE_HZ			( ( portTickType ) 1000 )
 #define configMINIMAL_STACK_SIZE	( ( unsigned short ) 128 )
 #define configTOTAL_HEAP_SIZE		( ( size_t ) ( 19*1024 ) )

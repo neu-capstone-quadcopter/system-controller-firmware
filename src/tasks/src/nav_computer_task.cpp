@@ -72,7 +72,7 @@ void start() {
 		nav_uart->bind_dma_channels(dma_channel_tx, dma_channel_rx);
 		nav_uart->set_transfer_mode(UART_XFER_MODE_DMA);
 	}
-	xTaskCreate(task_loop, "nav computer", 200, NULL, 5, &task_handle);
+	xTaskCreate(task_loop, "nav computer", 800, NULL, 5, &task_handle);
 	nav_event_queue = xQueueCreate(EVENT_QUEUE_DEPTH, sizeof(nav_event_t));
 
 	//nav_uart->set_baud(230400);
@@ -96,18 +96,11 @@ static void task_loop(void *p) {
 	nav_event_t event;
 	for(;;) {
 		xQueueReceive(nav_event_queue, &event, portMAX_DELAY);
-		char buffer[20] = "AAAAAAAAAA";
 		switch (event.type) {
 		case LoopTriggerEvent::SEND_FRAME:
-			// TODO: Serialize data
-			// TODO: Send data
-
 			// Package and send data frame
-			//send_data(current_event.data);
-			//read_from_uart();
 			serialize_and_send_frame(current_frame);
 			current_frame = monarcpb_SysCtrlToNavCPU_init_zero;
-			//write_to_uart((uint8_t*)serialization_buffer, 20);
 			break;
 		case LoopTriggerEvent::PROCESS_READ:
 			distribute_data(nav_data_buffer/*event.buffer*/, event.length);
@@ -119,6 +112,32 @@ static void task_loop(void *p) {
 }
 
 void serialize_and_send_frame(monarcpb_SysCtrlToNavCPU frame) {
+	frame.has_telemetry = true;
+	frame.telemetry.has_accelerometer = true;
+	frame.telemetry.accelerometer.has_x = true;
+	frame.telemetry.accelerometer.x = 17;
+	frame.telemetry.accelerometer.has_y = true;
+	frame.telemetry.accelerometer.y = 18;
+	frame.telemetry.accelerometer.has_z = true;
+	frame.telemetry.accelerometer.z = 19;
+
+	frame.telemetry.has_magnetometer = true;
+	frame.telemetry.magnetometer.has_x = true;
+	frame.telemetry.magnetometer.x = 34;
+	frame.telemetry.magnetometer.has_y = true;
+	frame.telemetry.magnetometer.y = 35;
+	frame.telemetry.magnetometer.has_z = true;
+	frame.telemetry.magnetometer.z = 36;
+
+	frame.telemetry.has_gyroscope = true;
+	frame.telemetry.gyroscope.has_x = true;
+	frame.telemetry.gyroscope.x = 69;
+	frame.telemetry.gyroscope.has_y = true;
+	frame.telemetry.gyroscope.y = 69;
+	frame.telemetry.gyroscope.has_z = true;
+	frame.telemetry.gyroscope.z = 69;
+
+
 	pb_ostream_t stream = pb_ostream_from_buffer(serialization_buffer, MAX_BUFFER_SIZE);//sizeof(serialization_buffer));
 	pb_encode(&stream, monarcpb_SysCtrlToNavCPU_fields, &frame);
 
@@ -128,6 +147,10 @@ void serialize_and_send_frame(monarcpb_SysCtrlToNavCPU frame) {
 
 void add_event_to_queue(nav_event_t event) {
 	xQueueSendToBack(nav_event_queue, &event, 0);
+}
+
+void add_event_to_queue_from_ISR(nav_event_t event) {
+	xQueueSendToBackFromISR(nav_event_queue, &event, 0);
 }
 
 void add_message_to_outgoing_frame(OutgoingNavComputerMessage &msg) {
@@ -195,7 +218,7 @@ static void read_data_handler(UartError status, uint8_t *data, uint16_t len) {
 	memcpy(nav_data_buffer, data, len);
 	//event.buffer = data;
 	event.length = len;
-	add_event_to_queue(event);
+	add_event_to_queue_from_ISR(event);
 
 	nav_uart->read_async(HEADER_LEN, read_len);
 	delete[] data;
@@ -204,7 +227,7 @@ static void read_data_handler(UartError status, uint8_t *data, uint16_t len) {
 static void timer_handler(TimerHandle_t xTimer) {
 	nav_event_t event;
 	event.type = LoopTriggerEvent::SEND_FRAME;
-	add_event_to_queue(event);
+	add_event_to_queue_from_ISR(event);
 }
 
 

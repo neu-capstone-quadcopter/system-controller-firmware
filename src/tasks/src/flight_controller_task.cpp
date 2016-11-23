@@ -161,7 +161,7 @@ static void task_loop(void *p) {
 	flight_cont_event_t current_event;
 	for(;;) {
 		telem_parser.parseForData(blackbox_stream);
-		//blackbox_parser.decodeFrameType(blackbox_stream);
+
 	}
 }
 

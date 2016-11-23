@@ -21,7 +21,7 @@
 #include <stdlib.h>
 
 #define EVENT_QUEUE_DEPTH 16
-#define MAX_BUFFER_SIZE 575
+#define MAX_BUFFER_SIZE 250
 
 #define USE_DMA false
 #define HEADER_LEN 4
@@ -72,7 +72,7 @@ void start() {
 		nav_uart->bind_dma_channels(dma_channel_tx, dma_channel_rx);
 		nav_uart->set_transfer_mode(UART_XFER_MODE_DMA);
 	}
-	xTaskCreate(task_loop, "nav computer", 200, NULL, 5, &task_handle);
+	xTaskCreate(task_loop, "nav computer", 800, NULL, 5, &task_handle);
 	nav_event_queue = xQueueCreate(EVENT_QUEUE_DEPTH, sizeof(nav_event_t));
 
 	//nav_uart->set_baud(230400);
@@ -90,7 +90,7 @@ void initialize_timers() {
 }
 
 static void task_loop(void *p) {
-	initialize_timers();
+	//initialize_timers();
 	nav_uart->read_async(HEADER_LEN, read_len);
 	current_frame = monarcpb_SysCtrlToNavCPU_init_zero;
 	nav_event_t event;
@@ -105,7 +105,7 @@ static void task_loop(void *p) {
 			// Package and send data frame
 			//send_data(current_event.data);
 			//read_from_uart();
-			serialize_and_send_frame(current_frame);
+			//serialize_and_send_frame(current_frame);
 			current_frame = monarcpb_SysCtrlToNavCPU_init_zero;
 			//write_to_uart((uint8_t*)serialization_buffer, 20);
 			break;

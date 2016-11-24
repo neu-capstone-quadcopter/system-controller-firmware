@@ -11,6 +11,7 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "blackbox_parser.hpp"
+#include "telemetry_parser.hpp"
 
 #include <stdlib.h>
 #include <cstring>
@@ -90,9 +91,6 @@ struct SBusFrame{
 
 static void task_loop(void *p);
 void setup_ritimer(void);
-void send_data(uint8_t *data);
-void write_to_sbus(uint8_t *data, uint8_t len);
-void read_from_uart();
 void fc_bb_read_handler(UartError status, uint8_t *data, uint16_t len);
 static void sbus_frame_written_handler(UartError status);
 
@@ -105,8 +103,10 @@ auto fc_bb_read_del = dlgt::make_delegate(&fc_bb_read_handler);
 auto sbus_written_del = dlgt::make_delegate(&sbus_frame_written_handler);
 
 GpdmaManager *dma_man;
-GpdmaChannel *test_channel_tx;
-GpdmaChannel *test_channel_rx;
+GpdmaChannel *sbus_dma_channel_tx;
+GpdmaChannel *sbus_dma_channel_rx;
+GpdmaChannel *blackbox_dma_channel_tx;
+GpdmaChannel *blackbox_dma_channel_rx;
 
 __BSS(RAM2)
 Stream blackbox_stream;
@@ -114,31 +114,40 @@ Stream blackbox_stream;
 bool added_to_stream = false;
 
 BlackboxParser blackbox_parser;
+TelemetryParser telem_parser;
+int blackbox_read_count = 0; //Will use to allow parser to skip header
 
 void start() {
 	fc_blackbox_uart = hal::get_driver<UartIo>(hal::FC_BLACKBOX_UART);
 	fc_sbus_uart = hal::get_driver<UartIo>(hal::FC_SBUS_UART);
 	xTaskCreate(task_loop, "flight controller", 400, NULL, 2, &task_handle);
-	fc_blackbox_uart->setFractionalBaud(0xA3, 0xA, 0x0);
+
 	blackbox_stream.allocate();
 }
 
 static void task_loop(void *p) {
 	fc_blackbox_uart->allocate_buffers(0,150);
-
+	fc_blackbox_uart->config_data_mode(UART_LCR_WLEN8, UART_LCR_PARITY_DIS, UART_LCR_SBS_1BIT);
+	//fc_blackbox_uart->setFractionalBaud(0xED, 0x1B, 0x0);
+	fc_blackbox_uart->set_baud(115200);
+	fc_blackbox_uart->enable_interrupts();
 
 	fc_sbus_uart->allocate_buffers(30, 0);
 	//fc_sbus_uart->set_baud(100000);
-	fc_sbus_uart->setFractionalBaud(0x41, 0xC, 0x0);
+	fc_sbus_uart->setFractionalBaud(0x41, 0xC, 0x0); // Set baud rate to 100000
 	fc_sbus_uart->enable_interrupts();
 	fc_sbus_uart->config_data_mode(UART_LCR_WLEN8, UART_LCR_PARITY_EVEN, UART_LCR_SBS_2BIT);
 	dma_man = hal::get_driver<GpdmaManager>(hal::GPDMA_MAN);
-	test_channel_tx = dma_man->allocate_channel(0);
-	test_channel_rx = dma_man->allocate_channel(1);
+	sbus_dma_channel_tx = dma_man->allocate_channel(0); // TODO: Prioritize DMAs per usage requirements
+	sbus_dma_channel_rx = dma_man->allocate_channel(1);
+	blackbox_dma_channel_tx = dma_man->allocate_channel(4);
+	blackbox_dma_channel_rx = dma_man->allocate_channel(5);
 
 	// Enabled DMA (Optional)
-	fc_sbus_uart->bind_dma_channels(test_channel_tx, test_channel_rx);
+	fc_sbus_uart->bind_dma_channels(sbus_dma_channel_tx, sbus_dma_channel_rx);
+	fc_blackbox_uart->bind_dma_channels(blackbox_dma_channel_tx, blackbox_dma_channel_rx);
 	fc_sbus_uart->set_transfer_mode(UART_XFER_MODE_DMA);
+	fc_blackbox_uart->set_transfer_mode(UART_XFER_MODE_DMA);
 
 	//memset(sbus_frame.channels, 0, 18);
 	for(uint8_t i = 0; i< 18; i++) {
@@ -150,17 +159,13 @@ static void task_loop(void *p) {
 	fc_blackbox_uart->read_async(100, fc_bb_read_del);
 	flight_cont_event_t current_event;
 	for(;;) {
-		vTaskDelay(500);
-		//blackbox_parser.decodeFrameType(blackbox_stream);
+		telem_parser.parseForData(blackbox_stream);
+
 	}
 }
 
 void set_frame_channel_cmd(uint8_t channel, uint16_t value) {
 	sbus_frame.channels[channel] = value & SBUS_CHANNEL_MASK;
-}
-
-void add_event_to_queue(flight_cont_event_t event) {
-	//xQueueSendToBack(flight_cont_event_queue, &event, 0);
 }
 
 void setup_ritimer(void) {
@@ -171,53 +176,11 @@ void setup_ritimer(void) {
 	NVIC_EnableIRQ(RITIMER_IRQn); // TODO: Make this a very high priority interrupt
 }
 
-//Modify this function to send flight command over
-//SBUS Interface
-void write_to_sbus(uint8_t *data, uint8_t len) {
-	//SBUS uses a 25 byte data frame
-	uint8_t buffer[25];
-
-	//Will need to accept a command from the nav computer
-	//in some predefined format which we will then send to SBUS
-
-	//Send over SBUS -- Uart2
-	fc_sbus_uart->write(data, 25);
-
-}
-
-uint8_t* serializeSbusFrame(SBusFrame s)
-{
-
-}
-
-//Modify this function to read in blackbox data from
-//the serial interface
-void read_from_uart() {
-	//Our initial buffer
-	uint8_t buffer[128];
-	memset(buffer, 0x00, 128);
-
-	//Figure out length of our incoming message
-	uint8_t length = 128;
-
-	//Read incoming message into buffer
-	fc_blackbox_uart->read(buffer, length);
-
-	//Do something with this message
-	buffer[127] = 0x00;
-
-}
-
 void fc_bb_read_handler(UartError status, uint8_t *data, uint16_t len)
 {
 
 		//Add data to stream
-		//if(!added_to_stream)
-		//{
 		blackbox_stream.addToStream(data,len);
-			//added_to_stream = true;
-		//}
-		//blackbox_stream.addToStream(data, len);
 
 		//Create read event
 		flight_cont_event_t e;
@@ -231,17 +194,6 @@ void fc_bb_read_handler(UartError status, uint8_t *data, uint16_t len)
 
 static void sbus_frame_written_handler(UartError status) {
 	// TODO: Check status
-}
-
-//This function will package up our data to then
-//send over our SBUS
-void send_data(uint8_t* data) {
-	static uint8_t buffer[MAX_BUFFER_SIZE];
-	memset(buffer, 0x00, MAX_BUFFER_SIZE);
-
-	uint8_t message_len = 0;
-	write_to_sbus(buffer, MAX_BUFFER_SIZE);
-	return;
 }
 } // End flight_controller_task namespace.
 

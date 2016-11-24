@@ -123,19 +123,19 @@ void start() {
 	fc_blackbox_uart = hal::get_driver<UartIo>(hal::FC_BLACKBOX_UART);
 	fc_sbus_uart = hal::get_driver<UartIo>(hal::FC_SBUS_UART);
 	xTaskCreate(task_loop, "flight controller", 400, NULL, 2, &task_handle);
-	//fc_blackbox_uart->setFractionalBaud(0xA3, 0x78, 0x0); //9600 Baud for Telemetry
-	fc_blackbox_uart->set_baud(9600);
+
 	blackbox_stream.allocate();
 }
 
 static void task_loop(void *p) {
 	fc_blackbox_uart->allocate_buffers(0,150);
 	fc_blackbox_uart->config_data_mode(UART_LCR_WLEN8, UART_LCR_PARITY_DIS, UART_LCR_SBS_1BIT);
+	fc_blackbox_uart->setFractionalBaud(0xED, 0x1B, 0x0);
 	fc_blackbox_uart->enable_interrupts();
 
 	fc_sbus_uart->allocate_buffers(30, 0);
 	//fc_sbus_uart->set_baud(100000);
-	fc_sbus_uart->setFractionalBaud(0x41, 0xC, 0x0);
+	fc_sbus_uart->setFractionalBaud(0x41, 0xC, 0x0); // Set baud rate to 100000
 	fc_sbus_uart->enable_interrupts();
 	fc_sbus_uart->config_data_mode(UART_LCR_WLEN8, UART_LCR_PARITY_EVEN, UART_LCR_SBS_2BIT);
 	dma_man = hal::get_driver<GpdmaManager>(hal::GPDMA_MAN);

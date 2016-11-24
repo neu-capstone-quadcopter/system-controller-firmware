@@ -148,7 +148,7 @@
  * Default value is 1000, which means that 4000 bytes is allocated for the
  * event buffer.
  ******************************************************************************/
-#define EVENT_BUFFER_SIZE 1000
+#define EVENT_BUFFER_SIZE 2000
 
 /*******************************************************************************
  * NTask, NISR, NQueue, NSemaphore, NMutex

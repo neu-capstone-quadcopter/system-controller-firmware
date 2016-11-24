@@ -112,6 +112,7 @@ static void task_loop(void *p) {
 }
 
 void serialize_and_send_frame(monarcpb_SysCtrlToNavCPU frame) {
+	/*
 	frame.has_telemetry = true;
 	frame.telemetry.has_accelerometer = true;
 	frame.telemetry.accelerometer.has_x = true;
@@ -136,7 +137,7 @@ void serialize_and_send_frame(monarcpb_SysCtrlToNavCPU frame) {
 	frame.telemetry.gyroscope.y = 69;
 	frame.telemetry.gyroscope.has_z = true;
 	frame.telemetry.gyroscope.z = 69;
-
+	*/
 
 	pb_ostream_t stream = pb_ostream_from_buffer(serialization_buffer, MAX_BUFFER_SIZE);//sizeof(serialization_buffer));
 	pb_encode(&stream, monarcpb_SysCtrlToNavCPU_fields, &frame);

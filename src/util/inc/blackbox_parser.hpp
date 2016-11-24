@@ -1,18 +1,21 @@
 #ifndef UTIL_BLACKBOX_PARSER_HPP
 #define UTIL_BLACKBOX_PARSER_HPP
 
+#include <telemetry_message.hpp>
 #include <cstdint>
 #include <cstring>
 #include "FreeRTOS.h"
 #include "blackbox_stream.hpp"
+#include "nav_computer_task.hpp"
 
-#define NUM_FIELDS 30
-#define NUM_P_FIELDS 20
+#define NUM_FIELDS 29
+#define NUM_MSG_FIELDS 9
 
 enum bb_unsigned_frame_fields{
 	LOOP_ITERAION,
 	TIME,
 	RC_COMMAND3,
+	VBAT_LATEST,
 	AMPERAGE_LATEST,
 	RSSI,
 	MOTOR0,
@@ -28,8 +31,6 @@ enum bb_signed_frame_fields{
 	AXIS_I0,
 	AXIS_I1,
 	AXIS_I2,
-	AXIS_D0,
-	AXIS_D1,
 	RC_COMMAND0,
 	RC_COMMAND1,
 	RC_COMMAND2,
@@ -90,6 +91,8 @@ public:
 	//Field Decoders
 	void decodeUVB(Stream &, bool); //0
 	void decodeSVB(Stream&, bool); //1
+	int32_t decodeSVB_tag8(Stream&, bool); //N/A
+	void decodeNeg14(Stream&, bool); //3
 	void decodeTAG8_8SVB(Stream&, bool); //6
 	void decodeTAG2_3S32(Stream&, bool); //7
 	void decodeTAG8_4S16(Stream&, bool); //8
@@ -149,6 +152,11 @@ private:
     uint8_t tag8_4s16_fields = 4;
     bool decoding_tag8_4s16 = false;
 
+    //Used in tag8_8svb
+    int32_t tag8_8svb_values[7];
+    uint8_t tag8_8svb_fields = 7;
+    bool decoding_tag8_8svb = false;
+
 	//Flags indicating decoding
     bool frame_id_found = false;
 	bool decoding_i_frame = false;
@@ -164,16 +172,19 @@ private:
 	//Min throttle value for prediction
 	uint32_t min_throttle = 1150;
 
-	bool field_signs[NUM_FIELDS] = {0,0,1,1,1,1,1,1,1,1,1,1,1,0,0,1,1,1,1,0,1,1,1,1,1,1,0,0,0,0};
-	uint8_t i_field_predictors[NUM_FIELDS] = {0,0,0,0,0,0,0,0,0,0,0,0,0,4,0,0,0,0,0,0,0,0,0,0,0,0,4,5,5,5};
-	uint8_t p_field_predictors[NUM_FIELDS] = {6,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,3,3,3,3,3,3,3,3,3,3};
-	uint8_t i_field_encodings[NUM_FIELDS] = {1,1,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0};
-	uint8_t p_field_encodings[NUM_FIELDS] = {9,0,0,0,0,7,7,7,0,0,8,8,8,8,6,6,6,6,6,6,0,0,0,0,0,0,0,0,0,0};
+	bool field_signs[NUM_FIELDS] = {0,0,1,1,1,1,1,1,1,1,1,0,0,0,1,1,1,1,0,1,1,1,1,1,1,0,0,0,0};
+	uint8_t i_field_predictors[NUM_FIELDS] = {0,0,0,0,0,0,0,0,0,0,0,4,9,0,0,0,0,0,0,0,0,0,0,0,0,4,5,5,5};
+	uint8_t p_field_predictors[NUM_FIELDS] = {6,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,3,3,3,3,3,3,3,3,3,3};
+	uint8_t i_field_encodings[NUM_FIELDS] = {1,1,0,0,0,0,0,0,0,0,0,1,3,1,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0};
+	uint8_t p_field_encodings[NUM_FIELDS] = {9,0,0,0,0,7,7,7,8,8,8,8,6,6,6,6,6,6,6,0,0,0,0,0,0,0,0,0,0};
 
 	//Working Frames
 	blackbox_frame prev_frame2;
 	blackbox_frame prev_frame;
 	blackbox_frame curr_frame;
+
+	//The message we will send to the Nav Computer
+	TelemetryMessage msg_to_send;
 };
 
 #endif //UTIL_BLACKBOX_PARSER_HPP

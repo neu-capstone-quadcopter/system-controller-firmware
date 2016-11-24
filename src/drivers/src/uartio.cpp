@@ -53,6 +53,7 @@ void UartIo::init_driver(void)
 
 	//Chip_UART_IntEnable(this->uart, (UART_IER_RBRINT | UART_IER_RLSINT));
 	NVIC_EnableIRQ(get_nvic_irq());
+	NVIC_SetPriority(get_nvic_irq(), 7);
 }
 
 void UartIo::enable_interrupts() {
@@ -88,6 +89,7 @@ void UartIo::set_baud(uint32_t baud) {
 }
 
 void UartIo::config_data_mode(uint32_t word_length, uint32_t parity, uint32_t stop_bits){
+
 	if(parity != UART_LCR_PARITY_DIS) {
 		Chip_UART_ConfigData(this->uart, (word_length | stop_bits | parity | UART_LCR_PARITY_EN));
 	}

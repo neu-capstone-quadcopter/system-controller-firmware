@@ -99,9 +99,8 @@ void BlackboxParser::decodeFrame(Stream &bb_stream, char frame_type){
 		}
 
 		curr_sign = field_signs[curr_field];
-		//uint8_t curr_byte = bb_stream.popFromStream();
 
-		//Let's decode this byte
+		//Let's start decoding
 		switch(curr_encoding)
 		{
 		case 0:
@@ -110,13 +109,18 @@ void BlackboxParser::decodeFrame(Stream &bb_stream, char frame_type){
 		case 1:
 			decodeSVB(bb_stream,curr_sign);
 			break;
+		case 3:
+			decodeNeg14(bb_stream, curr_sign);
+			break;
 		case 6:
 			if(!header_read) //Set header if not already done so
 			{
 				header_bytes = bb_stream.popFromStream();
 				header_read = true;
 			}
+
 			decodeTAG8_8SVB(bb_stream, curr_sign);
+			//decoding_tag8_8svb = true;
 			break;
 		case 7:
 			decodeTAG2_3S32(bb_stream, curr_sign);
@@ -135,6 +139,27 @@ void BlackboxParser::decodeFrame(Stream &bb_stream, char frame_type){
 		}
 
         //Now that we have decoded value - let's put it into correct field
+		if(decoding_tag8_8svb && final_value)
+		{
+			for(int i = 0; i<tag8_8svb_fields; i++)
+			{
+				curr_sign = field_signs[curr_field];
+				if(curr_sign == 0)
+				{
+					curr_frame.addUnsignedField(curr_unsigned_field, (uint32_t)tag8_8svb_values[i]);
+					curr_unsigned_field++;
+				}
+				else{
+					curr_frame.addSignedField(curr_signed_field, tag8_8svb_values[i]);
+					curr_signed_field++;
+				}
+
+				curr_field++;
+			}
+
+			final_value = false;
+			decoding_tag8_8svb = false;
+		}
         if(decoding_tag2_3s32 && final_value){
             //If we are doing tag2_3s32 and have decoded all field values, want to place
             //those into frame
@@ -179,7 +204,7 @@ void BlackboxParser::decodeFrame(Stream &bb_stream, char frame_type){
             final_value = false;
             decoding_tag8_4s16 = false;
         }
-        else if(!decoding_tag2_3s32 && !decoding_tag8_4s16 && final_value)
+        else if(!decoding_tag2_3s32 && !decoding_tag8_4s16 && !decoding_tag8_8svb && final_value)
         {
 			if(curr_sign == 0)
 			{
@@ -198,7 +223,7 @@ void BlackboxParser::decodeFrame(Stream &bb_stream, char frame_type){
         }
 
 		//Apply decompression once all fields are decoded
-		if(curr_field == (NUM_FIELDS - 1))
+		if(curr_field >= (NUM_FIELDS - 1))
 		{
             curr_predictor = 0;
             curr_signed_field = 0;
@@ -287,7 +312,12 @@ void BlackboxParser::decodeFrame(Stream &bb_stream, char frame_type){
             //Set this frame to previous frame for next run
             prev_frame2 = prev_frame;
             prev_frame = curr_frame;
-            //Add logic here to do something with completed frame
+
+
+
+            //After we populate fields, let's ship off this message
+            nav_computer_task::add_message_to_outgoing_frame(msg_to_send);
+
 
         }
 	}
@@ -352,6 +382,56 @@ void BlackboxParser::decodeSVB(Stream &bb_stream, bool sign)
 
     final_value = true;
 
+}
+
+int32_t BlackboxParser::decodeSVB_tag8(Stream &bb_stream, bool sign)
+{
+	decodeUVB(bb_stream, sign);
+
+	if(sign == 0)
+	    {
+	        curr_value = (uint32_t)zigZagDecode(curr_value);
+	        return (int32_t) curr_value;
+	    }
+	    else
+	    {
+	    	scurr_value = zigZagDecode(scurr_value);
+	    	return scurr_value;
+	    }
+
+}
+
+//Essentially UVB but final value is 14 bits
+void BlackboxParser::decodeNeg14(Stream &bb_stream, bool sign)
+{
+	int i, c, shift = 0;
+		uint32_t result;
+
+		for(i=0; i<5; i++)
+		{
+			c = bb_stream.popFromStream();
+			result = result |((c & ~0x80) << shift);
+
+			//Final Byte?
+			if(c<128){
+				if(sign == 0)
+					curr_value = (uint32_t) -signExtend14Bit(result);
+				else
+					scurr_value = -signExtend14Bit(result);
+				final_value = true;
+				return;
+			}
+
+			shift += 7;
+		}
+
+		//If more than 4 bytes, we will set value equal to 0
+		if(sign == 0)
+			curr_value = 0;
+		else
+			scurr_value = 0;
+
+		final_value = true;
 }
 
 void BlackboxParser::decodeTAG2_3S32(Stream &bb_stream, bool sign)
@@ -459,7 +539,7 @@ void BlackboxParser::decodeTAG8_4S16(Stream &bb_stream, bool sign)
 				break;
 			case FIELD_4BIT:
 				if (nibbleIndex == 0) {
-					buffer = bb_stream.popFromStream();
+					buffer = (uint8_t) bb_stream.popFromStream();
 					tag8_4s16_values[i] = signExtend4Bit(buffer >> 4);
 					nibbleIndex = 1;
 				} else {
@@ -512,6 +592,16 @@ void BlackboxParser::decodeTAG8_8SVB(Stream& bb_stream, bool sign)
 
 	//First an 8 bit header is written. The bits in this field all correspond
 	//to a field to be written (e.g. if LSB is 1 then first field will be non-zero).
+	/*uint8_t header = bb_stream.popFromStream();
+
+	for(int i = 0; i<tag8_8svb_fields; i++, header >>= 1)
+	{
+		tag8_8svb_values[i] = (header & 0x01) ? decodeSVB_tag8(bb_stream, sign) : 0;
+	}
+
+	final_value = true;
+	*/
+
 
 	//First - check LSB. If 1, then decode this byte and set to current field
 	if((header_bytes & (1 << 0)) == 1)

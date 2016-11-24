@@ -53,6 +53,7 @@ GpdmaManager::GpdmaManager(LPC_GPDMA_T *gpdma) {
 void GpdmaManager::init_driver(void) {
 	Chip_GPDMA_Init(this->gpdma_base);
 	NVIC_EnableIRQ(DMA_IRQn);
+	NVIC_SetPriority(DMA_IRQn, 7);
 }
 
 GpdmaChannel *GpdmaManager::allocate_channel(uint8_t channel_num) {

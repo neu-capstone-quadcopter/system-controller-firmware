@@ -117,7 +117,7 @@
  * recording is stopped when the buffer becomes full. This is useful for
  * recording events following a specific state, e.g., the startup sequence.
  *****************************************************************************/
-#define TRACE_RECORDER_STORE_MODE TRACE_STORE_MODE_STOP_WHEN_FULL
+#define TRACE_RECORDER_STORE_MODE TRACE_STORE_MODE_RING_BUFFER//TRACE_STORE_MODE_STOP_WHEN_FULL
 
 /*******************************************************************************
  * TRACE_SCHEDULING_ONLY
@@ -148,7 +148,7 @@
  * Default value is 1000, which means that 4000 bytes is allocated for the
  * event buffer.
  ******************************************************************************/
-#define EVENT_BUFFER_SIZE 1000
+#define EVENT_BUFFER_SIZE 2000
 
 /*******************************************************************************
  * NTask, NISR, NQueue, NSemaphore, NMutex

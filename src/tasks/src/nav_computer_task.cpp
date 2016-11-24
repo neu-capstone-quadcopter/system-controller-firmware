@@ -49,6 +49,7 @@ TimerHandle_t timer;
 GpdmaManager *dma_man;
 GpdmaChannel *dma_channel_tx;
 GpdmaChannel *dma_channel_rx;
+static SemaphoreHandle_t protobuff_semaphore;
 
 static monarcpb_SysCtrlToNavCPU current_frame;
 
@@ -58,6 +59,10 @@ static uint8_t nav_data_buffer[MAX_BUFFER_SIZE];
 
 auto read_len = dlgt::make_delegate(&read_len_handler);
 auto read_data = dlgt::make_delegate(&read_data_handler);
+
+traceLabel write_label;
+traceLabel read_len_label;
+traceLabel read_data_label;
 
 void start() {
 	nav_uart = hal::get_driver<UartIo>(hal::NAV_COMPUTER);
@@ -74,14 +79,19 @@ void start() {
 	}
 	xTaskCreate(task_loop, "nav computer", 800, NULL, 5, &task_handle);
 	nav_event_queue = xQueueCreate(EVENT_QUEUE_DEPTH, sizeof(nav_event_t));
+	protobuff_semaphore = xSemaphoreCreateBinary();
+	xSemaphoreGive(protobuff_semaphore);
 
-	//nav_uart->set_baud(230400);
+	// TODO: Use function for this
 	Chip_UART_EnableDivisorAccess(nav_uart->uart);
 	nav_uart->uart->FDR = 0xA3;
 	nav_uart->uart->DLL = 0x5;
 	nav_uart->uart->DLM = 0x0;
 	Chip_UART_DisableDivisorAccess(nav_uart->uart);
 
+	write_label = xTraceOpenLabel("NavWrite");
+	read_len_label = xTraceOpenLabel("NavReadLen");
+	read_data_label = xTraceOpenLabel("NavDataLen");
 }
 
 void initialize_timers() {
@@ -99,8 +109,10 @@ static void task_loop(void *p) {
 		switch (event.type) {
 		case LoopTriggerEvent::SEND_FRAME:
 			// Package and send data frame
+			xSemaphoreTake(protobuff_semaphore, 5);
 			serialize_and_send_frame(current_frame);
 			current_frame = monarcpb_SysCtrlToNavCPU_init_zero;
+			xSemaphoreGive(protobuff_semaphore);
 			break;
 		case LoopTriggerEvent::PROCESS_READ:
 			distribute_data(nav_data_buffer/*event.buffer*/, event.length);
@@ -155,7 +167,9 @@ void add_event_to_queue_from_ISR(nav_event_t event) {
 }
 
 void add_message_to_outgoing_frame(OutgoingNavComputerMessage &msg) {
+	xSemaphoreTake(protobuff_semaphore, 4);
 	msg.serialize_protobuf(current_frame);
+	xSemaphoreGive(protobuff_semaphore);
 }
 
 void write_to_uart(uint8_t *data, uint16_t len) {
@@ -189,6 +203,8 @@ void send_flight_controls(monarcpb_NavCPUToSysCtrl message) {
 }
 
 static void read_len_handler(UartError status, uint8_t *data, uint16_t len) {
+	vTraceUserEvent(read_len_label);
+
 	uint16_t sync;
 	if (USE_DMA)
 		sync = data[2] << 8 | data[1];
@@ -200,7 +216,7 @@ static void read_len_handler(UartError status, uint8_t *data, uint16_t len) {
 			nav_uart->read_async(HEADER_LEN, read_len);
 			xTimerDelete(xTimer, 10);
 		});
-		xTimerStart(timer_sync, 0);
+		xTimerStartFromISR(timer_sync, 0);
 		delete[] data;
 		return;
 	}
@@ -214,6 +230,8 @@ static void read_len_handler(UartError status, uint8_t *data, uint16_t len) {
 }
 
 static void read_data_handler(UartError status, uint8_t *data, uint16_t len) {
+	vTraceUserEvent(read_data_label);
+
 	nav_event_t event;
 	event.type = LoopTriggerEvent::PROCESS_READ;
 	memcpy(nav_data_buffer, data, len);
@@ -226,6 +244,8 @@ static void read_data_handler(UartError status, uint8_t *data, uint16_t len) {
 }
 
 static void timer_handler(TimerHandle_t xTimer) {
+	vTraceUserEvent(write_label);
+
 	nav_event_t event;
 	event.type = LoopTriggerEvent::SEND_FRAME;
 	add_event_to_queue_from_ISR(event);

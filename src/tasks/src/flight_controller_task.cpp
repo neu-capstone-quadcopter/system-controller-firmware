@@ -91,8 +91,6 @@ struct SBusFrame{
 
 static void task_loop(void *p);
 void setup_ritimer(void);
-void send_data(uint8_t *data);
-void write_to_sbus(uint8_t *data, uint8_t len);
 void fc_bb_read_handler(UartError status, uint8_t *data, uint16_t len);
 static void sbus_frame_written_handler(UartError status);
 
@@ -130,7 +128,8 @@ void start() {
 static void task_loop(void *p) {
 	fc_blackbox_uart->allocate_buffers(0,150);
 	fc_blackbox_uart->config_data_mode(UART_LCR_WLEN8, UART_LCR_PARITY_DIS, UART_LCR_SBS_1BIT);
-	fc_blackbox_uart->setFractionalBaud(0xED, 0x1B, 0x0);
+	//fc_blackbox_uart->setFractionalBaud(0xED, 0x1B, 0x0);
+	fc_blackbox_uart->set_baud(115200);
 	fc_blackbox_uart->enable_interrupts();
 
 	fc_sbus_uart->allocate_buffers(30, 0);
@@ -169,30 +168,12 @@ void set_frame_channel_cmd(uint8_t channel, uint16_t value) {
 	sbus_frame.channels[channel] = value & SBUS_CHANNEL_MASK;
 }
 
-void add_event_to_queue(flight_cont_event_t event) {
-	//xQueueSendToBack(flight_cont_event_queue, &event, 0);
-}
-
 void setup_ritimer(void) {
 	Chip_RIT_Init(LPC_RITIMER);
 	Chip_RIT_TimerDebugEnable(LPC_RITIMER);
 	Chip_RIT_SetTimerInterval(LPC_RITIMER, SBUS_INTERVAL_MS);
 	Chip_RIT_Enable(LPC_RITIMER);
 	NVIC_EnableIRQ(RITIMER_IRQn); // TODO: Make this a very high priority interrupt
-}
-
-//Modify this function to send flight command over
-//SBUS Interface
-void write_to_sbus(uint8_t *data, uint8_t len) {
-	//SBUS uses a 25 byte data frame
-	uint8_t buffer[25];
-
-	//Will need to accept a command from the nav computer
-	//in some predefined format which we will then send to SBUS
-
-	//Send over SBUS -- Uart2
-	fc_sbus_uart->write(data, 25);
-
 }
 
 void fc_bb_read_handler(UartError status, uint8_t *data, uint16_t len)
@@ -213,17 +194,6 @@ void fc_bb_read_handler(UartError status, uint8_t *data, uint16_t len)
 
 static void sbus_frame_written_handler(UartError status) {
 	// TODO: Check status
-}
-
-//This function will package up our data to then
-//send over our SBUS
-void send_data(uint8_t* data) {
-	static uint8_t buffer[MAX_BUFFER_SIZE];
-	memset(buffer, 0x00, MAX_BUFFER_SIZE);
-
-	uint8_t message_len = 0;
-	write_to_sbus(buffer, MAX_BUFFER_SIZE);
-	return;
 }
 } // End flight_controller_task namespace.
 

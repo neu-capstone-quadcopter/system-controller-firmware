@@ -123,12 +123,14 @@ public:
 
 	void uartInterruptHandler(void);
 
-	LPC_USART_T *uart;
+
 private:
 	IRQn_Type get_nvic_irq(void);
 	uint32_t get_tx_dmareq(void);
 	uint32_t get_rx_dmareq(void);
 	CHIP_SYSCTL_PCLK_T get_pclk(void);
+
+	LPC_USART_T *uart;
 
 	UartTransferMode transfer_mode;
 

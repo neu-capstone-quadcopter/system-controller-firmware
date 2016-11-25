@@ -80,12 +80,7 @@ void start() {
 	protobuff_semaphore = xSemaphoreCreateBinary();
 	xSemaphoreGive(protobuff_semaphore);
 
-	// TODO: Use function for this
-	Chip_UART_EnableDivisorAccess(nav_uart->uart);
-	nav_uart->uart->FDR = 0xA3;
-	nav_uart->uart->DLL = 0x5;
-	nav_uart->uart->DLM = 0x0;
-	Chip_UART_DisableDivisorAccess(nav_uart->uart);
+	nav_uart->set_baud_fractional(0xA3, 0x5, 0x0, SYSCTL_CLKDIV_4);
 }
 
 void initialize_timers() {

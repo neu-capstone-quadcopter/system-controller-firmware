@@ -14,7 +14,7 @@ public:
 	Stream();
 	void allocate();
 	uint8_t popFromStream();
-	void addToStream(uint8_t *data, uint8_t len);
+	void addToStream(uint8_t* data, uint8_t len, BaseType_t *woke_task);
 	bool streamIsEmpty();
 
 

@@ -158,7 +158,11 @@ UartError UartIo::write(const uint8_t* data, uint16_t length)
 		memcpy(const_cast<uint8_t*>(this->tx_buffer), data, length);
 
 		this->tx_dma_channel->register_callback([this](DmaError status){
-			xSemaphoreGiveFromISR(this->tx_transfer_semaphore, NULL);
+			BaseType_t task_woken = pdFALSE;
+			xSemaphoreGiveFromISR(this->tx_transfer_semaphore, &task_woken);
+			if(task_woken) {
+				vPortYield();
+			}
 		});
 		this->tx_dma_channel->start_transfer(
 				reinterpret_cast<uint32_t>(this->tx_buffer),
@@ -239,7 +243,11 @@ UartError UartIo::read(uint8_t* data, uint16_t length)
 		}
 
 		this->rx_dma_channel->register_callback([this](DmaError status){
-			xSemaphoreGiveFromISR(this->rx_transfer_semaphore, NULL);
+			BaseType_t task_woken = pdFALSE;
+			xSemaphoreGiveFromISR(this->rx_transfer_semaphore, &task_woken);
+			if(task_woken) {
+				vPortYield();
+			}
 		});
 		this->rx_dma_channel->start_transfer(
 				get_rx_dmareq(),
@@ -350,6 +358,8 @@ uint32_t UartIo::get_rx_dmareq(void) {
 }
 
 void UartIo::uartInterruptHandler(void){
+	BaseType_t task_woken = pdFALSE;
+
 	if(this->is_allocated) {
 		Chip_UART_IRQRBHandler(this->uart, &this->rx_ring, &this->tx_ring);
 
@@ -365,7 +375,8 @@ void UartIo::uartInterruptHandler(void){
 				(*this->rx_delegate)(UART_ERROR_NONE, data_cpy, this->rx_op_len);
 			}
 			else {
-				xSemaphoreGiveFromISR(this->rx_transfer_semaphore, NULL);
+
+				xSemaphoreGiveFromISR(this->rx_transfer_semaphore, &task_woken);
 			}
 		}
 
@@ -379,7 +390,7 @@ void UartIo::uartInterruptHandler(void){
 				(*this->tx_delegate)(UART_ERROR_NONE);
 			}
 			else {
-				xSemaphoreGiveFromISR(this->tx_transfer_semaphore, NULL);
+				xSemaphoreGiveFromISR(this->tx_transfer_semaphore, &task_woken);
 			}
 		}
 	}
@@ -387,6 +398,8 @@ void UartIo::uartInterruptHandler(void){
 		int y = this->uart->IIR;
 		int x = this->uart->RBR;
 		Chip_UART_ReadLineStatus(this->uart);
-		//disable_interrupts();
+	}
+	if(task_woken) {
+		vPortYield();
 	}
 }

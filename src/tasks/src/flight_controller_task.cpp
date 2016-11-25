@@ -178,18 +178,15 @@ void setup_ritimer(void) {
 
 void fc_bb_read_handler(UartError status, uint8_t *data, uint16_t len)
 {
+	BaseType_t task_woken = pdFALSE;
 
-		//Add data to stream
-		blackbox_stream.addToStream(data,len);
+	blackbox_stream.addToStream(data,len, &task_woken);
 
-		//Create read event
-		flight_cont_event_t e;
-		e.type = BLACKBOX_READ;
-		e.data = data;
+	fc_blackbox_uart->read_async(100, fc_bb_read_del);
 
-		//Add to the queue
-		//xQueueSendToBackFromISR(flight_cont_event_queue, &e, 0);
-		fc_blackbox_uart->read_async(100, fc_bb_read_del);
+	if(task_woken) {
+		vPortYield();
+	}
 }
 
 static void sbus_frame_written_handler(UartError status) {

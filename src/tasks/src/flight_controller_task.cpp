@@ -5,18 +5,21 @@
  *      Author: ncasale
  */
 
-#include "flight_controller_task.hpp"
-#include "hal.hpp"
-#include "uartio.hpp"
-#include "FreeRTOS.h"
-#include "task.h"
-#include "blackbox_parser.hpp"
-#include <stdlib.h>
+#include <cstdlib>
 #include <cstring>
 #include <cr_section_macros.h>
-#include <telemetry_parser2.hpp>
+
+#include "FreeRTOS.h"
+#include "task.h"
+
+#include "hal.hpp"
 
 #include "gpdma.hpp"
+#include "uartio.hpp"
+
+#include "telemetry_parser2.hpp"
+
+#include "flight_controller_task.hpp"
 
 #define EVENT_QUEUE_DEPTH 8
 #define MAX_BUFFER_SIZE 255
@@ -24,10 +27,10 @@
 
 namespace flight_controller_task {
 
-#define SBUS_CHANNEL_MASK 0x07ff
-#define SBUS_CHANNEL_BIT_LEN 11
-#define SBUS_CHANNEL_17 16
-#define SBUS_CHANNEL_18 17
+const uint16_t SBUS_CHANNEL_MASK = 0x07ff;
+const uint8_t SBUS_CHANNEL_BIT_LEN = 11;
+const uint8_t SBUS_CHANNEL_17 = 16;
+const uint8_t SBUS_CHANNEL_18 = 17;
 
 const uint8_t SBUS_INTERVAL_MS = 14;
 const uint8_t SBUS_FRAME_LEN = 25;
@@ -89,7 +92,9 @@ struct SBusFrame{
 };
 
 static void task_loop(void *p);
-static void setup_ritimer(void);
+static void init_telem_uart();
+static void init_sbus_uart();
+static void init_sbus_timer(void);
 static void telem_uart_read_handler(UartError status, uint8_t *data, uint16_t len);
 static void sbus_frame_written_handler(UartError status);
 
@@ -102,67 +107,70 @@ auto fc_bb_read_del = dlgt::make_delegate(&telem_uart_read_handler);
 auto sbus_written_del = dlgt::make_delegate(&sbus_frame_written_handler);
 
 GpdmaManager *dma_man;
-GpdmaChannel *sbus_dma_channel_tx;
-GpdmaChannel *sbus_dma_channel_rx;
-GpdmaChannel *blackbox_dma_channel_tx;
-GpdmaChannel *blackbox_dma_channel_rx;
 
 __BSS(RAM2)
 Stream blackbox_stream;
 
-TelemetryParser telem_parser;
-
 void start() {
-	telem_uart = hal::get_driver<UartIo>(hal::FC_BLACKBOX_UART);
+	dma_man = hal::get_driver<GpdmaManager>(hal::GPDMA_MAN); // TODO: Prioritize DMAs per usage requirements
+	telem_uart = hal::get_driver<UartIo>(hal::FC_TELEM_UART);
 	sbus_uart = hal::get_driver<UartIo>(hal::FC_SBUS_UART);
 	xTaskCreate(task_loop, "flight controller", 400, NULL, 2, &task_handle);
-
-	blackbox_stream.allocate();
-}
-
-static void task_loop(void *p) {
-	telem_uart->allocate_buffers(0,150);
-	telem_uart->config_data_mode(UART_LCR_WLEN8, UART_LCR_PARITY_DIS, UART_LCR_SBS_1BIT);
-	//fc_blackbox_uart->setFractionalBaud(0xED, 0x1B, 0x0);
-	telem_uart->set_baud(115200);
-	telem_uart->enable_interrupts();
-
-	sbus_uart->allocate_buffers(30, 0);
-	//fc_sbus_uart->set_baud(100000);
-	sbus_uart->setFractionalBaud(0x41, 0xC, 0x0); // Set baud rate to 100000
-	sbus_uart->enable_interrupts();
-	sbus_uart->config_data_mode(UART_LCR_WLEN8, UART_LCR_PARITY_EVEN, UART_LCR_SBS_2BIT);
-	dma_man = hal::get_driver<GpdmaManager>(hal::GPDMA_MAN);
-	sbus_dma_channel_tx = dma_man->allocate_channel(0); // TODO: Prioritize DMAs per usage requirements
-	sbus_dma_channel_rx = dma_man->allocate_channel(1);
-	blackbox_dma_channel_tx = dma_man->allocate_channel(4);
-	blackbox_dma_channel_rx = dma_man->allocate_channel(5);
-
-	// Enabled DMA (Optional)
-	sbus_uart->bind_dma_channels(sbus_dma_channel_tx, sbus_dma_channel_rx);
-	telem_uart->bind_dma_channels(blackbox_dma_channel_tx, blackbox_dma_channel_rx);
-	sbus_uart->set_transfer_mode(UART_XFER_MODE_DMA);
-	telem_uart->set_transfer_mode(UART_XFER_MODE_DMA);
-
-	//memset(sbus_frame.channels, 0, 18);
-	for(uint8_t i = 0; i< 18; i++) {
-		sbus_frame.channels[i] = 1500; //2040;
-	}
-	setup_ritimer();
-
-	//Checking for blackbox data on async basis
-	telem_uart->read_async(30, fc_bb_read_del);
-	for(;;) {
-		telem_parser.parseForData(blackbox_stream);
-
-	}
 }
 
 void set_frame_channel_cmd(uint8_t channel, uint16_t value) {
 	sbus_frame.channels[channel] = value & SBUS_CHANNEL_MASK;
 }
 
-void setup_ritimer(void) {
+static void task_loop(void *p) {
+	blackbox_stream.allocate();
+	init_telem_uart();
+	init_sbus_uart();
+
+	// Init SBUS Frame
+	for(uint8_t i = 0; i< 18; i++) {
+		sbus_frame.channels[i] = 1500;
+	}
+
+	init_sbus_timer();
+
+	// Kickoff async reads
+	telem_uart->read_async(30, fc_bb_read_del);
+
+	TelemetryParser telem_parser;
+	for(;;) {
+		telem_parser.parseForData(blackbox_stream);
+	}
+}
+
+static void init_telem_uart() {
+	telem_uart->allocate_buffers(0,150);
+	telem_uart->config_data_mode(UART_LCR_WLEN8, UART_LCR_PARITY_DIS, UART_LCR_SBS_1BIT);
+	telem_uart->set_baud_fractional(0xED, 0x1B, 0x0, SYSCTL_CLKDIV_1); // Set baud rate to 115200
+	//telem_uart->set_baud(115200);
+	telem_uart->enable_interrupts();
+
+	GpdmaChannel *blackbox_dma_channel_tx = dma_man->allocate_channel(4);
+	GpdmaChannel *blackbox_dma_channel_rx = dma_man->allocate_channel(5);
+
+	telem_uart->bind_dma_channels(blackbox_dma_channel_tx, blackbox_dma_channel_rx);
+	//telem_uart->set_transfer_mode(UART_XFER_MODE_DMA);
+}
+
+static void init_sbus_uart() {
+	sbus_uart->allocate_buffers(100, 0);
+	sbus_uart->set_baud_fractional(0x41, 0xC, 0x0, SYSCTL_CLKDIV_4); // Set baud rate to 100000
+	sbus_uart->enable_interrupts();
+	sbus_uart->config_data_mode(UART_LCR_WLEN8, UART_LCR_PARITY_EVEN, UART_LCR_SBS_2BIT);
+
+	GpdmaChannel *sbus_dma_channel_tx = dma_man->allocate_channel(0);
+	GpdmaChannel *sbus_dma_channel_rx = dma_man->allocate_channel(1);
+
+	sbus_uart->bind_dma_channels(sbus_dma_channel_tx, sbus_dma_channel_rx);
+	sbus_uart->set_transfer_mode(UART_XFER_MODE_DMA);
+}
+
+static void init_sbus_timer(void) {
 	Chip_RIT_Init(LPC_RITIMER);
 	Chip_RIT_TimerDebugEnable(LPC_RITIMER);
 	Chip_RIT_SetTimerInterval(LPC_RITIMER, SBUS_INTERVAL_MS);
@@ -170,13 +178,13 @@ void setup_ritimer(void) {
 	NVIC_EnableIRQ(RITIMER_IRQn); // TODO: Make this a very high priority interrupt
 }
 
-void telem_uart_read_handler(UartError status, uint8_t *data, uint16_t len)
+static void telem_uart_read_handler(UartError status, uint8_t *data, uint16_t len)
 {
 	BaseType_t task_woken = pdFALSE;
 
 	blackbox_stream.addToStream(data,len, &task_woken);
 
-	telem_uart->read_async(30, fc_bb_read_del);
+	telem_uart->read_async(100, fc_bb_read_del);
 
 	if(task_woken) {
 		vPortYield();

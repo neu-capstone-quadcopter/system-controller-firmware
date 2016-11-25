@@ -21,17 +21,6 @@
 #define DEFAULT_STOP_BIT UART_LCR_SBS_1BIT
 #define DEFAULT_TRANSFER_MODE UART_XFER_MODE_INTERRUPT
 
-
-
-void UartIo::setFractionalBaud(uint16_t fdr, uint16_t dll, uint16_t dlm)
-{
-	Chip_UART_EnableDivisorAccess(uart);
-	uart->FDR = fdr;
-	uart->DLL = dll;
-	uart->DLM = dlm;
-	Chip_UART_DisableDivisorAccess(uart);
-}
-
 UartIo::UartIo(LPC_USART_T *uart) {
 	this->uart = uart;
 	this->transfer_mode = DEFAULT_TRANSFER_MODE;
@@ -86,6 +75,17 @@ UartError UartIo::allocate_buffers(uint16_t tx_buffer_size, uint16_t rx_buffer_s
 void UartIo::set_baud(uint32_t baud) {
 	this->baud_rate = baud;
 	Chip_UART_SetBaud(this->uart, baud);
+}
+
+void UartIo::set_baud_fractional(uint16_t fdr, uint16_t dll, uint16_t dlm, CHIP_SYSCTL_CLKDIV_T pclk_div)
+{
+	Chip_UART_EnableDivisorAccess(uart);
+	uart->FDR = fdr;
+	uart->DLL = dll;
+	uart->DLM = dlm;
+	Chip_UART_DisableDivisorAccess(uart);
+
+	Chip_Clock_SetPCLKDiv(this->get_pclk(), pclk_div);
 }
 
 void UartIo::config_data_mode(uint32_t word_length, uint32_t parity, uint32_t stop_bits){
@@ -355,6 +355,23 @@ uint32_t UartIo::get_rx_dmareq(void) {
 		configASSERT(0);
 	}
 	return GPDMA_CONN_UART0_Rx;
+}
+
+CHIP_SYSCTL_PCLK_T UartIo::get_pclk(void) {
+	switch((uint32_t)this->uart)
+	{
+	case LPC_UART0_BASE:
+		return SYSCTL_PCLK_UART0;
+	case LPC_UART1_BASE:
+		return SYSCTL_PCLK_UART1;
+	case LPC_UART2_BASE:
+		return SYSCTL_PCLK_UART2;
+	case LPC_UART3_BASE:
+		return SYSCTL_PCLK_UART3;
+	default:
+		configASSERT(0);
+	}
+	return SYSCTL_PCLK_UART0;
 }
 
 void UartIo::uartInterruptHandler(void){

@@ -91,6 +91,8 @@ struct SBusFrame{
 	}
 };
 
+static const uint8_t STREAM_READ_LEN = 20;
+
 static void task_loop(void *p);
 static void init_telem_uart();
 static void init_sbus_uart();
@@ -135,7 +137,7 @@ static void task_loop(void *p) {
 	init_sbus_timer();
 
 	// Kickoff async reads
-	telem_uart->read_async(30, fc_bb_read_del);
+	telem_uart->read_async(STREAM_READ_LEN, fc_bb_read_del);
 
 	TelemetryParser telem_parser;
 	for(;;) {
@@ -182,7 +184,7 @@ static void telem_uart_read_handler(UartError status, uint8_t *data, uint16_t le
 
 	blackbox_stream.addToStream(data,len, &task_woken);
 
-	telem_uart->read_async(100, fc_bb_read_del);
+	telem_uart->read_async(STREAM_READ_LEN, fc_bb_read_del);
 
 	if(task_woken) {
 		vPortYield();

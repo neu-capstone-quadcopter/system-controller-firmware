@@ -21,6 +21,8 @@
 #define DEFAULT_STOP_BIT UART_LCR_SBS_1BIT
 #define DEFAULT_TRANSFER_MODE UART_XFER_MODE_INTERRUPT
 
+const uint8_t UART_FIFO_DEPTH = 16;
+
 UartIo::UartIo(LPC_USART_T *uart) {
 	this->uart = uart;
 	this->transfer_mode = DEFAULT_TRANSFER_MODE;
@@ -53,16 +55,9 @@ UartError UartIo::allocate_buffers(uint16_t tx_buffer_size, uint16_t rx_buffer_s
 	this->tx_buffer = new uint8_t[tx_buffer_size];
 	this->rx_buffer = new uint8_t[rx_buffer_size];
 
-	this->tx_buffer_ring = new uint8_t[tx_buffer_size];
-	this->rx_buffer_ring = new uint8_t[rx_buffer_size];
-
 	if(!this->tx_buffer || !this->rx_buffer) {
 		return UART_ERROR_MEMORY_ALLOCATION;
 	}
-
-	// TODO: Fuck this ring buffer shit
-	RingBuffer_Init(&this->tx_ring, this->tx_buffer_ring, 1, tx_buffer_size);
-	RingBuffer_Init(&this->rx_ring, this->rx_buffer_ring, 1, rx_buffer_size);
 
 	this->tx_buffer_len = tx_buffer_size;
 	this->rx_buffer_len = rx_buffer_size;
@@ -73,7 +68,6 @@ UartError UartIo::allocate_buffers(uint16_t tx_buffer_size, uint16_t rx_buffer_s
 }
 
 void UartIo::set_baud(uint32_t baud) {
-	this->baud_rate = baud;
 	Chip_UART_SetBaud(this->uart, baud);
 }
 
@@ -134,15 +128,18 @@ UartError UartIo::unbind_dma_channels(void) {
 
 UartError UartIo::write(const uint8_t* data, uint16_t length)
 {
+	this->tx_delegate = NULL;
 	this->tx_op_len = length;
+	this->tx_buffer_head_pos = 0;
+	memcpy(const_cast<uint8_t*>(this->tx_buffer), data, length);
 
 	switch(this->transfer_mode) {
 	case UART_XFER_MODE_POLLING:
 		// TODO: Maybe implement this lol
 		return UART_ERROR_GENERAL;
 	case UART_XFER_MODE_INTERRUPT:
-		this->is_writing = true;
-		Chip_UART_SendRB(this->uart, &this->tx_ring, data, length);
+		this->uart->IER |= UART_IER_THREINT;
+		this->fill_tx_fifo();
 		xSemaphoreTake(this->tx_transfer_semaphore, portMAX_DELAY);
 		return UART_ERROR_NONE;
 	case UART_XFER_MODE_DMA:
@@ -154,8 +151,6 @@ UartError UartIo::write(const uint8_t* data, uint16_t length)
 		if(length > this->tx_buffer_len) {
 			return UART_ERROR_BUFFER_OVERFLOW;
 		}
-
-		memcpy(const_cast<uint8_t*>(this->tx_buffer), data, length);
 
 		this->tx_dma_channel->register_callback([this](DmaError status){
 			BaseType_t task_woken = pdFALSE;
@@ -181,13 +176,14 @@ UartError UartIo::write(const uint8_t* data, uint16_t length)
 UartError UartIo::write_async(const uint8_t* data, uint16_t length, UartWriteDelegate& delegate) {
 	this->tx_delegate = &delegate;
 	this->tx_op_len = length;
+	this->tx_buffer_head_pos = 0;
+	memcpy(const_cast<uint8_t*>(this->tx_buffer), data, length);
 
 	switch(this->transfer_mode) {
 	case UART_XFER_MODE_INTERRUPT:
-		this->tx_delegate = &delegate;
-		this->is_writing = true;
-		this->is_write_async = true;
-		Chip_UART_SendRB(this->uart, &this->tx_ring, data, length);
+		this->uart->IER |= UART_IER_THREINT;
+		this->fill_tx_fifo();
+
 		return UART_ERROR_NONE;
 	case UART_XFER_MODE_DMA:
 	{
@@ -198,8 +194,6 @@ UartError UartIo::write_async(const uint8_t* data, uint16_t length, UartWriteDel
 		if(length > this->tx_buffer_len) {
 			return UART_ERROR_BUFFER_OVERFLOW;
 		}
-
-		memcpy(const_cast<uint8_t*>(this->tx_buffer), data, length);
 
 		this->tx_dma_channel->register_callback([this](DmaError status){
 			(*this->tx_delegate)(UART_ERROR_NONE);
@@ -220,6 +214,8 @@ UartError UartIo::write_async(const uint8_t* data, uint16_t length, UartWriteDel
 UartError UartIo::read(uint8_t* data, uint16_t length)
 {
 	this->rx_op_len = length;
+	this->rx_buffer_head_pos = 0;
+	this->rx_delegate = NULL;
 
 	switch(this->transfer_mode) {
 	case UART_XFER_MODE_POLLING:
@@ -227,9 +223,9 @@ UartError UartIo::read(uint8_t* data, uint16_t length)
 		return UART_ERROR_GENERAL;
 	case UART_XFER_MODE_INTERRUPT:
 	{
-		this->is_reading = true;
+		this->uart->IER |= UART_IER_RLSINT | UART_IER_RBRINT;
 		xSemaphoreTake(this->rx_transfer_semaphore, portMAX_DELAY);
-		Chip_UART_ReadRB(this->uart, &this->rx_ring, data, length);
+		memcpy(data, const_cast<uint8_t*>(this->rx_buffer), this->rx_buffer_head_pos);
 		return UART_ERROR_NONE;
 	}
 	case UART_XFER_MODE_DMA:
@@ -266,12 +262,12 @@ UartError UartIo::read(uint8_t* data, uint16_t length)
 UartError UartIo::read_async(uint16_t length, UartReadDelegate& delegate) {
 	this->rx_delegate = &delegate;
 	this->rx_op_len = length;
+	this->rx_buffer_head_pos = 0;
 
 	switch(this->transfer_mode) {
 	case UART_XFER_MODE_INTERRUPT:
 	{
-		this->is_reading = true;
-		this->is_read_async = true;
+		this->uart->IER |= UART_IER_RLSINT | UART_IER_RBRINT;
 		return UART_ERROR_NONE;
 	}
 	case UART_XFER_MODE_DMA:
@@ -287,8 +283,7 @@ UartError UartIo::read_async(uint16_t length, UartReadDelegate& delegate) {
 		this->rx_dma_channel->register_callback([this](DmaError status) {
 			uint8_t *data_cpy = new uint8_t[this->rx_op_len];
 			memcpy(data_cpy, const_cast<uint8_t*>(this->rx_buffer), this->rx_op_len);
-			(*this->rx_delegate)(UART_ERROR_NONE, data_cpy, this->rx_op_len);
-			//(*this->rx_delegate)(UART_ERROR_NONE, const_cast<uint8_t*>(this->rx_buffer), this->rx_op_len);
+			(*this->rx_delegate)(UART_ERROR_NONE, const_cast<uint8_t*>(this->rx_buffer), this->rx_op_len);
 		});
 
 		//this->uart->FCR |= UART_FCR_RX_RS;
@@ -304,6 +299,19 @@ UartError UartIo::read_async(uint16_t length, UartReadDelegate& delegate) {
 		configASSERT(0);
 	}
 	return UART_ERROR_GENERAL;
+}
+
+void UartIo::fill_tx_fifo(void) {
+	if(this->uart->LSR & UART_LSR_THRE) { // If TX Fifo is empty
+		for(uint8_t i; i < UART_FIFO_DEPTH; i++) {
+			if(this->tx_buffer_head_pos < this->tx_op_len) {
+				this->uart->THR = this->tx_buffer[this->tx_buffer_head_pos++];
+			}
+			else {
+				break;
+			}
+		}
+	}
 }
 
 IRQn_Type UartIo::get_nvic_irq(void){
@@ -377,45 +385,62 @@ CHIP_SYSCTL_PCLK_T UartIo::get_pclk(void) {
 void UartIo::uartInterruptHandler(void){
 	BaseType_t task_woken = pdFALSE;
 
-	if(this->is_allocated) {
-		Chip_UART_IRQRBHandler(this->uart, &this->rx_ring, &this->tx_ring);
+	switch(this->uart->IIR & UART_IIR_INTID_MASK) {
+	case UART_IIR_INTID_THRE:
+	{
+		// Interrupt type was THRE
+		this->fill_tx_fifo();
 
-		if(RingBuffer_GetCount(&this->rx_ring) >= this->rx_op_len && this->is_reading) {
-			this->is_reading = false;
+		if(this->tx_buffer_head_pos >= this->tx_op_len) {
+			// Write is over
+			this->uart->IER &= ~UART_IER_THREINT;
 
-			if(this->is_read_async) {
-				this->is_read_async = false;
-
-				Chip_UART_ReadRB(this->uart, &this->rx_ring, const_cast<uint8_t*>(this->rx_buffer), this->rx_op_len);
-				uint8_t *data_cpy = new uint8_t[this->rx_op_len];
-				memcpy(data_cpy, const_cast<uint8_t*>(this->rx_buffer), this->rx_op_len);
-				(*this->rx_delegate)(UART_ERROR_NONE, data_cpy, this->rx_op_len);
-			}
-			else {
-
-				xSemaphoreGiveFromISR(this->rx_transfer_semaphore, &task_woken);
-			}
-		}
-
-		if(RingBuffer_IsEmpty(&this->tx_ring) && this->is_writing)
-		{
-			this->is_writing = false;
-
-			if(this->is_write_async) {
-				this->is_write_async = false;
-
+			if(this->tx_delegate) {
+				// Async Write
 				(*this->tx_delegate)(UART_ERROR_NONE);
 			}
 			else {
+				// Sync write
 				xSemaphoreGiveFromISR(this->tx_transfer_semaphore, &task_woken);
 			}
 		}
+		break;
 	}
-	else {
-		int y = this->uart->IIR;
-		int x = this->uart->RBR;
-		Chip_UART_ReadLineStatus(this->uart);
+	case UART_IIR_INTID_RLS:
+	{
+		// RLS interrupt occured, some sort of error occured
+		// TODO: Handle error somehow
+		break;
 	}
+	case UART_IIR_INTID_RDA: case UART_IIR_INTID_CTI:
+	{
+		while(this->uart->LSR & UART_LSR_RDR) {
+			if(this->rx_buffer_head_pos < this->rx_op_len) {
+				this->rx_buffer[this->rx_buffer_head_pos++] = this->uart->RBR;
+			}
+			else {
+				break;
+			}
+
+		}
+
+		if(this->rx_buffer_head_pos >= this->rx_op_len) {
+			// Read is over
+			this->uart->IER &= ~(UART_IER_RBRINT | UART_IER_RLSINT);
+
+			if(this->rx_delegate) {
+				// Async read
+				(*this->rx_delegate)(UART_ERROR_NONE, const_cast<uint8_t*>(this->rx_buffer), this->rx_op_len);
+			}
+			else {
+				// Sync read
+				xSemaphoreGiveFromISR(this->rx_transfer_semaphore, &task_woken);
+			}
+		}
+		break;
+	}
+	}
+
 	if(task_woken) {
 		vPortYield();
 	}

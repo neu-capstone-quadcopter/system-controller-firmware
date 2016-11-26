@@ -65,7 +65,7 @@ auto read_data = dlgt::make_delegate(&read_data_handler);
 void start() {
 	nav_uart = hal::get_driver<UartIo>(hal::NAV_COMPUTER);
 	nav_uart->allocate_buffers(128, 128);
-	nav_uart->enable_interrupts();
+	//nav_uart->enable_interrupts();
 	dma_man = hal::get_driver<GpdmaManager>(hal::GPDMA_MAN);
 	dma_channel_tx = dma_man->allocate_channel(2);
 	dma_channel_rx = dma_man->allocate_channel(3);
@@ -98,7 +98,7 @@ static void task_loop(void *p) {
 		switch (event.type) {
 		case LoopTriggerEvent::SEND_FRAME:
 			// Package and send data frame
-			xSemaphoreTake(protobuff_semaphore, 5);
+			xSemaphoreTake(protobuff_semaphore, 1);
 			serialize_and_send_frame(current_frame);
 			current_frame = monarcpb_SysCtrlToNavCPU_init_zero;
 			xSemaphoreGive(protobuff_semaphore);

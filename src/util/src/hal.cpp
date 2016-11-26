@@ -34,6 +34,8 @@ namespace hal {
 
 		// Initialize all drivers
 		for(int i = 0; i < NUM_IDENTIFIERS; i++) {
+			if(i == ULTRASONIC_ALTIMETER)
+				continue;
 			drivers[i]->init_driver();
 		}
 	}
@@ -65,7 +67,7 @@ namespace hal {
 		drivers[LED_1] = led_1;
 #else
 		drivers[LOAD_SWITCH] = load_switch;
-		drivers[ULTRASONIC_ALTIMETER] = ultrasonic_altimeter;
+		//drivers[ULTRASONIC_ALTIMETER] = ultrasonic_altimeter;
 #endif
 		drivers[SENSOR_ADC] = adc;
 		drivers[CD74HC4067] = adc_mux;

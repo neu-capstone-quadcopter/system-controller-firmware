@@ -42,8 +42,8 @@ int main(void) {
 	//telemetry_radio_task::start();
 	//sensor_task::start();
 	console_task::start();
-	nav_computer_task::start();
-	flight_controller_task::start();
+	//nav_computer_task::start();
+	//flight_controller_task::start();
 
 	uiTraceStart();
 

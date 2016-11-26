@@ -125,6 +125,7 @@ public:
 
 
 private:
+	void fill_tx_fifo(void);
 	IRQn_Type get_nvic_irq(void);
 	uint32_t get_tx_dmareq(void);
 	uint32_t get_rx_dmareq(void);
@@ -146,20 +147,17 @@ private:
 	bool is_read_async = false;
 	bool is_allocated = false;
 
-	uint32_t baud_rate;
-	RINGBUFF_T tx_ring;
-	RINGBUFF_T rx_ring;
 	uint8_t volatile *tx_buffer;
 	uint8_t volatile *rx_buffer;
-	uint8_t *tx_buffer_ring;
-	uint8_t *rx_buffer_ring;
 	uint16_t tx_buffer_len;
 	uint16_t rx_buffer_len;
 	uint16_t tx_op_len;
 	uint16_t rx_op_len;
+	volatile uint16_t tx_buffer_head_pos;
+	volatile uint16_t rx_buffer_head_pos;
 
-	UartReadDelegate *rx_delegate;
-	UartWriteDelegate *tx_delegate;
+	UartReadDelegate *rx_delegate = NULL;
+	UartWriteDelegate *tx_delegate = NULL;
 };
 
 

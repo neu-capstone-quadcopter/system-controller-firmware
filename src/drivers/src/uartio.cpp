@@ -216,6 +216,7 @@ UartError UartIo::read(uint8_t* data, uint16_t length)
 	this->rx_op_len = length;
 	this->rx_buffer_head_pos = 0;
 	this->rx_delegate = NULL;
+	this->rx_status = UART_ERROR_NONE;
 
 	switch(this->transfer_mode) {
 	case UART_XFER_MODE_POLLING:
@@ -263,6 +264,7 @@ UartError UartIo::read_async(uint16_t length, UartReadDelegate& delegate) {
 	this->rx_delegate = &delegate;
 	this->rx_op_len = length;
 	this->rx_buffer_head_pos = 0;
+	this->rx_status = UART_ERROR_NONE;
 
 	switch(this->transfer_mode) {
 	case UART_XFER_MODE_INTERRUPT:
@@ -410,6 +412,17 @@ void UartIo::uartInterruptHandler(void){
 	{
 		// RLS interrupt occured, some sort of error occured
 		// TODO: Handle error somehow
+		if(this->uart->LSR & UART_LSR_RXFE) {
+			if(this->rx_delegate) {
+				// Async read
+				(*this->rx_delegate)(UART_ERROR_GENERAL, const_cast<uint8_t*>(this->rx_buffer), this->rx_op_len);
+			}
+			else {
+				// Sync read
+				xSemaphoreGiveFromISR(this->rx_transfer_semaphore, &task_woken);
+				this->rx_status = UART_ERROR_NONE;
+			}
+		}
 		break;
 	}
 	case UART_IIR_INTID_RDA: case UART_IIR_INTID_CTI:

@@ -33,7 +33,8 @@ enum UartError {
 	UART_ERROR_NO_DMA_CHANNEL,
 	UART_ERROR_MEMORY_ALLOCATION,
 	UART_ERROR_DMA_IN_USE,
-	UART_ERROR_BUFFER_OVERFLOW
+	UART_ERROR_BUFFER_OVERFLOW,
+	UART_ERROR_FRAMING_ERROR,
 };
 
 typedef dlgt::delegate<void(*)(UartError, uint8_t*, uint16_t)> UartReadDelegate;
@@ -158,6 +159,9 @@ private:
 
 	UartReadDelegate *rx_delegate = NULL;
 	UartWriteDelegate *tx_delegate = NULL;
+
+	UartError tx_status;
+	UartError rx_status;
 };
 
 

@@ -148,7 +148,6 @@ static void init_telem_uart() {
 	telem_uart->config_data_mode(UART_LCR_WLEN8, UART_LCR_PARITY_DIS, UART_LCR_SBS_1BIT);
 	telem_uart->set_baud_fractional(0xED, 0x1B, 0x0, SYSCTL_CLKDIV_1); // Set baud rate to 115200
 	//telem_uart->set_baud(115200);
-	//telem_uart->enable_interrupts();
 
 	GpdmaChannel *blackbox_dma_channel_tx = dma_man->allocate_channel(4);
 	GpdmaChannel *blackbox_dma_channel_rx = dma_man->allocate_channel(5);
@@ -160,7 +159,6 @@ static void init_telem_uart() {
 static void init_sbus_uart() {
 	sbus_uart->allocate_buffers(100, 0);
 	sbus_uart->set_baud_fractional(0x41, 0xC, 0x0, SYSCTL_CLKDIV_4); // Set baud rate to 100000
-	//sbus_uart->enable_interrupts();
 	sbus_uart->config_data_mode(UART_LCR_WLEN8, UART_LCR_PARITY_EVEN, UART_LCR_SBS_2BIT);
 
 	GpdmaChannel *sbus_dma_channel_tx = dma_man->allocate_channel(0);

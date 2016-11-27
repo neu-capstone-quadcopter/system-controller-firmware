@@ -29,6 +29,8 @@
 
 namespace nav_computer_task {
 
+const uint16_t SYNC_BYTES = 0x91D3;
+
 static void task_loop(void *p);
 //void send_data(sensor_task::adc_values_t data);
 //void package_data(sensor_task::adc_values_t data, monarcpb_SysCtrlToNavCPU &message);
@@ -60,14 +62,9 @@ static uint8_t nav_data_buffer[MAX_BUFFER_SIZE];
 auto read_len = dlgt::make_delegate(&read_len_handler);
 auto read_data = dlgt::make_delegate(&read_data_handler);
 
-traceLabel write_label;
-traceLabel read_len_label;
-traceLabel read_data_label;
-
 void start() {
 	nav_uart = hal::get_driver<UartIo>(hal::NAV_COMPUTER);
 	nav_uart->allocate_buffers(128, 128);
-	nav_uart->enable_interrupts();
 	dma_man = hal::get_driver<GpdmaManager>(hal::GPDMA_MAN);
 	dma_channel_tx = dma_man->allocate_channel(2);
 	dma_channel_rx = dma_man->allocate_channel(3);
@@ -82,20 +79,11 @@ void start() {
 	protobuff_semaphore = xSemaphoreCreateBinary();
 	xSemaphoreGive(protobuff_semaphore);
 
-	// TODO: Use function for this
-	Chip_UART_EnableDivisorAccess(nav_uart->uart);
-	nav_uart->uart->FDR = 0xA3;
-	nav_uart->uart->DLL = 0x5;
-	nav_uart->uart->DLM = 0x0;
-	Chip_UART_DisableDivisorAccess(nav_uart->uart);
-
-	write_label = xTraceOpenLabel("NavWrite");
-	read_len_label = xTraceOpenLabel("NavReadLen");
-	read_data_label = xTraceOpenLabel("NavDataLen");
+	nav_uart->set_baud_fractional(0xA3, 0x5, 0x0, SYSCTL_CLKDIV_4);
 }
 
 void initialize_timers() {
-	timer = xTimerCreate("NavTimer", 3, pdTRUE, NULL, timer_handler);
+	timer = xTimerCreate("NavTimer", 10, pdTRUE, NULL, timer_handler);
 	xTimerStart(timer, 0);
 }
 
@@ -109,7 +97,7 @@ static void task_loop(void *p) {
 		switch (event.type) {
 		case LoopTriggerEvent::SEND_FRAME:
 			// Package and send data frame
-			xSemaphoreTake(protobuff_semaphore, 5);
+			xSemaphoreTake(protobuff_semaphore, 1);
 			serialize_and_send_frame(current_frame);
 			current_frame = monarcpb_SysCtrlToNavCPU_init_zero;
 			xSemaphoreGive(protobuff_semaphore);
@@ -124,59 +112,34 @@ static void task_loop(void *p) {
 }
 
 void serialize_and_send_frame(monarcpb_SysCtrlToNavCPU frame) {
-	/*
-	frame.has_telemetry = true;
-	frame.telemetry.has_accelerometer = true;
-	frame.telemetry.accelerometer.has_x = true;
-	frame.telemetry.accelerometer.x = 17;
-	frame.telemetry.accelerometer.has_y = true;
-	frame.telemetry.accelerometer.y = 18;
-	frame.telemetry.accelerometer.has_z = true;
-	frame.telemetry.accelerometer.z = 19;
+	const uint8_t DATA_OFFSET = 4;
 
-	frame.telemetry.has_magnetometer = true;
-	frame.telemetry.magnetometer.has_x = true;
-	frame.telemetry.magnetometer.x = 34;
-	frame.telemetry.magnetometer.has_y = true;
-	frame.telemetry.magnetometer.y = 35;
-	frame.telemetry.magnetometer.has_z = true;
-	frame.telemetry.magnetometer.z = 36;
-
-	frame.telemetry.has_gyroscope = true;
-	frame.telemetry.gyroscope.has_x = true;
-	frame.telemetry.gyroscope.x = 69;
-	frame.telemetry.gyroscope.has_y = true;
-	frame.telemetry.gyroscope.y = 69;
-	frame.telemetry.gyroscope.has_z = true;
-	frame.telemetry.gyroscope.z = 69;
-	*/
-
-	pb_ostream_t stream = pb_ostream_from_buffer(serialization_buffer, MAX_BUFFER_SIZE);//sizeof(serialization_buffer));
+	pb_ostream_t stream = pb_ostream_from_buffer(serialization_buffer + DATA_OFFSET, MAX_BUFFER_SIZE - DATA_OFFSET);
 	pb_encode(&stream, monarcpb_SysCtrlToNavCPU_fields, &frame);
 
-	write_to_uart(serialization_buffer, stream.bytes_written);
-	return;
+	serialization_buffer[0] = static_cast<uint8_t>(SYNC_BYTES);
+	serialization_buffer[1] = static_cast<uint8_t>(SYNC_BYTES >> 8);
+	serialization_buffer[2] = stream.bytes_written;
+	serialization_buffer[3] = stream.bytes_written >> 8;
+	nav_uart->write(serialization_buffer, stream.bytes_written + DATA_OFFSET);
 }
 
 void add_event_to_queue(nav_event_t event) {
 	xQueueSendToBack(nav_event_queue, &event, 0);
 }
 
-void add_event_to_queue_from_ISR(nav_event_t event) {
-	xQueueSendToBackFromISR(nav_event_queue, &event, 0);
+void add_event_to_queue_isr(nav_event_t event) {
+	BaseType_t task_woken = pdFALSE;
+	xQueueSendToBackFromISR(nav_event_queue, &event, &task_woken);
+	if(task_woken) {
+		vPortYield();
+	}
 }
 
 void add_message_to_outgoing_frame(OutgoingNavComputerMessage &msg) {
 	xSemaphoreTake(protobuff_semaphore, 4);
 	msg.serialize_protobuf(current_frame);
 	xSemaphoreGive(protobuff_semaphore);
-}
-
-void write_to_uart(uint8_t *data, uint16_t len) {
-	uint16_t sync_bytes = 0x91D3;
-	nav_uart->write((uint8_t*) &sync_bytes, 2);
-	nav_uart->write((uint8_t*) &len, 2);
-	nav_uart->write(data, (uint8_t) len);
 }
 
 void distribute_data(uint8_t* data, uint16_t length) {
@@ -203,15 +166,13 @@ void send_flight_controls(monarcpb_NavCPUToSysCtrl message) {
 }
 
 static void read_len_handler(UartError status, uint8_t *data, uint16_t len) {
-	vTraceUserEvent(read_len_label);
-
 	uint16_t sync;
 	if (USE_DMA)
 		sync = data[2] << 8 | data[1];
 	else
 		sync = data[1] << 8 | data[0];
 
-	if (sync != 0x91D3) {
+	if (sync != SYNC_BYTES) {
 		TimerHandle_t timer_sync = xTimerCreate("SyncTimer", 1, pdTRUE, NULL, [](TimerHandle_t xTimer) {
 			nav_uart->read_async(HEADER_LEN, read_len);
 			xTimerDelete(xTimer, 10);
@@ -230,25 +191,21 @@ static void read_len_handler(UartError status, uint8_t *data, uint16_t len) {
 }
 
 static void read_data_handler(UartError status, uint8_t *data, uint16_t len) {
-	vTraceUserEvent(read_data_label);
-
 	nav_event_t event;
 	event.type = LoopTriggerEvent::PROCESS_READ;
 	memcpy(nav_data_buffer, data, len);
 	//event.buffer = data;
 	event.length = len;
-	add_event_to_queue_from_ISR(event);
+	add_event_to_queue_isr(event);
 
 	nav_uart->read_async(HEADER_LEN, read_len);
 	delete[] data;
 }
 
 static void timer_handler(TimerHandle_t xTimer) {
-	vTraceUserEvent(write_label);
-
 	nav_event_t event;
 	event.type = LoopTriggerEvent::SEND_FRAME;
-	add_event_to_queue_from_ISR(event);
+	add_event_to_queue_isr(event);
 }
 
 

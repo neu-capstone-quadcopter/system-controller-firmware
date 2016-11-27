@@ -62,8 +62,8 @@ namespace console_task {
 	void start(void) {
 		// Retrieve driver instances from HAL
 		uart = hal::get_driver<UartIo>(hal::CONSOLE_UART);
-		uart->allocate_buffers(128, 32);
-		uart->enable_interrupts();
+		uart->allocate_buffers(MAX_COMMAND_OUTPUT_SIZE, 32);
+		//uart->enable_interrupts();
 
 		//Instantiate Queue
 		event_queue = xQueueCreate(EVENT_QUEUE_DEPTH, sizeof(Event));
@@ -74,7 +74,7 @@ namespace console_task {
 	static void task_loop(void *p) {
 		Event current_event;
 
-		const char *header = "Hello bitches ;)\r\n";
+		const char *header = "Monarc System Controller Console\r\nPlease enter a command\r\n";
 		uart->write((uint8_t*)(header), strlen(header));
 		uart->read_async(1, uart_read_del);
 		for(;;) {
@@ -151,9 +151,13 @@ namespace console_task {
 		e.length = 1;
 
 		e.data[0] = data[0];
-		xQueueSendToBackFromISR(event_queue, &e, 0);
+		BaseType_t task_woken = pdFALSE;
+		xQueueSendToBackFromISR(event_queue, &e, &task_woken);
 		uart->read_async(1, uart_read_del);
-		delete[] data;
+
+		if(task_woken) {
+			vPortYield();
+		}
 	}
 
 	void send_debug_message(uint8_t *data, size_t length)

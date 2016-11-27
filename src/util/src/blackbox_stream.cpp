@@ -28,7 +28,7 @@
 		return read_ptr == write_ptr;
 	}
 
-	void Stream::addToStream(uint8_t* data, uint8_t len)
+	void Stream::addToStream(uint8_t* data, uint8_t len, BaseType_t *woke_task)
 	{
 
 		if(len >= STREAM_BUFFER_SIZE)
@@ -53,7 +53,7 @@
 		}
 
 		delete[] data;
-		xSemaphoreGiveFromISR(stream_read_semaphore, NULL);
+		xSemaphoreGiveFromISR(stream_read_semaphore, woke_task);
 	}
 
 	uint8_t Stream::popFromStream()

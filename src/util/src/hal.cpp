@@ -34,7 +34,9 @@ namespace hal {
 
 		// Initialize all drivers
 		for(int i = 0; i < NUM_IDENTIFIERS; i++) {
-			drivers[i]->init_driver();
+			if(drivers[i]) {
+				drivers[i]->init_driver();
+			}
 		}
 	}
 
@@ -70,7 +72,7 @@ namespace hal {
 		drivers[SENSOR_ADC] = adc;
 		drivers[CD74HC4067] = adc_mux;
 		drivers[NAV_COMPUTER] = nav_computer;
-		drivers[FC_BLACKBOX_UART] = fc_blackbox_uart;
+		drivers[FC_TELEM_UART] = fc_blackbox_uart;
 		drivers[FC_SBUS_UART] = fc_sbus_uart;
 		drivers[TELEM_CC1120] = telem_cc1120;
 		drivers[CONSOLE_UART] = console_uart;
@@ -114,7 +116,7 @@ extern "C" {
 	}
 
 	void UART0_IRQHandler(void){
-		static_cast<UartIo*>(drivers[FC_BLACKBOX_UART])->uartInterruptHandler();
+		static_cast<UartIo*>(drivers[FC_TELEM_UART])->uartInterruptHandler();
 	}
 #else
 	void SSP1_IRQHandler() {
@@ -134,7 +136,7 @@ extern "C" {
 	}
 
 	void UART3_IRQHandler(void){
-		static_cast<UartIo*>(drivers[FC_BLACKBOX_UART])->uartInterruptHandler();
+		static_cast<UartIo*>(drivers[FC_TELEM_UART])->uartInterruptHandler();
 	}
 	void TIMER0_IRQHandler(void) {
 		static_cast<Mb1240*>(drivers[ULTRASONIC_ALTIMETER])->timer_interrupt_handler();

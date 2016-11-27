@@ -33,7 +33,8 @@ enum UartError {
 	UART_ERROR_NO_DMA_CHANNEL,
 	UART_ERROR_MEMORY_ALLOCATION,
 	UART_ERROR_DMA_IN_USE,
-	UART_ERROR_BUFFER_OVERFLOW
+	UART_ERROR_BUFFER_OVERFLOW,
+	UART_ERROR_FRAMING_ERROR,
 };
 
 typedef dlgt::delegate<void(*)(UartError, uint8_t*, uint16_t)> UartReadDelegate;
@@ -44,7 +45,7 @@ public:
 	UartIo(LPC_USART_T *uart);
 	void init_driver(void);
 
-	void setFractionalBaud(uint16_t fdr, uint16_t dll, uint16_t dlm);
+
 	void enable_interrupts();
 
 	/*
@@ -64,6 +65,8 @@ public:
 	 * @return none
 	 */
 	void set_baud(uint32_t baud);
+
+	void set_baud_fractional(uint16_t fdr, uint16_t dll, uint16_t dlm, CHIP_SYSCTL_CLKDIV_T pclk_div);
 
 	/*
 	 * @brief Configure the mode in switch the uart sends data
@@ -121,11 +124,15 @@ public:
 
 	void uartInterruptHandler(void);
 
-	LPC_USART_T *uart;
+
 private:
+	void fill_tx_fifo(void);
 	IRQn_Type get_nvic_irq(void);
 	uint32_t get_tx_dmareq(void);
 	uint32_t get_rx_dmareq(void);
+	CHIP_SYSCTL_PCLK_T get_pclk(void);
+
+	LPC_USART_T *uart;
 
 	UartTransferMode transfer_mode;
 
@@ -141,20 +148,20 @@ private:
 	bool is_read_async = false;
 	bool is_allocated = false;
 
-	uint32_t baud_rate;
-	RINGBUFF_T tx_ring;
-	RINGBUFF_T rx_ring;
 	uint8_t volatile *tx_buffer;
 	uint8_t volatile *rx_buffer;
-	uint8_t *tx_buffer_ring;
-	uint8_t *rx_buffer_ring;
 	uint16_t tx_buffer_len;
 	uint16_t rx_buffer_len;
 	uint16_t tx_op_len;
 	uint16_t rx_op_len;
+	volatile uint16_t tx_buffer_head_pos;
+	volatile uint16_t rx_buffer_head_pos;
 
-	UartReadDelegate *rx_delegate;
-	UartWriteDelegate *tx_delegate;
+	UartReadDelegate *rx_delegate = NULL;
+	UartWriteDelegate *tx_delegate = NULL;
+
+	UartError tx_status;
+	UartError rx_status;
 };
 
 

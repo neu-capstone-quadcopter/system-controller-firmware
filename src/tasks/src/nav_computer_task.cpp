@@ -87,8 +87,23 @@ void initialize_timers() {
 	xTimerStart(timer, 0);
 }
 
+void initialize_wdt() {
+	Chip_WWDT_Init(LPC_WWDT);
+
+	// Set WDT timeout to 100 ticks.
+	Chip_WWDT_SetTimeOut(LPC_WWDT, 100);
+	// Reset WDT on timeout.
+	Chip_WWDT_SetOption(LPC_WWDT, WWDT_WDMOD_WDRESET);
+	Chip_WWDT_ClearStatusFlag(LPC_WWDT, WWDT_WDMOD_WDTOF | WWDT_WDMOD_WDINT);
+	Chip_WWDT_Start(LPC_WWDT);
+
+	NVIC_ClearPendingIRQ(WDT_IRQn);
+	NVIC_EnableIRQ(WDT_IRQn);
+}
+
 static void task_loop(void *p) {
 	initialize_timers();
+	initialize_wdt();
 	nav_uart->read_async(HEADER_LEN, read_len);
 	current_frame = monarcpb_SysCtrlToNavCPU_init_zero;
 	nav_event_t event;
@@ -122,6 +137,9 @@ void serialize_and_send_frame(monarcpb_SysCtrlToNavCPU frame) {
 	serialization_buffer[2] = stream.bytes_written;
 	serialization_buffer[3] = stream.bytes_written >> 8;
 	nav_uart->write(serialization_buffer, stream.bytes_written + DATA_OFFSET);
+
+	// Feed the Watchdog Timer
+	Chip_WWDT_Feed(LPC_WWDT);
 }
 
 void add_event_to_queue(nav_event_t event) {
@@ -208,6 +226,9 @@ static void timer_handler(TimerHandle_t xTimer) {
 	add_event_to_queue_isr(event);
 }
 
+void WDT_IRQHandler(void) {
+	// This is where we would increment the counter.
+}
 
 } // End nav_computer_task namespace.
 

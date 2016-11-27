@@ -36,6 +36,10 @@ int main(void) {
 	vTraceInitTraceData();
 	hal::init();
 
+	// Enable PWM Output
+	Chip_GPIO_SetDir(LPC_GPIO, FLTCTL_PWM_EN_PORT, FLTCTL_PWM_EN_PIN, true);
+	Chip_GPIO_SetPinState(LPC_GPIO, FLTCTL_PWM_EN_PORT, FLTCTL_PWM_EN_PIN, false);
+
 #ifdef IS_DEBUG_BOARD
 	led_task::start();
 #endif

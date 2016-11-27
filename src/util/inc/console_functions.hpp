@@ -143,16 +143,16 @@ namespace console_task {
 		uiTraceStart();
 	}
 #ifndef IS_DEBUG_BOARD
-	void set_navcmp_load_switch(char* output_string, uint8_t argc, char** argv)
+	void set_navcmp_pwr(char* output_string, uint8_t argc, char** argv)
 	{
 		if(argc == 2) {
 			bool state;
-			if(!strcmp(argv[1],"enable"))
+			if(!strcmp(argv[1],"on"))
 				state = true;
-			else if(!strcmp(argv[1],"disable"))
+			else if(!strcmp(argv[1],"off"))
 				state = false;
 			else {
-				strcpy(output_string, "Invalid Parameter -- options: \'enable\' or \'disable\'...\r\n");
+				strcpy(output_string, "Invalid Parameter -- options: \'on\' or \'off\'...\r\n");
 				return;
 			}
 			LoadSwitch *load_switch = hal::get_driver<LoadSwitch>(hal::LOAD_SWITCH);
@@ -162,16 +162,16 @@ namespace console_task {
 			strcpy(output_string, NOT_ENOUGH_ARGS_STR);
 	}
 
-	void set_fltctl_load_switch(char* output_string, uint8_t argc, char** argv)
+	void set_fltctl_pwr(char* output_string, uint8_t argc, char** argv)
 	{
 		if(argc == 2) {
 			bool state;
-			if(!strcmp(argv[1],"enable"))
+			if(!strcmp(argv[1],"on"))
 				state = true;
-			else if(!strcmp(argv[1],"disable"))
+			else if(!strcmp(argv[1],"off"))
 				state = false;
 			else {
-				strcpy(output_string, "Invalid Parameter -- options: \'enable\' or \'disable\'...\r\n");
+				strcpy(output_string, "Invalid Parameter -- options: \'on\' or \'off\'...\r\n");
 				return;
 			}
 			LoadSwitch *load_switch = hal::get_driver<LoadSwitch>(hal::LOAD_SWITCH);
@@ -181,16 +181,16 @@ namespace console_task {
 			strcpy(output_string, NOT_ENOUGH_ARGS_STR);
 	}
 
-	void set_gps_load_switch(char* output_string, uint8_t argc, char** argv)
+	void set_gps_pwr(char* output_string, uint8_t argc, char** argv)
 	{
 		if(argc == 2) {
 			bool state;
-			if(!strcmp(argv[1],"enable"))
+			if(!strcmp(argv[1],"on"))
 				state = true;
-			else if(!strcmp(argv[1],"disable"))
+			else if(!strcmp(argv[1],"off"))
 				state = false;
 			else {
-				strcpy(output_string, "Invalid Parameter -- options: \'enable\' or \'disable\'...\r\n");
+				strcpy(output_string, "Invalid Parameter -- options: \'on\' or \'off\'...\r\m");
 				return;
 			}
 			LoadSwitch *load_switch = hal::get_driver<LoadSwitch>(hal::LOAD_SWITCH);
@@ -200,13 +200,13 @@ namespace console_task {
 			strcpy(output_string, NOT_ENOUGH_ARGS_STR);
 	}
 
-	void set_radio_load_switch(char* output_string, uint8_t argc, char** argv)
+	void set_radio_pwr(char* output_string, uint8_t argc, char** argv)
 	{
 		if(argc == 2) {
 			bool state;
-			if(!strcmp(argv[1],"enable"))
+			if(!strcmp(argv[1],"on"))
 				state = true;
-			else if(!strcmp(argv[1],"disable"))
+			else if(!strcmp(argv[1],"off"))
 				state = false;
 			else {
 				strcpy(output_string, "Invalid Parameter -- options: \'enable\' or \'disable\'...\r\n");
@@ -245,10 +245,10 @@ namespace console_task {
 			{"set_fltctl_ch", &set_fltctl_ch},
 			{"arm_fltctl", &arm_fltctl},
 #ifndef IS_DEBUG_BOARD
-			{"set_navcmp_load_switch", &set_navcmp_load_switch},
-			{"set_fltctl_load_switch", &set_fltctl_load_switch},
-			{"set_gps_load_switch", &set_gps_load_switch},
-			{"set_radio_load_switch", &set_radio_load_switch},
+			{"set_navcmp_pwr", &set_navcmp_pwr},
+			{"set_fltctl_pwr", &set_fltctl_pwr},
+			{"set_gps_pwr", &set_gps_pwr},
+			{"set_radio_pwr", &set_radio_pwr},
 			{"get_ultrasonic_range", &get_ultrasonic_range},
 #endif
 	};

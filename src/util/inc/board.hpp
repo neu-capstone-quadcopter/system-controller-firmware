@@ -68,6 +68,10 @@
 #define RADIO_EN_PORT		2
 #define RADIO_EN_PIN		2
 
+#define FLTCTL_PWM_EN_PORT 2
+#define FLTCTL_PWM_EN_PIN 5
+
+
 static Cd74hc4067_gpio_map MUX_GPIO_MAP = {
 	.s0_port = 0,
 	.s0_pin = 29,

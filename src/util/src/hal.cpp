@@ -20,6 +20,7 @@
 #include "mb1240.hpp"
 #include "config.hpp"
 #include "load_switch_rail.hpp"
+#include "wdt.hpp"
 
 namespace hal {
 	void add_drivers(void);
@@ -51,6 +52,7 @@ namespace hal {
 #else
 		LoadSwitch *load_switch = new LoadSwitch();
 		Mb1240 *ultrasonic_altimeter = new Mb1240(ULTRASONIC_TIMER, ULTRASONIC_TIMER_CAP_CH);
+		WDT *wdt = new WDT(WDT_FREQ);
 #endif
 		Adc *adc = new Adc(ADC);
 		Cd74hc4067 *adc_mux = new Cd74hc4067(MUX_GPIO_MAP);
@@ -68,6 +70,7 @@ namespace hal {
 #else
 		drivers[LOAD_SWITCH] = load_switch;
 		drivers[ULTRASONIC_ALTIMETER] = ultrasonic_altimeter;
+		drivers[SYSTEM_WDT] = wdt;
 #endif
 		drivers[SENSOR_ADC] = adc;
 		drivers[CD74HC4067] = adc_mux;
@@ -92,6 +95,7 @@ namespace hal {
 	template class ExampleLed *get_driver(driver_identifier);
 	template class Mb1240 *get_driver(driver_identifier);
 	template class LoadSwitch *get_driver(driver_identifier);
+	template class WDT *get_driver(driver_identifier);
 }
 
 extern "C" {
@@ -140,6 +144,10 @@ extern "C" {
 	}
 	void TIMER0_IRQHandler(void) {
 		static_cast<Mb1240*>(drivers[ULTRASONIC_ALTIMETER])->timer_interrupt_handler();
+	}
+
+	void WDT_IRQHandler(void) {
+		// This is where we would increment the counter.
 	}
 #endif
 }

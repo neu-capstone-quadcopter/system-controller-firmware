@@ -24,6 +24,7 @@ namespace hal {
 #else
 		LOAD_SWITCH,
 		ULTRASONIC_ALTIMETER,
+		SYSTEM_WDT,
 #endif
 		SENSOR_ADC,
 		CD74HC4067,

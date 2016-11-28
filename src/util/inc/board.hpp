@@ -71,6 +71,8 @@
 #define FLTCTL_PWM_EN_PORT 2
 #define FLTCTL_PWM_EN_PIN 5
 
+#define WDT_FREQ 			100
+
 
 static Cd74hc4067_gpio_map MUX_GPIO_MAP = {
 	.s0_port = 0,

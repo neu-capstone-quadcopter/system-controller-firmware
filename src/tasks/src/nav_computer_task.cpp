@@ -15,6 +15,7 @@
 #include "pb_encode.h"
 #include "pb_decode.h"
 #include "api.pb.h"
+#include "mb1240.hpp"
 #include <cr_section_macros.h>
 #include <flight_controller_task.hpp>
 
@@ -32,8 +33,6 @@ namespace nav_computer_task {
 const uint16_t SYNC_BYTES = 0x91D3;
 
 static void task_loop(void *p);
-//void send_data(sensor_task::adc_values_t data);
-//void package_data(sensor_task::adc_values_t data, monarcpb_SysCtrlToNavCPU &message);
 void write_to_uart(uint8_t *data, uint16_t len);
 void read_from_uart();
 static void timer_handler(TimerHandle_t xTimer);
@@ -41,9 +40,8 @@ void distribute_data(uint8_t *data, uint16_t length);
 static void read_len_handler(UartError status, uint8_t *data, uint16_t len);
 static void read_data_handler(UartError status, uint8_t *data, uint16_t len);
 void serialize_and_send_frame(monarcpb_SysCtrlToNavCPU frame);
-// TODO: Crate a function that serializes the frame
-//void send_data(sensor_task::adc_values_t data); TODO: Make this just send data
 void send_flight_controls(monarcpb_NavCPUToSysCtrl message);
+static void add_ultrasonic_range_to_pb(monarcpb_SysCtrlToNavCPU frame);
 
 UartIo* nav_uart;
 static TaskHandle_t task_handle;
@@ -51,6 +49,7 @@ TimerHandle_t timer;
 GpdmaManager *dma_man;
 GpdmaChannel *dma_channel_tx;
 GpdmaChannel *dma_channel_rx;
+Mb1240 *ultrasonic_altimeter;
 static SemaphoreHandle_t protobuff_semaphore;
 
 static monarcpb_SysCtrlToNavCPU current_frame;
@@ -63,6 +62,8 @@ auto read_len = dlgt::make_delegate(&read_len_handler);
 auto read_data = dlgt::make_delegate(&read_data_handler);
 
 void start() {
+	ultrasonic_altimeter = hal::get_driver<Mb1240>(hal::ULTRASONIC_ALTIMETER);
+
 	nav_uart = hal::get_driver<UartIo>(hal::NAV_COMPUTER);
 	nav_uart->allocate_buffers(128, 128);
 	dma_man = hal::get_driver<GpdmaManager>(hal::GPDMA_MAN);
@@ -98,6 +99,7 @@ static void task_loop(void *p) {
 		case LoopTriggerEvent::SEND_FRAME:
 			// Package and send data frame
 			xSemaphoreTake(protobuff_semaphore, 1);
+			add_ultrasonic_range_to_pb(current_frame);
 			serialize_and_send_frame(current_frame);
 			current_frame = monarcpb_SysCtrlToNavCPU_init_zero;
 			xSemaphoreGive(protobuff_semaphore);
@@ -208,6 +210,10 @@ static void timer_handler(TimerHandle_t xTimer) {
 	add_event_to_queue_isr(event);
 }
 
+static void add_ultrasonic_range_to_pb(monarcpb_SysCtrlToNavCPU frame) {
+	frame.telemetry.has_altitude = true;
+	frame.telemetry.altitude = ultrasonic_altimeter->get_current_range_mm();
+}
 
 } // End nav_computer_task namespace.
 

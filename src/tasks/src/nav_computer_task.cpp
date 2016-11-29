@@ -41,7 +41,7 @@ static void read_len_handler(UartError status, uint8_t *data, uint16_t len);
 static void read_data_handler(UartError status, uint8_t *data, uint16_t len);
 void serialize_and_send_frame(monarcpb_SysCtrlToNavCPU frame);
 void send_flight_controls(monarcpb_NavCPUToSysCtrl message);
-static void add_ultrasonic_range_to_pb(monarcpb_SysCtrlToNavCPU frame);
+static void add_ultrasonic_range_to_pb(monarcpb_SysCtrlToNavCPU &frame);
 
 UartIo* nav_uart;
 static TaskHandle_t task_handle;
@@ -205,7 +205,7 @@ static void timer_handler(TimerHandle_t xTimer) {
 	add_event_to_queue_isr(event);
 }
 
-static void add_ultrasonic_range_to_pb(monarcpb_SysCtrlToNavCPU frame) {
+static void add_ultrasonic_range_to_pb(monarcpb_SysCtrlToNavCPU &frame) {
 	frame.telemetry.has_altitude = true;
 	frame.telemetry.altitude = ultrasonic_altimeter->get_current_range_mm();
 }

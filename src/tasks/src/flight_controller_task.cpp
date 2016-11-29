@@ -140,7 +140,7 @@ static void task_loop(void *p) {
 
 	TelemetryParser telem_parser;
 	for(;;) {
-		telem_parser.parseForData(blackbox_stream);
+		telem_parser.parse_stream(blackbox_stream);
 	}
 }
 

@@ -1,17 +1,6 @@
 #include "telemetry_parser.hpp"
 
 //Define our Data IDs
-#define GPS_ALTITUDE_ID 0x01
-#define TEMPERATURE1_ID 0x02
-#define RPM_ID 0x03
-#define FUEL_LEVEL_ID 0x04
-#define TEMPERATURE2_ID 0x05
-#define VOLT_ID 0x06
-#define ALTITUDE_ID 0x10
-#define GPS_SPEED_ID 0x11
-#define LONGITUDE_ID 0x12
-#define COURSE_ID 0x14
-
 #define ACC_X_ID 0x24
 #define ACC_Y_ID 0x25
 #define ACC_Z_ID 0x26
@@ -26,6 +15,10 @@
 #define MOTOR1_THRUST_ID 0x61
 #define MOTOR2_THRUST_ID 0x62
 #define MOTOR3_THRUST_ID 0x63
+#define PITCH_ID 0x7A
+#define ROLL_ID 0x7B
+#define YAW_ID 0x7C
+
 
 #define NUM_MSG_FIELDS 10
 
@@ -33,7 +26,7 @@ TelemetryParser::TelemetryParser()
 {
 	//Baro is sent at a lower rate than rest of data so we will
 	//assume that it is always ready to send so we don't block other data
-	have_values[BARO] = true;
+	//have_values[BARO] = true;
 
 	/*//JUST FOR TESTING -- For now we will always have the Motor Thrust values be true
 	have_values[MOTOR0_THRUST] = true;
@@ -113,6 +106,18 @@ void TelemetryParser::get_data(Stream &stream, uint8_t curr_byte)
 			break;
 		case BARO_ID:
 			curr_field = BARO;
+			have_data_id = true;
+			break;
+		case PITCH_ID:
+			curr_field = PITCH;
+			have_data_id = true;
+			break;
+		case ROLL_ID:
+			curr_field = ROLL;
+			have_data_id = true;
+			break;
+		case YAW_ID:
+			curr_field = YAW;
 			have_data_id = true;
 			break;
 		case MOTOR0_THRUST_ID:

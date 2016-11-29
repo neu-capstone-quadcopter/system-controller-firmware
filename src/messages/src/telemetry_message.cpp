@@ -9,6 +9,7 @@
 
 void TelemetryMessage::serialize_protobuf(monarcpb_SysCtrlToNavCPU &protobuf) {
 	protobuf.has_telemetry = true;
+	protobuf.telemetry.has_attitude = true;
 	protobuf.telemetry.has_gyroscope = true;
 	protobuf.telemetry.has_magnetometer = true;
 	protobuf.telemetry.has_accelerometer = true;
@@ -52,21 +53,34 @@ void TelemetryMessage::serialize_protobuf(monarcpb_SysCtrlToNavCPU &protobuf) {
 			protobuf.telemetry.gyroscope.z = this->telem_values[i];
 			break;
 		case 9: //Baro
+			protobuf.telemetry.has_atmospheric_pressure = true;
 			protobuf.telemetry.atmospheric_pressure = this->telem_values[i];
 			break;
-		case 10: //Motor0 Thrust
+		case 10: // Pitch
+			protobuf.telemetry.attitude.has_pitch = true;
+			protobuf.telemetry.attitude.pitch = this->telem_values[i];
+			break;
+		case 11: // Roll
+			protobuf.telemetry.attitude.has_roll = true;
+			protobuf.telemetry.attitude.roll = this->telem_values[i];
+			break;
+		case 12: // Yaw
+			protobuf.telemetry.attitude.has_yaw = true;
+			protobuf.telemetry.attitude.yaw = this->telem_values[i];
+			break;
+		case 13: //Motor0 Thrust
 			protobuf.telemetry.has_motor0_thrust = true;
 			protobuf.telemetry.motor0_thrust = this->telem_values[i];
 			break;
-		case 11: //Motor1 Thrust
+		case 14: //Motor1 Thrust
 			protobuf.telemetry.has_motor1_thrust = true;
 			protobuf.telemetry.motor1_thrust = this->telem_values[i];
 			break;
-		case 12: //Motor2 Thrust
+		case 15: //Motor2 Thrust
 			protobuf.telemetry.has_motor2_thrust = true;
 			protobuf.telemetry.motor2_thrust = this->telem_values[i];
 			break;
-		case 13: //Motor3 Thrust
+		case 16: //Motor3 Thrust
 			protobuf.telemetry.has_motor3_thrust = true;
 			protobuf.telemetry.motor3_thrust = this->telem_values[i];
 			break;

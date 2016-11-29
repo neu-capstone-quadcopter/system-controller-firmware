@@ -120,16 +120,15 @@
 							<tool id="com.crt.advproject.link.exe.debug.766865493" name="MCU Linker" superClass="com.crt.advproject.link.exe.debug"/>
 						</toolChain>
 					</folderInfo>
-					<fileInfo id="com.crt.advproject.config.exe.debug.1698178935.1996720090" name="telemetry_parser.cpp" rcbsApplicability="disable" resourcePath="src/util/src/telemetry_parser2.cpp" toolsToInvoke="com.crt.advproject.cpp.exe.debug.437407545.1744063021">
-						<tool id="com.crt.advproject.cpp.exe.debug.437407545.1744063021" name="MCU C++ Compiler" superClass="com.crt.advproject.cpp.exe.debug.437407545">
-							<option id="com.crt.advproject.cpp.exe.debug.option.optimization.level.1585829080" name="Optimization Level" superClass="com.crt.advproject.cpp.exe.debug.option.optimization.level" value="gnu.cpp.compiler.optimization.level.none" valueType="enumerated"/>
-							<inputType id="com.crt.advproject.compiler.cpp.input.137960069" superClass="com.crt.advproject.compiler.cpp.input"/>
+					<fileInfo id="com.crt.advproject.config.exe.debug.1698178935.1231497083" name="blackbox_stream.cpp" rcbsApplicability="disable" resourcePath="src/util/src/stream.cpp" toolsToInvoke="com.crt.advproject.cpp.exe.debug.437407545.1441371081">
+						<tool id="com.crt.advproject.cpp.exe.debug.437407545.1441371081" name="MCU C++ Compiler" superClass="com.crt.advproject.cpp.exe.debug.437407545">
+							<inputType id="com.crt.advproject.compiler.cpp.input.1484005879" superClass="com.crt.advproject.compiler.cpp.input"/>
 						</tool>
-						<tool customBuildStep="true" id="org.eclipse.cdt.managedbuilder.ui.rcbs.495208192" name="Resource Custom Build Step">
-							<inputType id="org.eclipse.cdt.managedbuilder.ui.rcbs.inputtype.398303185" name="Resource Custom Build Step Input Type">
-								<additionalInput kind="additionalinputdependency" paths=""/>
+						<tool customBuildStep="true" id="org.eclipse.cdt.managedbuilder.ui.rcbs.330142627" name="Resource Custom Build Step">
+							<inputType id="org.eclipse.cdt.managedbuilder.ui.rcbs.inputtype.1296604170" name="Resource Custom Build Step Input Type">
+								<additionalInput kind="additionalinputdependency"/>
 							</inputType>
-							<outputType id="org.eclipse.cdt.managedbuilder.ui.rcbs.outputtype.109602417" name="Resource Custom Build Step Output Type"/>
+							<outputType id="org.eclipse.cdt.managedbuilder.ui.rcbs.outputtype.1128314676" name="Resource Custom Build Step Output Type"/>
 						</tool>
 					</fileInfo>
 					<sourceEntries>

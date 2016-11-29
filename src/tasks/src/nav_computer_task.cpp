@@ -16,7 +16,7 @@
 #include "pb_decode.h"
 #include "api.pb.h"
 #include <cr_section_macros.h>
-#include <flight_controller_task.hpp>
+#include "flight_controller_task.hpp"
 
 #include <stdlib.h>
 

@@ -8,6 +8,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <cr_section_macros.h>
+#include <telemetry_parser.hpp>
 
 #include "FreeRTOS.h"
 #include "task.h"
@@ -16,8 +17,6 @@
 
 #include "gpdma.hpp"
 #include "uartio.hpp"
-
-#include "telemetry_parser2.hpp"
 
 #include "flight_controller_task.hpp"
 
@@ -141,7 +140,7 @@ static void task_loop(void *p) {
 
 	TelemetryParser telem_parser;
 	for(;;) {
-		telem_parser.parseForData(blackbox_stream);
+		telem_parser.parse_stream(blackbox_stream);
 	}
 }
 
@@ -182,7 +181,7 @@ static void telem_uart_read_handler(UartError status, uint8_t *data, uint16_t le
 {
 	BaseType_t task_woken = pdFALSE;
 
-	blackbox_stream.addToStream(data,len, &task_woken);
+	blackbox_stream.push(data,len, &task_woken);
 
 	telem_uart->read_async(STREAM_READ_LEN, fc_bb_read_del);
 

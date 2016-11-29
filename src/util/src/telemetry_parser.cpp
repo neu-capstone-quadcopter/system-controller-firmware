@@ -1,4 +1,4 @@
-#include <telemetry_parser2.hpp>
+#include "telemetry_parser.hpp"
 
 //Define our Data IDs
 #define GPS_ALTITUDE_ID 0x01
@@ -44,21 +44,20 @@ TelemetryParser::TelemetryParser()
 
 }
 
-void TelemetryParser::parseForData(Stream &stream)
+void TelemetryParser::parse_stream(Stream &stream)
 {
-
 	//Start by popping a byte from the stream
-	uint8_t curr_byte = stream.popFromStream();
+	uint8_t curr_byte = stream.pop();
 
 	//Compare this byte to our data IDs
-	getData(stream, curr_byte);
+	get_data(stream, curr_byte);
 
 	//Send of the Frame
-	sendFrame();
+	send_frame();
 
 }
 
-void TelemetryParser::getData(Stream &stream, uint8_t curr_byte)
+void TelemetryParser::get_data(Stream &stream, uint8_t curr_byte)
 {
 	//If byte is 0x5E, this is field separator and we should
 	//reset flag and return
@@ -159,13 +158,18 @@ void TelemetryParser::getData(Stream &stream, uint8_t curr_byte)
 				xor_next_byte = false;
 			}
 
+			//If the data byte is 0, we will zero out this field to ensure data is correct even
+			//if we parse this field multiple times before a frame is sent
+			if(data_byte == 0)
+				curr_frame.telem_fields[curr_field] = 0;
+
 			curr_frame.telem_fields[curr_field] |= (int16_t)(curr_byte16 << (data_byte * 8));
 			data_byte++;
 		}
 	}
 }
 
-void TelemetryParser::sendFrame()
+void TelemetryParser::send_frame()
 {
 	//Iterate through our haveValues vector. If all are true, frame is populated
 	//and we can send off to Nav Computer. Else just return.
@@ -192,11 +196,11 @@ void TelemetryParser::sendFrame()
 	nav_computer_task::add_message_to_outgoing_frame(msg_to_send);
 
 	//Reset member variables for new frame
-	resetVariables();
+	reset_variables();
 
 }
 
-void TelemetryParser::resetVariables()
+void TelemetryParser::reset_variables()
 {
 	have_data_id = false;
 	curr_field = -1;

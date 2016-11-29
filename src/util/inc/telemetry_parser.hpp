@@ -1,7 +1,7 @@
 #ifndef UTIL_TELEMETRY_PARSER_HPP_
 #define UTIL_TELEMETRY_PARSER_HPP_
 
-#include "blackbox_stream.hpp"
+#include <stream.hpp>
 #include "FreeRTOS.h"
 #include "telemetry_message.hpp"
 #include "nav_computer_task.hpp"
@@ -38,16 +38,16 @@ public:
 	TelemetryParser();
 
 	//Parser Functions
-	void parseForData(Stream&);
+	void parse_stream(Stream&);
 
 	//Identifies Data Field
-	void getData(Stream&, uint8_t);
+	void get_data(Stream&, uint8_t);
 
 	//Sends a frame if it is complete, else doesn't and continues parse
-	void sendFrame();
+	void send_frame();
 
 	//Use to reset our member variables
-	void resetVariables();
+	void reset_variables();
 
 
 private:

@@ -65,7 +65,7 @@ void start() {
 	ultrasonic_altimeter = hal::get_driver<Mb1240>(hal::ULTRASONIC_ALTIMETER);
 
 	nav_uart = hal::get_driver<UartIo>(hal::NAV_COMPUTER);
-	nav_uart->allocate_buffers(128, 128);
+	nav_uart->allocate_buffers(200, 200);
 	dma_man = hal::get_driver<GpdmaManager>(hal::GPDMA_MAN);
 	dma_channel_tx = dma_man->allocate_channel(2);
 	dma_channel_rx = dma_man->allocate_channel(3);

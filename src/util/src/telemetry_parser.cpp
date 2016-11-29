@@ -10,7 +10,8 @@
 #define MAG_X_ID 0x6A
 #define MAG_Y_ID 0x6B
 #define MAG_Z_ID 0x6C
-#define BARO_ID  0x10
+#define BARO_BP_ID 0x10
+#define BARO_AP_ID 0x21
 #define MOTOR0_THRUST_ID 0x60
 #define MOTOR1_THRUST_ID 0x61
 #define MOTOR2_THRUST_ID 0x62
@@ -18,9 +19,12 @@
 #define PITCH_ID 0x7A
 #define ROLL_ID 0x7B
 #define YAW_ID 0x7C
+#define CMD_PITCH_ID 0x8A
+#define CMD_ROLL_ID 0x8B
+#define CMD_YAW_ID 0x8C
+#define CMD_THROTTLE_ID 0x8D
 
-
-#define NUM_MSG_FIELDS 17
+#define NUM_MSG_FIELDS 22
 
 TelemetryParser::TelemetryParser()
 {
@@ -104,8 +108,12 @@ void TelemetryParser::get_data(Stream &stream, uint8_t curr_byte)
 			curr_field = GYR_Z;
 			have_data_id = true;
 			break;
-		case BARO_ID:
-			curr_field = BARO;
+		case BARO_BP_ID:
+			curr_field = BARO_BP;
+			have_data_id = true;
+			break;
+		case BARO_AP_ID:
+			curr_field = BARO_AP;
 			have_data_id = true;
 			break;
 		case PITCH_ID:
@@ -118,6 +126,22 @@ void TelemetryParser::get_data(Stream &stream, uint8_t curr_byte)
 			break;
 		case YAW_ID:
 			curr_field = YAW;
+			have_data_id = true;
+			break;
+		case CMD_PITCH_ID:
+			curr_field = CMD_PITCH;
+			have_data_id = true;
+			break;
+		case CMD_ROLL_ID:
+			curr_field = CMD_ROLL;
+			have_data_id = true;
+			break;
+		case CMD_YAW_ID:
+			curr_field = CMD_YAW;
+			have_data_id = true;
+			break;
+		case CMD_THROTTLE_ID:
+			curr_field = CMD_THROTTLE;
 			have_data_id = true;
 			break;
 		case MOTOR0_THRUST_ID:
@@ -136,6 +160,7 @@ void TelemetryParser::get_data(Stream &stream, uint8_t curr_byte)
 			curr_field = MOTOR3_THRUST;
 			have_data_id = true;
 			break;
+
 		default:
 			break;
 		}
@@ -214,14 +239,7 @@ void TelemetryParser::reset_variables()
 	//Reset haveValues and frame data
 	for(int i = 0; i < FRAME_FIELDS; i++)
 	{
-		//Always want Baro value to be ready to send
-		//TODO:During testing also want motor thrust values to always be ready to send
-		if(i != BARO)
-		{
-			have_values[i] = false;
-			curr_frame.telem_fields[i] = 0;
-		}
-
-
+		have_values[i] = false;
+		curr_frame.telem_fields[i] = 0;
 	}
 }

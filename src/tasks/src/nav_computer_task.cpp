@@ -32,8 +32,6 @@ namespace nav_computer_task {
 const uint16_t SYNC_BYTES = 0x91D3;
 
 static void task_loop(void *p);
-//void send_data(sensor_task::adc_values_t data);
-//void package_data(sensor_task::adc_values_t data, monarcpb_SysCtrlToNavCPU &message);
 void write_to_uart(uint8_t *data, uint16_t len);
 void read_from_uart();
 static void timer_handler(TimerHandle_t xTimer);
@@ -41,8 +39,6 @@ void distribute_data(uint8_t *data, uint16_t length);
 static void read_len_handler(UartError status, uint8_t *data, uint16_t len);
 static void read_data_handler(UartError status, uint8_t *data, uint16_t len);
 void serialize_and_send_frame(monarcpb_SysCtrlToNavCPU frame);
-// TODO: Crate a function that serializes the frame
-//void send_data(sensor_task::adc_values_t data); TODO: Make this just send data
 void send_flight_controls(monarcpb_NavCPUToSysCtrl message);
 
 UartIo* nav_uart;
@@ -149,7 +145,6 @@ void distribute_data(uint8_t* data, uint16_t length) {
 	pb_decode(&stream, monarcpb_NavCPUToSysCtrl_fields, &message);
 	// TODO: Distribute data to sysctrl nodes as needed.
 	send_flight_controls(message);
-	//delete[] data;
 }
 
 void send_flight_controls(monarcpb_NavCPUToSysCtrl message) {
@@ -178,7 +173,6 @@ static void read_len_handler(UartError status, uint8_t *data, uint16_t len) {
 			xTimerDelete(xTimer, 10);
 		});
 		xTimerStartFromISR(timer_sync, 0);
-		delete[] data;
 		return;
 	}
 	uint16_t length;
@@ -187,19 +181,16 @@ static void read_len_handler(UartError status, uint8_t *data, uint16_t len) {
 	else
 		length = data[3] << 8 | data[2];
 	nav_uart->read_async(length, read_data);
-	delete[] data;
 }
 
 static void read_data_handler(UartError status, uint8_t *data, uint16_t len) {
 	nav_event_t event;
 	event.type = LoopTriggerEvent::PROCESS_READ;
 	memcpy(nav_data_buffer, data, len);
-	//event.buffer = data;
 	event.length = len;
 	add_event_to_queue_isr(event);
 
 	nav_uart->read_async(HEADER_LEN, read_len);
-	delete[] data;
 }
 
 static void timer_handler(TimerHandle_t xTimer) {

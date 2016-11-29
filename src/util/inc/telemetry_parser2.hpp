@@ -1,7 +1,7 @@
 #ifndef UTIL_TELEMETRY_PARSER_HPP_
 #define UTIL_TELEMETRY_PARSER_HPP_
 
-#include "blackbox_stream.hpp"
+#include <stream.hpp>
 #include "FreeRTOS.h"
 #include "telemetry_message.hpp"
 #include "nav_computer_task.hpp"

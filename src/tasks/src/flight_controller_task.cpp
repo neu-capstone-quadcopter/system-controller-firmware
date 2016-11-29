@@ -182,7 +182,7 @@ static void telem_uart_read_handler(UartError status, uint8_t *data, uint16_t le
 {
 	BaseType_t task_woken = pdFALSE;
 
-	blackbox_stream.addToStream(data,len, &task_woken);
+	blackbox_stream.push(data,len, &task_woken);
 
 	telem_uart->read_async(STREAM_READ_LEN, fc_bb_read_del);
 

@@ -49,7 +49,7 @@ void TelemetryParser::parseForData(Stream &stream)
 {
 
 	//Start by popping a byte from the stream
-	uint8_t curr_byte = stream.popFromStream();
+	uint8_t curr_byte = stream.pop();
 
 	//Compare this byte to our data IDs
 	getData(stream, curr_byte);

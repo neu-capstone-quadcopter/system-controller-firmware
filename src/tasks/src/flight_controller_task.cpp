@@ -8,6 +8,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <cr_section_macros.h>
+#include <telemetry_parser.hpp>
 
 #include "FreeRTOS.h"
 #include "task.h"
@@ -16,8 +17,6 @@
 
 #include "gpdma.hpp"
 #include "uartio.hpp"
-
-#include "telemetry_parser2.hpp"
 
 #include "flight_controller_task.hpp"
 

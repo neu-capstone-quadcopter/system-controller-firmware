@@ -18,11 +18,13 @@ public:
 	bool streamIsEmpty();
 
 
+
 private:
 	uint8_t stream_buffer[STREAM_BUFFER_SIZE];
 	uint8_t *read_ptr;
 	uint8_t *write_ptr;
 	SemaphoreHandle_t stream_read_semaphore;
+	QueueHandle_t stream_queue;
 };
 
 #endif //UTIL_BLACKBOX_STREAM_HPP

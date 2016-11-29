@@ -1,4 +1,5 @@
 #include "blackbox_stream.hpp"
+#include "uart_console_task.hpp"
 
 	Stream::Stream()
 	{
@@ -20,7 +21,8 @@
 
 	void Stream::allocate()
 	{
-		stream_read_semaphore = xSemaphoreCreateBinary();
+		stream_queue = xQueueCreate(250, sizeof(uint8_t));
+		//stream_read_semaphore = xSemaphoreCreateBinary();
 	}
 
 	bool Stream::streamIsEmpty()
@@ -30,7 +32,13 @@
 
 	void Stream::addToStream(uint8_t* data, uint8_t len, BaseType_t *woke_task)
 	{
+		for(int i = 0; i < len; i++)
+		{
+			xQueueSendToBackFromISR(stream_queue, data + i, woke_task);
 
+		}
+
+/*
 		if(len >= STREAM_BUFFER_SIZE)
 		{
 			//Potentially throw some error if len too large for buffer
@@ -52,12 +60,37 @@
 
 		}
 
-		delete[] data;
+		//Look out for faulty data
+		for(int i = 0; i < len; i++)
+		{
+			uint8_t header_byte = *(data+i);
+			//Look for header
+			if(header_byte == 0x5e)
+			{
+				//Look for data ID for acc z
+				if(i < (len - 4))
+				{
+					uint8_t data_id = *(data + i + 1);
+					if(data_id == 0x26)
+					{
+						//Look at 2nd byte -- if greater than 0x04, fucked up
+						uint8_t second_byte = *(data + i + 3);
+						if(second_byte > 0x04)
+						{
+							char * msg = "Add Fucked";
+							console_task::send_debug_message((uint8_t*) msg, 10);
+						}
+					}
+				}
+			}
+		}
 		xSemaphoreGiveFromISR(stream_read_semaphore, woke_task);
+		*/
 	}
 
 	uint8_t Stream::popFromStream()
 	{
+		/*
 		//Pop one byte at a time based on our read ptr
 		if(read_ptr == write_ptr)
 		{
@@ -69,6 +102,8 @@
 			read_ptr ++;
 		else
 			read_ptr = stream_buffer;
-
+		*/
+		uint8_t val;
+		xQueueReceive(stream_queue, &val, portMAX_DELAY);
 		return val;
 	}

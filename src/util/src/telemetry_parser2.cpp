@@ -1,4 +1,5 @@
 #include <telemetry_parser2.hpp>
+#include "uart_console_task.hpp"
 
 //Define our Data IDs
 #define GPS_ALTITUDE_ID 0x01
@@ -152,12 +153,24 @@ void TelemetryParser::getData(Stream &stream, uint8_t curr_byte)
 			//populate it
 			uint16_t curr_byte16 = (uint16_t) curr_byte;
 
+			//DEBUGGING
+			if(curr_byte > 0x04 && data_byte == 1 && curr_field == 2)
+			{
+				char *msg = "Parser Fucked\n";
+				console_task::send_debug_message((uint8_t*) msg, 14);
+			}
+
 			//Should this byte be XOR'd with 0x60?
 			if(xor_next_byte)
 			{
 				curr_byte16 = curr_byte16 ^ 0x60;
 				xor_next_byte = false;
 			}
+
+			//If the data byte is 0, we will zero out this field to ensure data is correct even
+			//if we parse this field multiple times before a frame is sent
+			if(data_byte == 0)
+				curr_frame.telem_fields[curr_field] = 0;
 
 			curr_frame.telem_fields[curr_field] |= (int16_t)(curr_byte16 << (data_byte * 8));
 			data_byte++;

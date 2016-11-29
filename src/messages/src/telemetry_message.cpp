@@ -14,7 +14,7 @@ void TelemetryMessage::serialize_protobuf(monarcpb_SysCtrlToNavCPU &protobuf) {
 	protobuf.telemetry.has_magnetometer = true;
 	protobuf.telemetry.has_accelerometer = true;
 	protobuf.telemetry.has_atmospheric_pressure = true;
-	for(uint8_t i = 0; i < 10; i++) {
+	for(uint8_t i = 0; i < 17; i++) {
 		switch (i) {
 		case 0: //Acc x
 			protobuf.telemetry.accelerometer.has_x = true;

@@ -20,7 +20,7 @@
 #define YAW_ID 0x7C
 
 
-#define NUM_MSG_FIELDS 10
+#define NUM_MSG_FIELDS 17
 
 TelemetryParser::TelemetryParser()
 {

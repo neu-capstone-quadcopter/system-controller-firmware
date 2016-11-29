@@ -99,7 +99,7 @@ static void task_loop(void *p) {
 			xSemaphoreGive(protobuff_semaphore);
 			break;
 		case LoopTriggerEvent::PROCESS_READ:
-			distribute_data(nav_data_buffer/*event.buffer*/, event.length);
+			distribute_data(nav_data_buffer, event.length);
 			break;
 		default:
 			break;

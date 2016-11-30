@@ -22,7 +22,7 @@ namespace hal {
 		LED_0,
 		LED_1,
 #else
-		LOAD_SWITCH,
+		GPIOS,
 		ULTRASONIC_ALTIMETER,
 #endif
 		SENSOR_ADC,

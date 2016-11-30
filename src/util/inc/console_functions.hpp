@@ -8,13 +8,13 @@
 #ifndef UTIL_INC_CONSOLE_FUNCTIONS_HPP_
 #define UTIL_INC_CONSOLE_FUNCTIONS_HPP_
 
+#include <gpio.hpp>
 #include <cstdio>
 #include <cstdlib>
 
 #include "board.hpp"
 #include "hal.hpp"
 #include "flight_controller_task.hpp"
-#include "load_switch_rail.hpp"
 #include "mb1240.hpp"
 
 namespace console_task {
@@ -103,21 +103,16 @@ namespace console_task {
 		}
 	}
 
-	void set_fltctl_ch(char* output_string, uint8_t argc, char** argv) {
-		if(argc >= 3) {
-			flight_controller_task::set_frame_channel_cmd(atoi(argv[1]), atoi(argv[2]));
-		}
-		else {
-			strcpy(output_string, NOT_ENOUGH_ARGS_STR);
-		}
-	}
 
-	void arm_fltctl(char* output_string, uint8_t argc, char** argv)
+	void set_fltctl_arming(char* output_string, uint8_t argc, char** argv)
 	{
-		flight_controller_task::set_frame_channel_cmd(0,1000);
-		flight_controller_task::set_frame_channel_cmd(1,1000);
-		flight_controller_task::set_frame_channel_cmd(2, 100);
-		flight_controller_task::set_frame_channel_cmd(3, 1900);
+		if(argc == 2) {
+			if(argv[1][0] == '1') {
+				flight_controller_task::arm_controller();
+			} else {
+				flight_controller_task::disarm_controller();
+			}
+		}
 
 	}
 
@@ -155,7 +150,7 @@ namespace console_task {
 				strcpy(output_string, "Invalid Parameter -- options: \'on\' or \'off\'...\r\n");
 				return;
 			}
-			LoadSwitch *load_switch = hal::get_driver<LoadSwitch>(hal::LOAD_SWITCH);
+			GpioManager *load_switch = hal::get_driver<GpioManager>(hal::GPIOS);
 			load_switch->set_load_switch_navcmp(state);
 		}
 		else
@@ -174,7 +169,7 @@ namespace console_task {
 				strcpy(output_string, "Invalid Parameter -- options: \'on\' or \'off\'...\r\n");
 				return;
 			}
-			LoadSwitch *load_switch = hal::get_driver<LoadSwitch>(hal::LOAD_SWITCH);
+			GpioManager *load_switch = hal::get_driver<GpioManager>(hal::GPIOS);
 			load_switch->set_load_switch_fltctl(state);
 		}
 		else
@@ -193,7 +188,7 @@ namespace console_task {
 				strcpy(output_string, "Invalid Parameter -- options: \'on\' or \'off\'...\r\n");
 				return;
 			}
-			LoadSwitch *load_switch = hal::get_driver<LoadSwitch>(hal::LOAD_SWITCH);
+			GpioManager *load_switch = hal::get_driver<GpioManager>(hal::GPIOS);
 			load_switch->set_load_switch_gps(state);
 		}
 		else
@@ -212,7 +207,7 @@ namespace console_task {
 				strcpy(output_string, "Invalid Parameter -- options: \'enable\' or \'disable\'...\r\n");
 				return;
 			}
-			LoadSwitch *load_switch = hal::get_driver<LoadSwitch>(hal::LOAD_SWITCH);
+			GpioManager *load_switch = hal::get_driver<GpioManager>(hal::GPIOS);
 			load_switch->set_load_switch_radio(state);
 		}
 		else
@@ -237,8 +232,8 @@ namespace console_task {
 				strcpy(output_string, "Invalid Parameter -- options: \'1\' or \'0\'...\r\n");
 				return;
 			}
-			LoadSwitch *load_switch = hal::get_driver<LoadSwitch>(hal::LOAD_SWITCH);
-			load_switch->set_hw_arm(state);
+			GpioManager *gpio_man = hal::get_driver<GpioManager>(hal::GPIOS);
+			gpio_man->set_pwm_output_en(state);
 		}
 		else
 			strcpy(output_string, NOT_ENOUGH_ARGS_STR);
@@ -261,8 +256,7 @@ namespace console_task {
 			{"get_task_info", &get_task_info},
 			{"get_runtime_info", &get_runtime_info},
 			{"start_trace", &start_trace},
-			{"set_fltctl_ch", &set_fltctl_ch},
-			{"arm_fltctl", &arm_fltctl},
+			{"set_fltctl_arming", &set_fltctl_arming},
 #ifndef IS_DEBUG_BOARD
 			{"set_navcmp_pwr", &set_navcmp_pwr},
 			{"set_fltctl_pwr", &set_fltctl_pwr},

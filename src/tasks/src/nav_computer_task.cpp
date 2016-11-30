@@ -41,6 +41,7 @@ static void read_len_handler(UartError status, uint8_t *data, uint16_t len);
 static void read_data_handler(UartError status, uint8_t *data, uint16_t len);
 void serialize_and_send_frame(monarcpb_SysCtrlToNavCPU frame);
 void send_flight_controls(monarcpb_NavCPUToSysCtrl message);
+static bool eval_kill(monarcpb_NavCPUToSysCtrl message);
 static void add_ultrasonic_range_to_pb(monarcpb_SysCtrlToNavCPU &frame);
 
 UartIo* nav_uart;
@@ -51,6 +52,7 @@ GpdmaChannel *dma_channel_tx;
 GpdmaChannel *dma_channel_rx;
 Mb1240 *ultrasonic_altimeter;
 static SemaphoreHandle_t protobuff_semaphore;
+static QueueHandle_t nav_event_queue;
 
 static monarcpb_SysCtrlToNavCPU current_frame;
 
@@ -151,19 +153,28 @@ void distribute_data(uint8_t* data, uint16_t length) {
 	pb_decode(&stream, monarcpb_NavCPUToSysCtrl_fields, &message);
 	// TODO: Distribute data to sysctrl nodes as needed.
 	send_flight_controls(message);
+
+	if(eval_kill(message)) {
+		flight_controller_task::kill_controller();
+	}
 }
 
 void send_flight_controls(monarcpb_NavCPUToSysCtrl message) {
 	if(message.has_control) {
-		if (message.control.has_roll)
-			flight_controller_task::set_frame_channel_cmd(0, message.control.roll);
-		if (message.control.has_pitch)
-			flight_controller_task::set_frame_channel_cmd(1, message.control.pitch);
-		if (message.control.has_yaw)
-			flight_controller_task::set_frame_channel_cmd(2, message.control.yaw);
-		if (message.control.has_throttle)
-			flight_controller_task::set_frame_channel_cmd(3, message.control.throttle);
+		auto raw_rc = message.control;
+		if(raw_rc.has_pitch && raw_rc.has_roll && raw_rc.has_yaw && raw_rc.has_throttle) {
+			flight_controller_task::RcValue rc;
+			rc.pitch = raw_rc.pitch;
+			rc.roll = raw_rc.roll;
+			rc.yaw = raw_rc.yaw;
+			rc.throttle = raw_rc.throttle;
+			flight_controller_task::pass_rc(rc);
+		}
 	}
+}
+
+bool eval_kill(monarcpb_NavCPUToSysCtrl message) {
+	return message.has_state && message.state.has_kill && message.state.kill;
 }
 
 static void read_len_handler(UartError status, uint8_t *data, uint16_t len) {

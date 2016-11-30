@@ -17,8 +17,6 @@
 namespace nav_computer_task {
 	void start(void);
 
-	static QueueHandle_t nav_event_queue;
-
 	enum class NavComputerCmdStatus {
 		NO_ERROR
 	};

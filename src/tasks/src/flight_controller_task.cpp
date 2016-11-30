@@ -8,15 +8,17 @@
 #include <cstdlib>
 #include <cstring>
 #include <cr_section_macros.h>
-#include <telemetry_parser.hpp>
+#include <gpio.hpp>
 
 #include "FreeRTOS.h"
 #include "task.h"
+#include "queue.h"
+#include "timers.h"
 
 #include "hal.hpp"
-
 #include "gpdma.hpp"
 #include "uartio.hpp"
+#include "telemetry_parser.hpp"
 
 #include "flight_controller_task.hpp"
 
@@ -26,13 +28,27 @@
 
 namespace flight_controller_task {
 
-const uint16_t SBUS_CHANNEL_MASK = 0x07ff;
-const uint8_t SBUS_CHANNEL_BIT_LEN = 11;
-const uint8_t SBUS_CHANNEL_17 = 16;
-const uint8_t SBUS_CHANNEL_18 = 17;
+enum SBusChannelMapping {
+	PITCH_CH = 1,
+	ROLL_CH = 0,
+	YAW_CH = 3,
+	THROTTLE_CH = 2,
+	ARMING_CH = 6
+};
 
-const uint8_t SBUS_INTERVAL_MS = 14;
-const uint8_t SBUS_FRAME_LEN = 25;
+static const uint16_t SBUS_CHANNEL_MASK = 0x07ff;
+static const uint8_t SBUS_CHANNEL_BIT_LEN = 11;
+static const uint8_t SBUS_CHANNEL_17 = 16;
+static const uint8_t SBUS_CHANNEL_18 = 17;
+static const uint8_t SBUS_INTERVAL_MS = 14;
+static const uint8_t SBUS_FRAME_LEN = 25;
+
+static const uint8_t STREAM_READ_LEN = 20;
+
+static const uint8_t RC_VALUE_QUEUE_DEPTH = 1;
+static const uint16_t HIGH_SWITCH_RC_VALUE = 200;
+static const uint16_t LOW_SWITCH_RC_VALUE = 1800;
+static const uint16_t RC_VALUE_TIMEOUT_MS = 5000;
 
 struct SBusFrame{
 	uint16_t channels[18];
@@ -90,8 +106,6 @@ struct SBusFrame{
 	}
 };
 
-static const uint8_t STREAM_READ_LEN = 20;
-
 static void task_loop(void *p);
 static void init_telem_uart();
 static void init_sbus_uart();
@@ -99,28 +113,72 @@ static void init_sbus_timer(void);
 static void telem_uart_read_handler(UartError status, uint8_t *data, uint16_t len);
 static void sbus_frame_written_handler(UartError status);
 
+static TaskHandle_t task_handle;
+static QueueHandle_t rc_value_queue;
+static TimerHandle_t arming_timeout_timer;
+
 static UartIo* telem_uart;
 static UartIo* sbus_uart;
-static TaskHandle_t task_handle;
-static SBusFrame sbus_frame;
+static GpdmaManager *dma_man;
+static GpioManager *gpio_man;
+
+static SBusFrame last_sbus_frame;
+__BSS(RAM2)
+static Stream blackbox_stream;
+
+static bool arming_channel_state = false;
+static bool kill_state = false;
 
 auto fc_bb_read_del = dlgt::make_delegate(&telem_uart_read_handler);
 auto sbus_written_del = dlgt::make_delegate(&sbus_frame_written_handler);
 
-GpdmaManager *dma_man;
-
-__BSS(RAM2)
-Stream blackbox_stream;
-
 void start() {
-	dma_man = hal::get_driver<GpdmaManager>(hal::GPDMA_MAN); // TODO: Prioritize DMAs per usage requirements
+	dma_man = hal::get_driver<GpdmaManager>(hal::GPDMA_MAN);
 	telem_uart = hal::get_driver<UartIo>(hal::FC_TELEM_UART);
 	sbus_uart = hal::get_driver<UartIo>(hal::FC_SBUS_UART);
+	gpio_man = hal::get_driver<GpioManager>(hal::GPIOS);
+
+	rc_value_queue = xQueueCreate(EVENT_QUEUE_DEPTH, sizeof(RcValue));
+	// Creating timer for disarming if we don't get new attitude updates
+	arming_timeout_timer = xTimerCreate("NavTimer", RC_VALUE_TIMEOUT_MS, pdFALSE, NULL, [](TimerHandle_t timer) {
+		disarm_controller();
+	});
+
 	xTaskCreate(task_loop, "flight controller", 400, NULL, 2, &task_handle);
 }
 
-void set_frame_channel_cmd(uint8_t channel, uint16_t value) {
-	sbus_frame.channels[channel] = value & SBUS_CHANNEL_MASK;
+Status pass_rc(RcValue new_value) {
+	arm_controller();
+
+	xTimerStart(arming_timeout_timer, 0);
+
+	if(xQueueSendToBack(rc_value_queue, &new_value, 0) != pdPASS) {
+		return Status::COMMAND_ALREADY_INQUEUE;
+	}
+	return Status::SUCCESS;
+}
+
+void arm_controller(void) {
+	if(!kill_state) {
+		arming_channel_state = true;
+		gpio_man->set_pwm_output_en(true);
+	}
+}
+
+void disarm_controller(void) {
+	arming_channel_state = false;
+}
+
+void kill_controller(void) {
+	portENTER_CRITICAL();
+	gpio_man->set_pwm_output_en(false);
+	kill_state = true;
+	arming_channel_state = false;
+	portEXIT_CRITICAL();
+}
+
+bool is_controller_armed(void) {
+	return arming_channel_state;
 }
 
 static void task_loop(void *p) {
@@ -130,7 +188,7 @@ static void task_loop(void *p) {
 
 	// Init SBUS Frame
 	for(uint8_t i = 0; i< 18; i++) {
-		sbus_frame.channels[i] = 1500;
+		last_sbus_frame.channels[i] = 1500;
 	}
 
 	init_sbus_timer();
@@ -148,13 +206,6 @@ static void init_telem_uart() {
 	telem_uart->allocate_buffers(0,150);
 	telem_uart->config_data_mode(UART_LCR_WLEN8, UART_LCR_PARITY_DIS, UART_LCR_SBS_1BIT);
 	telem_uart->set_baud_fractional(0xED, 0x1B, 0x0, SYSCTL_CLKDIV_1); // Set baud rate to 115200
-	//telem_uart->set_baud(115200);
-
-	GpdmaChannel *blackbox_dma_channel_tx = dma_man->allocate_channel(4);
-	GpdmaChannel *blackbox_dma_channel_rx = dma_man->allocate_channel(5);
-
-	telem_uart->bind_dma_channels(blackbox_dma_channel_tx, blackbox_dma_channel_rx);
-	//telem_uart->set_transfer_mode(UART_XFER_MODE_DMA);
 }
 
 static void init_sbus_uart() {
@@ -199,8 +250,28 @@ extern "C" {
 	using namespace flight_controller_task;
 	void RIT_IRQHandler(void) {
 		uint8_t raw_frame[SBUS_FRAME_LEN];
-		sbus_frame.serialize(raw_frame);
+		SBusFrame new_frame = last_sbus_frame;;
+		RcValue new_values;
+		// Get RC values
+		if(xQueueReceiveFromISR(rc_value_queue, &new_values, NULL) == pdTRUE) {
+			new_frame.channels[PITCH_CH] = new_values.pitch;
+			new_frame.channels[ROLL_CH] = new_values.roll;
+			new_frame.channels[YAW_CH] = new_values.yaw;
+			new_frame.channels[THROTTLE_CH] = new_values.throttle;
+		}
+
+		// Arming
+		if(arming_channel_state) {
+			new_frame.channels[ARMING_CH] = HIGH_SWITCH_RC_VALUE;
+		}
+		else {
+			new_frame.channels[ARMING_CH] = LOW_SWITCH_RC_VALUE;
+		}
+
+		memcpy(&last_sbus_frame, &new_frame, sizeof(SBusFrame));
+		new_frame.serialize(raw_frame);
 		sbus_uart->write_async(raw_frame, SBUS_FRAME_LEN, sbus_written_del);
+		//last_sbus_frame = new_frame;
 		Chip_RIT_ClearInt(LPC_RITIMER);
 	}
 }

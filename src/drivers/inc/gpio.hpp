@@ -5,22 +5,22 @@
  *      Author: bsoper
  */
 
-#ifndef DRIVERS_INC_LOAD_SWITCH_RAIL_HPP_
-#define DRIVERS_INC_LOAD_SWITCH_RAIL_HPP_
+#ifndef DRIVERS_INC_GPIO_HPP_
+#define DRIVERS_INC_GPIO_HPP_
 
 #include "driver.hpp"
 
-class LoadSwitch : public Driver {
+class GpioManager : public Driver {
 public:
-	LoadSwitch() {};
+	GpioManager() {};
 	void init_driver(void);
 	void set_load_switch_navcmp(bool state);
 	void set_load_switch_fltctl(bool state);
 	void set_load_switch_gps(bool state);
 	void set_load_switch_radio(bool state);
-	void set_hw_arm(bool state);
+	void set_pwm_output_en(bool state);
 };
 
 
 
-#endif /* DRIVERS_INC_LOAD_SWITCH_RAIL_HPP_ */
+#endif /* DRIVERS_INC_GPIO_HPP_ */

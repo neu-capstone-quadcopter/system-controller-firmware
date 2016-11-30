@@ -8,13 +8,30 @@
 #ifndef TASKS_INC_FLIGHT_CONTROLLER_TASK_HPP_
 #define TASKS_INC_FLIGHT_CONTROLLER_TASK_HPP_
 
+#include <cstdint>
+
 #include "FreeRTOS.h"
 #include "queue.h"
 #include "task.h"
 
 namespace flight_controller_task {
+	enum class Status {
+		SUCCESS = 0,
+		COMMAND_ALREADY_INQUEUE = 1
+	};
+
+	struct RcValue {
+		uint16_t pitch;
+		uint16_t roll;
+		uint16_t yaw;
+		uint16_t throttle;
+	};
+
 	void start(void);
-	void set_frame_channel_cmd(uint8_t channel, uint16_t value);
+	Status pass_attitude(RcValue new_value);
+	void arm_controller(void);
+	void disarm_controller(void);
+	void kill_controller(void);
 
 } // End flight_controller_task namespace.
 

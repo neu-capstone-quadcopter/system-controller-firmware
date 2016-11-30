@@ -103,21 +103,16 @@ namespace console_task {
 		}
 	}
 
-	void set_fltctl_ch(char* output_string, uint8_t argc, char** argv) {
-		if(argc >= 3) {
-			flight_controller_task::set_frame_channel_cmd(atoi(argv[1]), atoi(argv[2]));
-		}
-		else {
-			strcpy(output_string, NOT_ENOUGH_ARGS_STR);
-		}
-	}
 
-	void arm_fltctl(char* output_string, uint8_t argc, char** argv)
+	void set_fltctl_arming(char* output_string, uint8_t argc, char** argv)
 	{
-		flight_controller_task::set_frame_channel_cmd(0,1000);
-		flight_controller_task::set_frame_channel_cmd(1,1000);
-		flight_controller_task::set_frame_channel_cmd(2, 100);
-		flight_controller_task::set_frame_channel_cmd(3, 1900);
+		if(argc == 2) {
+			if(argv[0][0] == '1') {
+				flight_controller_task::arm_controller();
+			} else {
+				flight_controller_task::disarm_controller();
+			}
+		}
 
 	}
 
@@ -190,7 +185,7 @@ namespace console_task {
 			else if(!strcmp(argv[1],"off"))
 				state = false;
 			else {
-				strcpy(output_string, "Invalid Parameter -- options: \'on\' or \'off\'...\r\m");
+				strcpy(output_string, "Invalid Parameter -- options: \'on\' or \'off\'...\r\n");
 				return;
 			}
 			LoadSwitch *load_switch = hal::get_driver<LoadSwitch>(hal::LOAD_SWITCH);
@@ -242,8 +237,7 @@ namespace console_task {
 			{"get_task_info", &get_task_info},
 			{"get_runtime_info", &get_runtime_info},
 			{"start_trace", &start_trace},
-			{"set_fltctl_ch", &set_fltctl_ch},
-			{"arm_fltctl", &arm_fltctl},
+			{"set_fltctl_arming", &set_fltctl_arming},
 #ifndef IS_DEBUG_BOARD
 			{"set_navcmp_pwr", &set_navcmp_pwr},
 			{"set_fltctl_pwr", &set_fltctl_pwr},

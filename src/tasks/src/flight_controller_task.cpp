@@ -48,6 +48,7 @@ static const uint8_t STREAM_READ_LEN = 20;
 static const uint8_t RC_VALUE_QUEUE_DEPTH = 1;
 static const uint16_t HIGH_SWITCH_RC_VALUE = 200;
 static const uint16_t LOW_SWITCH_RC_VALUE = 1800;
+static const uint16_t RC_VALUE_TIMEOUT_MS = 5000;
 
 struct SBusFrame{
 	uint16_t channels[18];
@@ -139,7 +140,7 @@ void start() {
 
 	rc_value_queue = xQueueCreate(EVENT_QUEUE_DEPTH, sizeof(RcValue));
 	// Creating timer for disarming if we don't get new attitude updates
-	arming_timeout_timer = xTimerCreate("NavTimer", 500, pdFALSE, NULL, [](TimerHandle_t timer) {
+	arming_timeout_timer = xTimerCreate("NavTimer", RC_VALUE_TIMEOUT_MS, pdFALSE, NULL, [](TimerHandle_t timer) {
 		disarm_controller();
 	});
 

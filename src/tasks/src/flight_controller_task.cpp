@@ -124,6 +124,7 @@ __BSS(RAM2)
 static Stream blackbox_stream;
 
 static bool arming_channel_state = false;
+static bool kill_state = false;
 
 auto fc_bb_read_del = dlgt::make_delegate(&telem_uart_read_handler);
 auto sbus_written_del = dlgt::make_delegate(&sbus_frame_written_handler);
@@ -154,10 +155,17 @@ Status pass_rc(RcValue new_value) {
 }
 
 void arm_controller(void) {
-	arming_channel_state = true;
+	if(!kill_state) {
+		arming_channel_state = true;
+	}
 }
 
 void disarm_controller(void) {
+	arming_channel_state = false;
+}
+
+void kill_controller(void) {
+	kill_state = true;
 	arming_channel_state = false;
 }
 

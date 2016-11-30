@@ -41,6 +41,7 @@ static void read_len_handler(UartError status, uint8_t *data, uint16_t len);
 static void read_data_handler(UartError status, uint8_t *data, uint16_t len);
 void serialize_and_send_frame(monarcpb_SysCtrlToNavCPU frame);
 void send_flight_controls(monarcpb_NavCPUToSysCtrl message);
+static bool eval_kill(monarcpb_NavCPUToSysCtrl message);
 static void add_ultrasonic_range_to_pb(monarcpb_SysCtrlToNavCPU &frame);
 
 UartIo* nav_uart;
@@ -152,6 +153,10 @@ void distribute_data(uint8_t* data, uint16_t length) {
 	pb_decode(&stream, monarcpb_NavCPUToSysCtrl_fields, &message);
 	// TODO: Distribute data to sysctrl nodes as needed.
 	send_flight_controls(message);
+
+	if(eval_kill(message)) {
+		flight_controller_task::kill_controller();
+	}
 }
 
 void send_flight_controls(monarcpb_NavCPUToSysCtrl message) {
@@ -166,6 +171,10 @@ void send_flight_controls(monarcpb_NavCPUToSysCtrl message) {
 			flight_controller_task::pass_rc(rc);
 		}
 	}
+}
+
+bool eval_kill(monarcpb_NavCPUToSysCtrl message) {
+	return message.has_state && message.state.has_kill && message.state.kill;
 }
 
 static void read_len_handler(UartError status, uint8_t *data, uint16_t len) {

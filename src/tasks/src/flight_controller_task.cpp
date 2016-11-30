@@ -46,8 +46,8 @@ static const uint8_t SBUS_FRAME_LEN = 25;
 static const uint8_t STREAM_READ_LEN = 20;
 
 static const uint8_t RC_VALUE_QUEUE_DEPTH = 1;
-static const uint16_t LOW_SWITCH_RC_VALUE = 200;
-static const uint16_t HIGH_SWITCH_RC_VALUE = 1800;
+static const uint16_t HIGH_SWITCH_RC_VALUE = 200;
+static const uint16_t LOW_SWITCH_RC_VALUE = 1800;
 
 struct SBusFrame{
 	uint16_t channels[18];
@@ -237,9 +237,10 @@ extern "C" {
 			new_frame.channels[ARMING_INDEX] = LOW_SWITCH_RC_VALUE;
 		}
 
+		memcpy(&last_sbus_frame, &new_frame, sizeof(SBusFrame));
 		new_frame.serialize(raw_frame);
 		sbus_uart->write_async(raw_frame, SBUS_FRAME_LEN, sbus_written_del);
-		last_sbus_frame = new_frame;
+		//last_sbus_frame = new_frame;
 		Chip_RIT_ClearInt(LPC_RITIMER);
 	}
 }

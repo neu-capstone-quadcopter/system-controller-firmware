@@ -107,7 +107,7 @@ namespace console_task {
 	void set_fltctl_arming(char* output_string, uint8_t argc, char** argv)
 	{
 		if(argc == 2) {
-			if(argv[0][0] == '1') {
+			if(argv[1][0] == '1') {
 				flight_controller_task::arm_controller();
 			} else {
 				flight_controller_task::disarm_controller();

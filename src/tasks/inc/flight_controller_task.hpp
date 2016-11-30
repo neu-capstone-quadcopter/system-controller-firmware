@@ -28,10 +28,11 @@ namespace flight_controller_task {
 	};
 
 	void start(void);
-	Status pass_attitude(RcValue new_value);
+	Status pass_rc(RcValue new_value);
 	void arm_controller(void);
 	void disarm_controller(void);
 	void kill_controller(void);
+	bool is_controller_armed(void);
 
 } // End flight_controller_task namespace.
 

@@ -12,6 +12,7 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "queue.h"
+#include "timers.h"
 
 #include "hal.hpp"
 #include "gpdma.hpp"
@@ -26,15 +27,13 @@
 
 namespace flight_controller_task {
 
-enum class SBusChannelMapping {
-	PITCH = 1,
-	ROLL = 0,
-	YAW = 3,
-	THROTTLE = 2,
-	ARMING = 6
+enum SBusChannelMapping {
+	PITCH_CH = 1,
+	ROLL_CH = 0,
+	YAW_CH = 3,
+	THROTTLE_CH = 2,
+	ARMING_CH = 6
 };
-
-static const uint8_t ARMING_INDEX = static_cast<uint8_t>(SBusChannelMapping::ARMING);
 
 static const uint16_t SBUS_CHANNEL_MASK = 0x07ff;
 static const uint8_t SBUS_CHANNEL_BIT_LEN = 11;
@@ -114,6 +113,7 @@ static void sbus_frame_written_handler(UartError status);
 
 static TaskHandle_t task_handle;
 static QueueHandle_t rc_value_queue;
+static TimerHandle_t arming_timeout_timer;
 
 static UartIo* telem_uart;
 static UartIo* sbus_uart;
@@ -134,11 +134,19 @@ void start() {
 	sbus_uart = hal::get_driver<UartIo>(hal::FC_SBUS_UART);
 
 	rc_value_queue = xQueueCreate(EVENT_QUEUE_DEPTH, sizeof(RcValue));
+	// Creating timer for disarming if we don't get new attitude updates
+	arming_timeout_timer = xTimerCreate("NavTimer", 500, pdFALSE, NULL, [](TimerHandle_t timer) {
+		disarm_controller();
+	});
 
 	xTaskCreate(task_loop, "flight controller", 400, NULL, 2, &task_handle);
 }
 
-Status pass_attitude(RcValue new_value) {
+Status pass_rc(RcValue new_value) {
+	arm_controller();
+
+	xTimerStart(arming_timeout_timer, 0);
+
 	if(xQueueSendToBack(rc_value_queue, &new_value, 0) != pdPASS) {
 		return Status::COMMAND_ALREADY_INQUEUE;
 	}
@@ -151,6 +159,10 @@ void arm_controller(void) {
 
 void disarm_controller(void) {
 	arming_channel_state = false;
+}
+
+bool is_controller_armed(void) {
+	return arming_channel_state;
 }
 
 static void task_loop(void *p) {
@@ -222,19 +234,22 @@ extern "C" {
 	using namespace flight_controller_task;
 	void RIT_IRQHandler(void) {
 		uint8_t raw_frame[SBUS_FRAME_LEN];
-		SBusFrame new_frame;
+		SBusFrame new_frame = last_sbus_frame;;
+		RcValue new_values;
 		// Get RC values
-		if(xQueueReceiveFromISR(rc_value_queue, &new_frame, NULL) != pdTRUE) {
-			// The queue was empty, take note of this and send last value
-			new_frame = last_sbus_frame;
+		if(xQueueReceiveFromISR(rc_value_queue, &new_values, NULL) == pdTRUE) {
+			new_frame.channels[PITCH_CH] = new_values.pitch;
+			new_frame.channels[ROLL_CH] = new_values.roll;
+			new_frame.channels[YAW_CH] = new_values.yaw;
+			new_frame.channels[THROTTLE_CH] = new_values.throttle;
 		}
 
 		// Arming
 		if(arming_channel_state) {
-			new_frame.channels[ARMING_INDEX] = HIGH_SWITCH_RC_VALUE;
+			new_frame.channels[ARMING_CH] = HIGH_SWITCH_RC_VALUE;
 		}
 		else {
-			new_frame.channels[ARMING_INDEX] = LOW_SWITCH_RC_VALUE;
+			new_frame.channels[ARMING_CH] = LOW_SWITCH_RC_VALUE;
 		}
 
 		memcpy(&last_sbus_frame, &new_frame, sizeof(SBusFrame));

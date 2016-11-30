@@ -163,7 +163,7 @@ void send_flight_controls(monarcpb_NavCPUToSysCtrl message) {
 			rc.roll = raw_rc.roll;
 			rc.yaw = raw_rc.yaw;
 			rc.throttle = raw_rc.throttle;
-			flight_controller_task::pass_attitude(rc);
+			flight_controller_task::pass_rc(rc);
 		}
 	}
 }

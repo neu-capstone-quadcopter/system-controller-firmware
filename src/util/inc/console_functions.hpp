@@ -8,13 +8,13 @@
 #ifndef UTIL_INC_CONSOLE_FUNCTIONS_HPP_
 #define UTIL_INC_CONSOLE_FUNCTIONS_HPP_
 
+#include <gpio.hpp>
 #include <cstdio>
 #include <cstdlib>
 
 #include "board.hpp"
 #include "hal.hpp"
 #include "flight_controller_task.hpp"
-#include "load_switch_rail.hpp"
 #include "mb1240.hpp"
 
 namespace console_task {
@@ -150,7 +150,7 @@ namespace console_task {
 				strcpy(output_string, "Invalid Parameter -- options: \'on\' or \'off\'...\r\n");
 				return;
 			}
-			LoadSwitch *load_switch = hal::get_driver<LoadSwitch>(hal::LOAD_SWITCH);
+			GpioManager *load_switch = hal::get_driver<GpioManager>(hal::GPIOS);
 			load_switch->set_load_switch_navcmp(state);
 		}
 		else
@@ -169,7 +169,7 @@ namespace console_task {
 				strcpy(output_string, "Invalid Parameter -- options: \'on\' or \'off\'...\r\n");
 				return;
 			}
-			LoadSwitch *load_switch = hal::get_driver<LoadSwitch>(hal::LOAD_SWITCH);
+			GpioManager *load_switch = hal::get_driver<GpioManager>(hal::GPIOS);
 			load_switch->set_load_switch_fltctl(state);
 		}
 		else
@@ -188,7 +188,7 @@ namespace console_task {
 				strcpy(output_string, "Invalid Parameter -- options: \'on\' or \'off\'...\r\n");
 				return;
 			}
-			LoadSwitch *load_switch = hal::get_driver<LoadSwitch>(hal::LOAD_SWITCH);
+			GpioManager *load_switch = hal::get_driver<GpioManager>(hal::GPIOS);
 			load_switch->set_load_switch_gps(state);
 		}
 		else
@@ -207,7 +207,7 @@ namespace console_task {
 				strcpy(output_string, "Invalid Parameter -- options: \'enable\' or \'disable\'...\r\n");
 				return;
 			}
-			LoadSwitch *load_switch = hal::get_driver<LoadSwitch>(hal::LOAD_SWITCH);
+			GpioManager *load_switch = hal::get_driver<GpioManager>(hal::GPIOS);
 			load_switch->set_load_switch_radio(state);
 		}
 		else
@@ -232,8 +232,8 @@ namespace console_task {
 				strcpy(output_string, "Invalid Parameter -- options: \'1\' or \'0\'...\r\n");
 				return;
 			}
-			LoadSwitch *load_switch = hal::get_driver<LoadSwitch>(hal::LOAD_SWITCH);
-			load_switch->set_hw_arm(state);
+			GpioManager *gpio_man = hal::get_driver<GpioManager>(hal::GPIOS);
+			gpio_man->set_pwm_output_en(state);
 		}
 		else
 			strcpy(output_string, NOT_ENOUGH_ARGS_STR);

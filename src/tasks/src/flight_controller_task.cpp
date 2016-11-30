@@ -8,6 +8,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <cr_section_macros.h>
+#include <gpio.hpp>
 
 #include "FreeRTOS.h"
 #include "task.h"
@@ -117,7 +118,8 @@ static TimerHandle_t arming_timeout_timer;
 
 static UartIo* telem_uart;
 static UartIo* sbus_uart;
-GpdmaManager *dma_man;
+static GpdmaManager *dma_man;
+static GpioManager *gpio_man;
 
 static SBusFrame last_sbus_frame;
 __BSS(RAM2)
@@ -133,6 +135,7 @@ void start() {
 	dma_man = hal::get_driver<GpdmaManager>(hal::GPDMA_MAN);
 	telem_uart = hal::get_driver<UartIo>(hal::FC_TELEM_UART);
 	sbus_uart = hal::get_driver<UartIo>(hal::FC_SBUS_UART);
+	gpio_man = hal::get_driver<GpioManager>(hal::GPIOS);
 
 	rc_value_queue = xQueueCreate(EVENT_QUEUE_DEPTH, sizeof(RcValue));
 	// Creating timer for disarming if we don't get new attitude updates
@@ -157,6 +160,7 @@ Status pass_rc(RcValue new_value) {
 void arm_controller(void) {
 	if(!kill_state) {
 		arming_channel_state = true;
+		gpio_man->set_pwm_output_en(true);
 	}
 }
 
@@ -167,6 +171,7 @@ void disarm_controller(void) {
 void kill_controller(void) {
 	kill_state = true;
 	arming_channel_state = false;
+	gpio_man->set_pwm_output_en(false);
 }
 
 bool is_controller_armed(void) {

@@ -5,6 +5,7 @@
  *      Author: nigil
  */
 
+#include <gpio.hpp>
 #include "chip.h"
 #include "board.hpp"
 
@@ -19,7 +20,6 @@
 #include "cd74hc4067.hpp"
 #include "mb1240.hpp"
 #include "config.hpp"
-#include "load_switch_rail.hpp"
 
 namespace hal {
 	void add_drivers(void);
@@ -49,7 +49,7 @@ namespace hal {
 		ExampleLed *led_0 = new ExampleLed(LED0_PORT, LED0_PIN);
 		ExampleLed *led_1 = new ExampleLed(LED1_PORT, LED1_PIN);
 #else
-		LoadSwitch *load_switch = new LoadSwitch();
+		GpioManager *load_switch = new GpioManager();
 		Mb1240 *ultrasonic_altimeter = new Mb1240(ULTRASONIC_TIMER, ULTRASONIC_TIMER_CAP_CH);
 #endif
 		Adc *adc = new Adc(ADC);
@@ -66,7 +66,7 @@ namespace hal {
 		drivers[LED_0] = led_0;
 		drivers[LED_1] = led_1;
 #else
-		drivers[LOAD_SWITCH] = load_switch;
+		drivers[GPIOS] = load_switch;
 		drivers[ULTRASONIC_ALTIMETER] = ultrasonic_altimeter;
 #endif
 		drivers[SENSOR_ADC] = adc;
@@ -91,7 +91,7 @@ namespace hal {
 	template class Cc1120 *get_driver(driver_identifier);
 	template class ExampleLed *get_driver(driver_identifier);
 	template class Mb1240 *get_driver(driver_identifier);
-	template class LoadSwitch *get_driver(driver_identifier);
+	template class GpioManager *get_driver(driver_identifier);
 }
 
 extern "C" {

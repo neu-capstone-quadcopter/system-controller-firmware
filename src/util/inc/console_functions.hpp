@@ -219,6 +219,25 @@ namespace console_task {
 		Mb1240 *ultrasonic_altimeter = hal::get_driver<Mb1240>(hal::ULTRASONIC_ALTIMETER);
 		sprintf(output_string, "%d\r\n", ultrasonic_altimeter->get_current_range_mm());
 	}
+
+	void set_kill(char* output_string, uint8_t argc, char** argv)
+	{
+		if(argc == 2) {
+			bool state;
+			if(!strcmp(argv[1], "1"))
+				state = true;
+			else if(!strcmp(argv[1], "0"))
+				state = false;
+			else {
+				strcpy(output_string, "Invalid Parameter -- options: \'1\' or \'0\'...\r\n");
+				return;
+			}
+			LoadSwitch *load_switch = hal::get_driver<LoadSwitch>(hal::LOAD_SWITCH);
+			load_switch->set_hw_arm(state);
+		}
+		else
+			strcpy(output_string, NOT_ENOUGH_ARGS_STR);
+	}
 #endif
 
 	typedef void (*CommandFunction)(char*,uint8_t,char**);

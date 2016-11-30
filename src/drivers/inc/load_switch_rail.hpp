@@ -18,6 +18,7 @@ public:
 	void set_load_switch_fltctl(bool state);
 	void set_load_switch_gps(bool state);
 	void set_load_switch_radio(bool state);
+	void set_hw_arm(bool state);
 };
 
 

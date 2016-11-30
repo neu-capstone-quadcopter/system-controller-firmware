@@ -170,9 +170,11 @@ void disarm_controller(void) {
 }
 
 void kill_controller(void) {
+	portENTER_CRITICAL();
+	gpio_man->set_pwm_output_en(false);
 	kill_state = true;
 	arming_channel_state = false;
-	gpio_man->set_pwm_output_en(false);
+	portEXIT_CRITICAL();
 }
 
 bool is_controller_armed(void) {

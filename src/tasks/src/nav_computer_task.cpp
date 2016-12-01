@@ -154,18 +154,16 @@ void distribute_data(uint8_t* data, uint16_t length) {
 	pb_decode(&stream, monarcpb_NavCPUToSysCtrl_fields, &message);
 	// TODO: Distribute data to sysctrl nodes as needed.
 	send_flight_controls(message);
+}
 
+void send_flight_controls(monarcpb_NavCPUToSysCtrl message) {
 	if(eval_kill(message)) {
 		flight_controller_task::kill_controller();
 	}
 	else if(eval_soft_kill(message)) {
 		flight_controller_task::soft_kill_controller();
 	}
-
-}
-
-void send_flight_controls(monarcpb_NavCPUToSysCtrl message) {
-	if(message.has_control) {
+	else if(message.has_control) {
 		auto raw_rc = message.control;
 		if(raw_rc.has_pitch && raw_rc.has_roll && raw_rc.has_yaw && raw_rc.has_throttle &&
 		   !flight_controller_task::soft_kill_state) {

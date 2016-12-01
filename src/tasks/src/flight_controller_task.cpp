@@ -50,6 +50,9 @@ static const uint16_t HIGH_SWITCH_RC_VALUE = 200;
 static const uint16_t LOW_SWITCH_RC_VALUE = 1800;
 static const uint16_t RC_VALUE_TIMEOUT_MS = 2000;
 
+static const uint16_t CENTER_STICK_VAL = 992;
+static const uint16_t SOFT_KILL_THROTTLE_VAL = 875;
+
 struct SBusFrame{
 	uint16_t channels[18];
 	bool frame_lost;
@@ -178,14 +181,19 @@ void kill_controller(void) {
 }
 
 void soft_kill_controller(void) {
+	portENTER_CRITICAL();
 	soft_kill_state = true;
 
 	RcValue rc;
-	rc.pitch = 992;
-	rc.roll = 992;
-	rc.yaw = 992;
-	rc.throttle = 875;
-	pass_rc(rc);
+	rc.pitch = CENTER_STICK_VAL;
+	rc.roll = CENTER_STICK_VAL;
+	rc.yaw = CENTER_STICK_VAL;
+	rc.throttle = SOFT_KILL_THROTTLE_VAL;
+
+	xTimerStop(arming_timeout_timer, 0);
+
+	xQueueOverwrite(rc_value_queue, &rc);
+	portEXIT_CRITICAL();
 }
 
 bool is_controller_armed(void) {
@@ -282,7 +290,6 @@ extern "C" {
 		memcpy(&last_sbus_frame, &new_frame, sizeof(SBusFrame));
 		new_frame.serialize(raw_frame);
 		sbus_uart->write_async(raw_frame, SBUS_FRAME_LEN, sbus_written_del);
-		//last_sbus_frame = new_frame;
 		Chip_RIT_ClearInt(LPC_RITIMER);
 	}
 }

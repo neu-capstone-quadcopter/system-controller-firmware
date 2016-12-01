@@ -27,11 +27,14 @@ namespace flight_controller_task {
 		uint16_t throttle;
 	};
 
+	static bool soft_kill_state = false;
+
 	void start(void);
 	Status pass_rc(RcValue new_value);
 	void arm_controller(void);
 	void disarm_controller(void);
 	void kill_controller(void);
+	void soft_kill_controller(void);
 	bool is_controller_armed(void);
 
 } // End flight_controller_task namespace.

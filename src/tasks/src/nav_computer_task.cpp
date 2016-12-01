@@ -42,6 +42,7 @@ static void read_data_handler(UartError status, uint8_t *data, uint16_t len);
 void serialize_and_send_frame(monarcpb_SysCtrlToNavCPU frame);
 void send_flight_controls(monarcpb_NavCPUToSysCtrl message);
 static bool eval_kill(monarcpb_NavCPUToSysCtrl message);
+bool eval_soft_kill(monarcpb_NavCPUToSysCtrl message);
 static void add_ultrasonic_range_to_pb(monarcpb_SysCtrlToNavCPU &frame);
 
 UartIo* nav_uart;
@@ -157,12 +158,17 @@ void distribute_data(uint8_t* data, uint16_t length) {
 	if(eval_kill(message)) {
 		flight_controller_task::kill_controller();
 	}
+	else if(eval_soft_kill(message)) {
+		flight_controller_task::soft_kill_controller();
+	}
+
 }
 
 void send_flight_controls(monarcpb_NavCPUToSysCtrl message) {
 	if(message.has_control) {
 		auto raw_rc = message.control;
-		if(raw_rc.has_pitch && raw_rc.has_roll && raw_rc.has_yaw && raw_rc.has_throttle) {
+		if(raw_rc.has_pitch && raw_rc.has_roll && raw_rc.has_yaw && raw_rc.has_throttle &&
+		   !flight_controller_task::soft_kill_state) {
 			flight_controller_task::RcValue rc;
 			rc.pitch = raw_rc.pitch;
 			rc.roll = raw_rc.roll;
@@ -175,6 +181,10 @@ void send_flight_controls(monarcpb_NavCPUToSysCtrl message) {
 
 bool eval_kill(monarcpb_NavCPUToSysCtrl message) {
 	return message.has_state && message.state.has_kill && message.state.kill;
+}
+
+bool eval_soft_kill(monarcpb_NavCPUToSysCtrl message) {
+	return message.has_state && message.state.has_soft_kill && message.state.soft_kill;
 }
 
 static void read_len_handler(UartError status, uint8_t *data, uint16_t len) {

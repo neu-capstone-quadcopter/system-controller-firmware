@@ -48,7 +48,7 @@ static const uint8_t STREAM_READ_LEN = 20;
 static const uint8_t RC_VALUE_QUEUE_DEPTH = 1;
 static const uint16_t HIGH_SWITCH_RC_VALUE = 200;
 static const uint16_t LOW_SWITCH_RC_VALUE = 1800;
-static const uint16_t RC_VALUE_TIMEOUT_MS = 5000;
+static const uint16_t RC_VALUE_TIMEOUT_MS = 2000;
 
 struct SBusFrame{
 	uint16_t channels[18];
@@ -175,6 +175,17 @@ void kill_controller(void) {
 	kill_state = true;
 	arming_channel_state = false;
 	portEXIT_CRITICAL();
+}
+
+void soft_kill_controller(void) {
+	soft_kill_state = true;
+
+	RcValue rc;
+	rc.pitch = 992;
+	rc.roll = 992;
+	rc.yaw = 992;
+	rc.throttle = 875;
+	pass_rc(rc);
 }
 
 bool is_controller_armed(void) {

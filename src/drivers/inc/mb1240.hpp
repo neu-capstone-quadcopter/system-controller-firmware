@@ -16,7 +16,7 @@ class Mb1240 : public Driver {
 public:
 	Mb1240(LPC_TIMER_T *ultrasonic_timer, uint8_t timer_cap_ch);
 	void init_driver();
-	uint16_t get_current_range_mm();
+	bool get_current_range_mm(uint16_t *range);
 	void timer_interrupt_handler();
 private:
 	LPC_TIMER_T *timer;
@@ -24,6 +24,7 @@ private:
 	uint32_t last_rising_cap;
 	uint16_t current_range_mm;
 	bool is_awaiting_rising_edge = true;
+	bool has_read_last_value = true;
 	void init_capture_timer();
 };
 

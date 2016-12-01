@@ -217,7 +217,9 @@ namespace console_task {
 	void get_ultrasonic_range(char* output_string, uint8_t argc, char** argv)
 	{
 		Mb1240 *ultrasonic_altimeter = hal::get_driver<Mb1240>(hal::ULTRASONIC_ALTIMETER);
-		sprintf(output_string, "%d\r\n", ultrasonic_altimeter->get_current_range_mm());
+		uint16_t range;
+		ultrasonic_altimeter->get_current_range_mm(&range);
+		sprintf(output_string, "%d\r\n", range);
 	}
 
 	void set_kill(char* output_string, uint8_t argc, char** argv)

@@ -11,7 +11,8 @@
 #include "board.hpp"
 #include "util.hpp"
 
-static const uint32_t SENSOR_US_PER_CM = 58;
+//static const uint32_t SENSOR_US_PER_CM = 58;
+static const float SENSOR_US_PER_MM = 5.8f;
 static const uint32_t TIMER_CNT_PER_US = 24; // 1e-6 / (4 / CCLK))
 
 Mb1240::Mb1240(LPC_TIMER_T *ultrasonic_timer, uint8_t timer_cap_ch) {
@@ -24,8 +25,15 @@ void Mb1240::init_driver() {
 	this->init_capture_timer();
 }
 
-uint16_t Mb1240::get_current_range_mm() {
-	return this->current_range_mm;
+bool Mb1240::get_current_range_mm(uint16_t *range) {
+	*range = this->current_range_mm;
+	if(this->has_read_last_value) {
+		return false;
+	}
+	else {
+		this->has_read_last_value = true;
+		return true;
+	}
 }
 
 void Mb1240::timer_interrupt_handler() {
@@ -53,12 +61,13 @@ void Mb1240::timer_interrupt_handler() {
 
 		uint32_t pulse_time_us = pulse_cnt / TIMER_CNT_PER_US;
 
-		this->current_range_mm = pulse_time_us / SENSOR_US_PER_CM * 10;
+		this->current_range_mm = pulse_time_us / SENSOR_US_PER_MM;
 
 
 		Chip_TIMER_CaptureFallingEdgeDisable(this->timer, this->timer_cap_ch);
 		Chip_TIMER_CaptureRisingEdgeEnable(this->timer, this->timer_cap_ch);
 
+		this->has_read_last_value = false;
 		this->is_awaiting_rising_edge = true;
 	}
 	Chip_TIMER_ClearCapture(this->timer, this->timer_cap_ch);

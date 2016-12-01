@@ -217,8 +217,12 @@ static void timer_handler(TimerHandle_t xTimer) {
 }
 
 static void add_ultrasonic_range_to_pb(monarcpb_SysCtrlToNavCPU &frame) {
-	frame.telemetry.has_altitude = true;
-	frame.telemetry.altitude = ultrasonic_altimeter->get_current_range_mm();
+	uint16_t ultrasonic_range;
+	if(ultrasonic_altimeter->get_current_range_mm(&ultrasonic_range)) {
+		frame.has_telemetry = true;
+		frame.telemetry.has_altitude = true;
+		frame.telemetry.altitude = ultrasonic_range;
+	}
 }
 
 } // End nav_computer_task namespace.
